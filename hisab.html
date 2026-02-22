@@ -1,0 +1,2434 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>পুজো ম্যানেজমেন্ট সিস্টেম</title>
+    
+    <!-- ফন্ট -->
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- আইকন -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Excel Reader Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { siliguri: ['"Hind Siliguri"', 'sans-serif'], },
+                    colors: {
+                        puja: { red: '#D9381E', orange: '#F2A900', light: '#FFF5E1', dark: '#8B0000', purple: '#581c87', blue: '#1e3a8a' }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { font-family: 'Hind Siliguri', sans-serif; background-color: #f8f9fa; overscroll-behavior-y: none; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .nav-link { padding: 0.75rem 1rem; color: white; opacity: 0.8; transition: all 0.3s; border-bottom: 3px solid transparent; font-weight: 500; white-space: nowrap; }
+        .nav-link:hover { opacity: 1; background-color: rgba(255,255,255,0.1); }
+        .nav-link.active { opacity: 1; border-bottom-color: #F2A900; background-color: rgba(0,0,0,0.25); font-weight: 700; }
+
+        .sub-tab-btn { border-bottom: 2px solid transparent; color: #6b7280; transition: all 0.2s; white-space: nowrap; }
+        .sub-tab-btn.active { border-bottom-color: #D9381E; color: #D9381E; font-weight: 700; }
+        .sub-tab-btn.income-active { border-bottom-color: #581c87; color: #581c87; }
+
+        .spreadsheet-table { min-width: max-content; }
+        .spreadsheet-table th { background-color: #e5e7eb; border: 1px solid #d1d5db; padding: 10px; text-align: left; font-weight: 600; white-space: nowrap; }
+        .spreadsheet-table td { border: 1px solid #d1d5db; padding: 8px; background-color: white; }
+        .cursor-pointer:hover td { background-color: #f0f9ff; }
+        
+        .suggestion-box { position: absolute; background: white; border: 1px solid #ddd; z-index: 50; width: 100%; max-height: 250px; overflow-y: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-radius: 0 0 8px 8px; }
+        .suggestion-box-top { position: absolute; bottom: 100%; left: 0; background: white; border: 1px solid #ddd; z-index: 50; width: 100%; max-height: 150px; overflow-y: auto; box-shadow: 0 -4px 10px rgba(0,0,0,0.1); border-radius: 8px 8px 0 0; margin-bottom: 2px; }
+        .suggestion-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; }
+        .suggestion-item:hover { background-color: #fef2f2; }
+        .suggestion-past { background-color: #f0fdf4; border-left: 4px solid #16a34a; }
+        .suggestion-past:hover { background-color: #dcfce7; }
+        
+        /* Dashboard Tables */
+        .dash-table th { background-color: #f3f4f6; padding: 8px; border-bottom: 2px solid #e5e7eb; text-align: left; font-size: 13px; font-weight: bold; }
+        .dash-table td { padding: 8px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+    </style>
+</head>
+<body class="text-gray-800 h-[100dvh] flex flex-col font-siliguri overflow-hidden w-full">
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="fixed inset-0 bg-puja-light z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-md border-t-4 border-puja-red">
+            <div class="flex items-center justify-center gap-2 mb-2">
+                <i data-lucide="flower-2" class="w-8 h-8 sm:w-9 sm:h-9 text-yellow-500"></i>
+                <h1 class="text-xl sm:text-2xl font-bold text-puja-red">মডার্ণ স্পোর্টিং ক্লাব</h1>
+            </div>
+            <p class="text-center text-gray-500 mb-6 text-sm sm:text-base">লগইন ক্রেডেনশিয়াল দিন</p>
+            <div class="space-y-4">
+                <div class="flex gap-4 p-2 bg-gray-50 rounded justify-center">
+                    <label class="flex items-center cursor-pointer font-bold"><input type="radio" name="loginType" value="admin" checked class="mr-2 accent-puja-red"> Admin</label>
+                    <label class="flex items-center cursor-pointer font-bold"><input type="radio" name="loginType" value="member" class="mr-2 accent-puja-red"> Member</label>
+                </div>
+                <input type="text" id="loginId" class="w-full border p-3 rounded" value="" placeholder="Login ID">
+                <input type="password" id="loginPass" class="w-full border p-3 rounded" value="" placeholder="Password">
+                <button onclick="handleLogin()" class="w-full bg-puja-red hover:bg-red-700 text-white font-bold py-3 rounded shadow-lg text-lg">লগইন করুন</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP LAYOUT -->
+    <div id="app-container" class="hidden flex flex-col h-full w-full">
+        <!-- HEADER -->
+        <header id="main-header" class="bg-purple-800 text-white shadow-lg z-40 shrink-0 transition-colors duration-300">
+            <div class="container mx-auto px-2 sm:px-4">
+                <div class="flex justify-between items-center py-2 border-b border-white/20">
+                  <div class="flex items-center gap-1 sm:gap-2">
+                    <i data-lucide="flower-2" class="w-5 h-5 sm:w-6 sm:h-6 text-yellow-300"></i>
+                    <h1 class="text-lg sm:text-xl font-bold truncate">মডার্ণ স্পোর্টিং ক্লাব</h1>
+                    <button onclick="handleManualRefresh()" class="ml-1 sm:ml-2 bg-white/20 hover:bg-white/40 text-white p-1 sm:p-1.5 rounded-full transition-all shadow-sm border border-white/30" title="Refresh Data">
+                        <i data-lucide="refresh-cw" id="refreshSpinner" class="w-3 h-3 sm:w-4 sm:h-4"></i>
+                    </button>
+                  </div>
+                  <div class="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm">
+                      <span id="user-display-name" class="font-bold">Admin</span>
+                      <button onclick="logout()" class="hover:text-yellow-200 border border-white/40 px-2 py-1 rounded">Logout</button>
+                  </div>
+                </div>
+                <!-- NAVIGATION -->
+                <nav class="flex gap-1 overflow-x-auto scrollbar-hide pt-2 pb-1 w-full snap-x">
+                    <button onclick="switchTab('income')" class="nav-link active snap-start flex items-center" id="nav-income"><i data-lucide="indian-rupee" class="w-4 h-4 mr-1"></i> আয়ের হিসাব</button>
+                    <button onclick="switchTab('expense')" class="nav-link snap-start flex items-center" id="nav-expense"><i data-lucide="shopping-cart" class="w-4 h-4 mr-1"></i> ব্যয়ের হিসাব</button>
+                    <button onclick="switchTab('report')" class="nav-link snap-start flex items-center" id="nav-report"><i data-lucide="file-text" class="w-4 h-4 mr-1"></i> রিপোর্ট</button>
+                    <button onclick="switchTab('settings')" class="nav-link snap-start flex items-center" id="nav-settings"><i data-lucide="settings" class="w-4 h-4 mr-1"></i> সেটিংস</button>
+                    <button onclick="switchTab('history')" class="nav-link snap-start flex items-center" id="nav-history"><i data-lucide="archive" class="w-4 h-4 mr-1"></i> পুরোনো হিসাব</button>
+                </nav>
+            </div>
+        </header>
+
+        <!-- SUB HEADER -->
+        <div class="bg-white border-b px-3 sm:px-6 py-2 flex justify-between items-center shadow-sm shrink-0 flex-wrap gap-2">
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+                <label class="text-xs sm:text-sm font-semibold text-gray-500 whitespace-nowrap">বর্তমান পুজো:</label>
+                <select id="pujaSelect" onchange="refreshUI()" class="border rounded px-2 py-1 sm:py-2 text-sm bg-gray-50 font-bold text-puja-red flex-1 sm:flex-none w-full sm:w-auto">
+                    <option value="বাসন্তী পূজা ২০২৬">বাসন্তী পূজা ২০২৬</option>
+                    <option value="কালী পূজা ২০২৫">কালী পূজা ২০২৫</option>
+                    <option value="সরস্বতী পূজা ২০২৬">সরস্বতী পূজা ২০২৬</option>
+                    <option value="দুর্গাপূজা ২০২৬">দুর্গাপূজা ২০২৬</option>
+                </select>
+            </div>
+            <div class="text-right w-full sm:w-auto flex justify-between sm:block border-t sm:border-0 pt-1 sm:pt-0">
+                <span class="text-xs sm:text-sm font-bold text-gray-700" id="today-date">--/--/----</span>
+                <span class="text-xs text-gray-500 ml-2" id="today-day">বার</span>
+            </div>
+        </div>
+
+        <!-- CONTENT -->
+            <main class="flex-1 overflow-y-auto overscroll-none bg-gray-50 p-2 sm:p-4 md:p-6 relative min-h-0" style="-webkit-overflow-scrolling: touch;">
+            <!-- INCOME TAB -->
+            <div id="tab-income" class="tab-content space-y-4"> 
+                <div class="flex overflow-x-auto scrollbar-hide border-b bg-white rounded-t-lg shadow-sm px-2 sm:px-4 w-full">
+                    <button onclick="switchSubTab('bill')" class="px-4 sm:px-6 py-3 sub-tab-btn income-active font-bold text-purple-800 border-b-2 border-purple-800 text-sm sm:text-base" data-target="sub-bill">বিল প্রদান</button>
+                    <button onclick="switchSubTab('collection')" class="px-4 sm:px-6 py-3 sub-tab-btn text-sm sm:text-base" data-target="sub-collection">চাঁদা সংগ্রহ</button>
+                    <button onclick="switchSubTab('car')" class="px-4 sm:px-6 py-3 sub-tab-btn text-sm sm:text-base" data-target="sub-car">গাড়ীর চাঁদা</button>
+                    <button onclick="switchSubTab('dashboard')" class="px-4 sm:px-6 py-3 sub-tab-btn text-sm sm:text-base" data-target="sub-dashboard">ড্যাশবোর্ড</button>
+                </div>
+
+                <!-- 1. BILL GENERATION -->
+                <div id="sub-bill" class="sub-tab-content bg-white p-4 sm:p-6 rounded-b-lg shadow animate-fade-in border-t-4 border-purple-600">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
+                        <div><label class="block text-sm mb-1 text-gray-600 font-bold">তারিখ</label><input type="date" id="billDate" class="w-full border p-2 sm:p-3 rounded focus:border-purple-500"></div>
+                        <div><label class="block text-sm mb-1 text-gray-600 font-bold">পাড়া নির্বাচন করুন</label><select id="billPara" class="w-full border p-2 sm:p-3 rounded bg-white font-bold text-purple-800 focus:border-purple-500"></select></div>
+                    </div>
+                    <div class="mb-4 sm:mb-6 relative">
+                        <label class="block text-sm mb-1 font-bold text-gray-700">নাম লিখুন (Name)</label>
+                        <input type="text" id="billNameInput" onkeyup="handleSmartInput(this, 'income')" class="w-full border-2 border-purple-200 focus:border-purple-600 focus:ring-1 focus:ring-purple-600 p-3 rounded text-base sm:text-lg" placeholder="ইংরেজী বা বাংলায় নাম লিখুন...">
+                        <div id="billNameSuggestions" class="suggestion-box hidden"></div>
+                        <input type="hidden" id="billNameBangla">
+                        <input type="hidden" id="billNameEnglish">
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 bg-purple-50 p-4 rounded border border-purple-100">
+                        <div><label class="block text-sm mb-1 text-gray-600 font-bold">ধার্য চাঁদা (Amount)</label><input type="number" id="billAmount" class="w-full border p-2 rounded text-lg font-mono focus:border-purple-500" placeholder="0"></div>
+                        <div><label class="block text-sm mb-1 text-gray-600 font-bold">অগ্রিম দান (Advance)</label><input type="number" id="billAdvance" class="w-full border p-2 rounded text-lg font-mono focus:border-purple-500" placeholder="0"></div>
+                        <div><label class="block text-sm mb-1 text-gray-600 font-bold">মন্তব্য (Remarks)</label><input type="text" id="billRemarks" class="w-full border p-2 rounded text-sm sm:text-base focus:border-purple-500"></div>
+                    </div>
+                    <div class="flex gap-3 sm:gap-4 flex-col sm:flex-row border-t pt-4">
+                        <button onclick="saveBill()" class="flex-1 bg-purple-700 hover:bg-purple-800 text-white px-8 py-3 rounded shadow font-bold text-lg">Save Bill</button>
+                        <button onclick="clearBillForm()" class="sm:w-32 bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-3 rounded font-bold">Clear</button>
+                    </div>
+                </div>
+
+                <!-- 2. COLLECTION -->
+                <div id="sub-collection" class="sub-tab-content hidden space-y-4">
+                    <div class="bg-white p-3 sm:p-4 rounded shadow border-l-4 border-green-600">
+                        <div class="flex flex-col md:flex-row gap-3 sm:gap-4 items-start md:items-end">
+                            <div class="w-full md:flex-1">
+                                <label class="block text-xs font-bold text-gray-500 mb-1">সংগ্রহের তারিখ</label>
+                                <input type="date" id="collectionDate" class="w-full border p-2 rounded bg-green-50 font-bold text-green-800">
+                            </div>
+                            <div class="w-full md:flex-1">
+                                <label class="block text-xs font-bold text-gray-500 mb-1">ফিল্টার (পাড়া)</label>
+                                <select id="colParaSelect" onchange="renderCollectionTable()" class="w-full border p-2 rounded font-bold text-purple-800"><option value="all">সব পাড়া</option></select>
+                            </div>
+                            <div class="w-full md:flex-[2]">
+                                <label class="block text-xs font-bold text-gray-500 mb-1">খুঁজুন (Search)</label>
+                                <input type="text" id="colSearch" onkeyup="renderCollectionTable()" class="w-full border p-2 rounded" placeholder="নাম বা ক্রমিক দিয়ে খুঁজুন...">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded shadow overflow-hidden w-full">
+                        <div class="overflow-x-auto w-full">
+                            <table class="w-full spreadsheet-table text-xs sm:text-sm min-w-[700px]">
+                                <thead><tr><th>Date</th><th>ক্রমিক</th><th>পাড়া</th><th>ইংরেজী নাম</th><th>বাংলা নাম</th><th class="text-right">ধার্য</th><th class="text-right">প্রদেয়</th><th class="text-right">বাকী</th><th class="text-center">Action</th></tr></thead>
+                                <tbody id="collectionTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. CAR DONATION -->
+                <div id="sub-car" class="sub-tab-content hidden space-y-4">
+                    <div class="bg-white p-4 sm:p-6 rounded shadow border-l-4 border-blue-600">
+                        <div class="flex flex-col md:flex-row gap-4 mb-4 border-b pb-4">
+                            <div class="w-full md:flex-1">
+                                <label class="block text-xs font-bold text-gray-500 mb-1">তারিখ</label>
+                                <input type="date" id="carEntryDate" class="w-full border p-2 rounded bg-gray-50 font-bold text-blue-800">
+                            </div>
+                            <div class="flex gap-4 sm:gap-6 pt-0 sm:pt-6">
+                                <label class="flex items-center font-bold text-gray-700 cursor-pointer"><input type="radio" name="carType" value="Coal" checked class="mr-2 w-4 h-4 sm:w-5 sm:h-5 accent-blue-600"> কয়লার গাড়ী</label>
+                                <label class="flex items-center font-bold text-gray-700 cursor-pointer"><input type="radio" name="carType" value="Local" class="mr-2 w-4 h-4 sm:w-5 sm:h-5 accent-blue-600"> লোকাল গাড়ী</label>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
+                            <div class="relative">
+                                <label class="block text-sm font-bold mb-1 text-blue-800">গাড়ীর নম্বর</label>
+                                <input type="text" id="carNumberInput" oninput="formatCarNumberDisplay(this)" class="w-full border-2 border-blue-200 focus:border-blue-500 p-3 sm:p-4 rounded text-xl sm:text-2xl uppercase font-mono" placeholder="WB11 G 1111">
+                                <div id="carNumberSuggestions" class="suggestion-box hidden"></div>
+                            </div>
+                            <div class="bg-gray-50 p-3 sm:p-4 rounded border">
+                                <div class="flex gap-2 mb-3">
+                                    <div class="flex-1"><label class="block text-xs mb-1 font-bold">ধার্য</label><input type="number" id="carAmount" value="200" class="w-full border p-2 rounded text-center"></div>
+                                    <div class="flex-1"><label class="block text-xs mb-1 font-bold">প্রদেয়</label><input type="number" id="carPaid" oninput="calcCarDue()" class="w-full border p-2 rounded text-center font-bold text-green-700"></div>
+                                    <div class="flex-1"><label class="block text-xs mb-1 font-bold">বাকী</label><input type="number" id="carDue" class="w-full border p-2 rounded bg-gray-200 font-bold text-red-600 text-center" readonly></div>
+                                </div>
+                                <input type="text" id="carRemarks" class="w-full border p-2 rounded text-sm" placeholder="মন্তব্য (Remarks)">
+                            </div>
+                        </div>
+                        <div class="mt-4 sm:mt-6"><button onclick="saveCarEntry()" class="w-full md:w-auto md:float-right bg-blue-600 hover:bg-blue-700 text-white px-10 py-3 rounded font-bold shadow-lg text-lg">নতুন এন্ট্রি সেভ করুন</button><div class="clear-both"></div></div>
+                    </div>
+                    <div class="bg-white rounded shadow p-3 sm:p-4 w-full">
+                        <div class="mb-4 flex gap-2 items-center bg-blue-50 p-2 sm:p-3 rounded border border-blue-200">
+                            <i data-lucide="search" class="w-5 h-5 text-blue-500"></i>
+                            <input type="text" id="carSearchInput" onkeyup="renderCarTable()" class="w-full bg-transparent outline-none font-bold text-gray-700 text-sm sm:text-base placeholder-gray-400" placeholder="Search by Date, Car No...">
+                        </div>
+                        <div class="overflow-x-auto w-full">
+                            <table class="w-full spreadsheet-table text-xs sm:text-sm min-w-[600px]">
+                                <thead><tr><th>Date</th><th>Car No</th><th>Type</th><th class="text-right">Paid</th><th class="text-right">Due</th><th>Remarks</th><th class="text-center">Action</th></tr></thead>
+                                <tbody id="carTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. NEW DASHBOARD -->
+                <div id="sub-dashboard" class="sub-tab-content hidden space-y-4">
+                    <!-- Top Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+                        <div class="bg-white p-4 sm:p-5 rounded-lg shadow border-l-4 border-green-500"><div><h3 class="text-gray-500 font-bold uppercase text-xs sm:text-sm">সর্বমোট আয়</h3><p class="text-2xl sm:text-3xl font-bold mt-1 text-green-700" id="dashTotalInc">₹0</p></div></div>
+                        <div class="bg-white p-4 sm:p-5 rounded-lg shadow border-l-4 border-red-500"><div><h3 class="text-gray-500 font-bold uppercase text-xs sm:text-sm">সর্বমোট ব্যয়</h3><p class="text-2xl sm:text-3xl font-bold mt-1 text-red-700" id="dashTotalExp">₹0</p></div></div>
+                        <div class="bg-white p-4 sm:p-5 rounded-lg shadow border-l-4 border-blue-500"><div><h3 class="text-gray-500 font-bold uppercase text-xs sm:text-sm">বর্তমান স্থিতি (Balance)</h3><p class="text-2xl sm:text-3xl font-bold mt-1 text-blue-800" id="dashBalance">₹0</p></div></div>
+                    </div>
+
+                    <!-- Layout Tables -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                        <!-- Income Breakdown -->
+                        <div class="bg-white rounded-lg shadow border border-gray-100">
+                            <div class="bg-green-50 p-3 border-b border-green-100 rounded-t-lg flex items-center gap-2">
+                                <i data-lucide="trending-up" class="w-5 h-5 text-green-600"></i>
+                                <h3 class="font-bold text-green-800">আয়ের বিস্তারিত হিসাব</h3>
+                            </div>
+                            <div class="p-4 overflow-x-auto">
+                                <table class="w-full dash-table min-w-[350px]">
+                                    <thead>
+                                        <tr><th>উৎস</th><th class="text-right">আজ চাঁদা উঠেছে</th><th class="text-right">এপর্যন্ত চাঁদা উঠেছে</th></tr>
+                                    </thead>
+                                    <tbody id="dashIncomeTableBody">
+                                        <!-- Dynamically generated -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Expense Breakdown -->
+                        <div class="bg-white rounded-lg shadow border border-gray-100">
+                            <div class="bg-red-50 p-3 border-b border-red-100 rounded-t-lg flex items-center gap-2">
+                                <i data-lucide="trending-down" class="w-5 h-5 text-red-600"></i>
+                                <h3 class="font-bold text-red-800">খরচের বিস্তারিত হিসাব</h3>
+                            </div>
+                            <div class="p-4">
+                                <div class="grid grid-cols-2 gap-4 mb-4">
+                                    <div class="bg-gray-50 p-3 rounded border text-center">
+                                        <p class="text-xs text-gray-500 font-bold">আজকের খরচ</p>
+                                        <p class="text-lg font-bold text-red-600" id="dashTodayExpAmt">₹0</p>
+                                    </div>
+                                    <div class="bg-gray-50 p-3 rounded border text-center">
+                                        <p class="text-xs text-gray-500 font-bold">সর্বমোট খরচ</p>
+                                        <p class="text-lg font-bold text-red-800" id="dashTotalExpAmt">₹0</p>
+                                    </div>
+                                </div>
+                                <h4 class="text-xs font-bold text-gray-500 mb-2 border-b pb-1">সাম্প্রতিক খরচের তালিকা</h4>
+                                <ul id="dashRecentExpList" class="space-y-2">
+                                    <!-- Dynamically generated -->
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EXPENSE TAB -->
+            <div id="tab-expense" class="tab-content hidden space-y-4 sm:space-y-6">
+                 <div class="flex overflow-x-auto scrollbar-hide border-b bg-white rounded-t-lg shadow-sm px-2 sm:px-4">
+                    <button onclick="switchExpSubTab('add')" class="px-4 sm:px-6 py-3 sub-tab-btn active text-sm sm:text-base border-b-2 border-red-600 text-red-600 font-bold" data-target="sub-exp-add">নতুন খরচ</button>
+                    <button onclick="switchExpSubTab('view')" class="px-4 sm:px-6 py-3 sub-tab-btn text-sm sm:text-base" data-target="sub-exp-view">খরচের তালিকা</button>
+                </div>
+                <div id="sub-exp-add" class="sub-exp-content bg-white p-4 sm:p-8 rounded shadow max-w-3xl mx-auto border-t-4 border-red-600">
+                    <h3 class="text-xl sm:text-2xl font-bold text-red-700 mb-4 sm:mb-6 flex items-center gap-2"><i data-lucide="minus-circle" class="w-5 h-5 sm:w-6 sm:h-6"></i> খরচের হিসাব লিখুন</h3>
+                    <div class="space-y-4 sm:space-y-6">
+                        <div><label class="block text-sm mb-1 font-bold text-gray-600">তারিখ</label><input type="date" id="expDate" class="w-full border p-2 sm:p-3 rounded bg-gray-50"></div>
+                        <div class="relative">
+                            <label class="block text-sm mb-1 font-bold text-gray-600">খরচের কারণ (English ↔ Bangla)</label>
+                            <div id="expPastSuggestions" class="suggestion-box-top hidden"></div>
+                            <input type="text" id="expReason" onkeyup="handleExpInput(this)" class="w-full border p-2 sm:p-3 rounded focus:ring-2 focus:ring-red-300 outline-none" placeholder="e.g. Pandal Decoration or প্যান্ডেল">
+                            <div id="expSuggestions" class="suggestion-box hidden"></div>
+                        </div>
+                        <div><label class="block text-sm mb-1 font-bold text-gray-600">পরিমাণ (Amount)</label><input type="number" id="expAmount" class="w-full border p-2 sm:p-3 rounded text-lg sm:text-xl font-mono" placeholder="₹"></div>
+                        <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2 sm:pt-4">
+                            <button onclick="saveExpense()" class="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 rounded font-bold shadow text-base sm:text-lg">SAVE EXPENSE</button>
+                            <button onclick="document.getElementById('expReason').value=''; document.getElementById('expAmount').value=''" class="sm:w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded font-bold">CANCEL</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="sub-exp-view" class="sub-exp-content hidden space-y-4 w-full">
+                    <div class="bg-white p-3 sm:p-4 rounded shadow">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 items-end">
+                            <div><label class="text-xs font-bold text-gray-500">Date From</label><input type="date" id="expStart" onchange="renderExpenseTable()" class="w-full border p-2 rounded"></div>
+                            <div><label class="text-xs font-bold text-gray-500">Date To</label><input type="date" id="expEnd" onchange="renderExpenseTable()" class="w-full border p-2 rounded"></div>
+                            <div><label class="text-xs font-bold text-gray-500">ব্যায়ের কারণ</label><select id="expFilterReason" onchange="renderExpenseTable()" class="w-full border p-2 rounded"><option value="all">All</option></select></div>
+                            <div><label class="text-xs font-bold text-gray-500">Search</label><input type="text" id="expSearch" onkeyup="renderExpenseTable()" class="w-full border p-2 rounded" placeholder="Keyword..."></div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded shadow overflow-hidden w-full">
+                        <div class="overflow-x-auto w-full">
+                            <table class="w-full spreadsheet-table text-sm min-w-[500px]">
+                                <thead><tr><th>Date</th><th>Reason</th><th class="text-right">Amount</th><th class="text-center">Action</th></tr></thead>
+                                <tbody id="expenseTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REPORT TAB -->
+            <div id="tab-report" class="tab-content hidden w-full">
+                <div class="bg-white p-4 sm:p-6 rounded shadow flex flex-col items-center max-w-5xl mx-auto mt-2 sm:mt-4">
+                    <div class="w-full border-b pb-3 sm:pb-4 mb-3 sm:mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <h2 class="text-lg sm:text-xl font-bold text-gray-700"><i data-lucide="file-bar-chart" class="inline w-5 h-5 sm:w-6 sm:h-6 mr-1 sm:mr-2"></i>অ্যাডভান্সড রিপোর্ট</h2>
+                        <div class="flex gap-2 w-full sm:w-auto flex-wrap">
+                            <button onclick="generateAISummary()" id="aiSummaryBtn" class="hidden flex-1 sm:flex-none justify-center bg-purple-600 text-white px-4 py-2 rounded text-sm hover:bg-purple-800 font-bold shadow-lg"><i data-lucide="sparkles" class="w-4 h-4 inline mr-1"></i> ✨ AI Analysis</button>
+                            <button onclick="printReportResult()" id="printBtn" class="hidden flex-1 sm:flex-none justify-center bg-gray-700 text-white px-4 py-2 rounded text-sm hover:bg-black font-bold"><i data-lucide="printer" class="w-4 h-4 inline mr-1"></i> Print</button>
+                            <button onclick="exportReportExcel()" id="excelBtn" class="hidden flex-1 sm:flex-none justify-center bg-green-700 text-white px-4 py-2 rounded text-sm hover:bg-green-900 font-bold"><i data-lucide="sheet" class="w-4 h-4 inline mr-1"></i> Excel</button>
+                            <button onclick="downloadReportPDF()" id="pdfBtn" class="hidden flex-1 sm:flex-none justify-center bg-red-700 text-white px-4 py-2 rounded text-sm hover:bg-red-900 font-bold"><i data-lucide="file-down" class="w-4 h-4 inline mr-1"></i> PDF</button>
+                        </div>
+                    </div>
+
+                    <!-- AI Summary Display Box -->
+                    <div id="aiSummaryBox" class="w-full hidden bg-purple-50 p-4 rounded-lg border-2 border-purple-200 mb-4 shadow-inner relative">
+                        <button onclick="document.getElementById('aiSummaryBox').classList.add('hidden')" class="absolute top-2 right-2 text-purple-400 hover:text-purple-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+                        <h3 class="text-purple-800 font-bold flex items-center gap-2 mb-2"><i data-lucide="sparkles" class="w-5 h-5"></i> AI ফাইন্যান্সিয়াল রিপোর্ট সামারি</h3>
+                        <div id="aiSummaryText" class="text-sm text-gray-700 leading-relaxed font-medium"></div>
+                    </div>
+
+                    <div class="w-full bg-blue-50 p-3 sm:p-4 rounded border border-blue-200 mb-4 sm:mb-6 space-y-3 sm:space-y-4">
+                        <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                            <div class="w-full sm:flex-1"><label class="text-xs font-bold text-gray-500 block mb-1">তারিখ হতে (From)</label><input type="date" class="w-full border p-2 rounded bg-white" id="repStart"></div>
+                            <div class="w-full sm:flex-1"><label class="text-xs font-bold text-gray-500 block mb-1">তারিখ পর্যন্ত (To)</label><input type="date" class="w-full border p-2 rounded bg-white" id="repEnd"></div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                            <div>
+                                <label class="text-xs font-bold text-gray-500 block mb-1">হিসাবের ধরন (Report Type)</label>
+                                <select id="repType" onchange="handleReportUI()" class="w-full border p-2 rounded font-bold text-gray-700">
+                                    <option value="income">আয় (Income)</option>
+                                    <option value="expense">ব্যায় (Expense)</option>
+                                    <option value="due_list">চাঁদা বাকী (Due List)</option>
+                                    <option value="summary">আয়-ব্যায় একসাথে (All-in-One)</option>
+                                </select>
+                            </div>
+                            <div id="repSourceBox">
+                                <label class="text-xs font-bold text-gray-500 block mb-1">উৎস (Source)</label>
+                                <select id="repSource" onchange="handleReportUI()" class="w-full border p-2 rounded">
+                                    <option value="all">সব (All Sources)</option>
+                                    <option value="para">পাড়া (Para Collection)</option>
+                                    <option value="car">গাড়ী (Car Donation)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="repSubFilters" class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                            <div id="repParaListBox" class="hidden">
+                                <label class="text-xs font-bold text-gray-500 block mb-1">কোন পাড়া?</label>
+                                <select id="repParaSelect" class="w-full border p-2 rounded text-blue-700 font-bold"><option value="all">সব পাড়া</option></select>
+                            </div>
+                            <div id="repStatusBox" class="w-full">
+                                <label class="text-xs font-bold text-gray-500 block mb-1">অবস্থা (Status)</label>
+                                <select id="repStatus" class="w-full border p-2 rounded bg-gray-100" disabled>
+                                    <option value="all">সব (All)</option>
+                                    <option value="paid">টাকা দিয়েছে (Paid)</option>
+                                    <option value="due">বাকী আছে (Due)</option>
+                                    <option value="zero">মোটেই দেয়নি (Zero)</option>
+                                </select>
+                                <small class="text-[10px] text-gray-400">স্ট্যাটাস ফিল্টার এখন Report Type থেকে কন্ট্রোল হয়</small>
+                            </div>
+                        </div>
+                        <button onclick="generateReport()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded font-bold shadow mt-2 text-base">রিপোর্ট দেখুন (Generate)</button>
+                    </div>
+
+                    <div id="reportResultArea" class="w-full hidden border-t pt-4">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-2 gap-2">
+                            <h3 class="font-bold text-base sm:text-lg underline" id="repResultTitle">Report Result</h3>
+                            <span class="text-xs sm:text-sm font-bold bg-yellow-100 px-2 py-1 rounded border border-yellow-300">Total: <span id="repTotalDisplay">0</span></span>
+                        </div>
+                        <div class="overflow-x-auto w-full">
+                            <table class="w-full spreadsheet-table text-xs sm:text-sm border min-w-[600px]" id="exportableTable">
+                                <thead id="repTableHead" class="bg-gray-100"></thead>
+                                <tbody id="repTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SETTINGS TAB -->
+            <div id="tab-settings" class="tab-content hidden w-full">
+                 <div class="bg-white p-4 sm:p-6 rounded shadow max-w-4xl mx-auto mt-2 sm:mt-4 space-y-6 sm:space-y-8">
+                    <div>
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 border-b pb-4 gap-3">
+                            <h3 class="text-lg sm:text-xl font-bold text-gray-700">⚙️ পাড়া ও চাঁদা সেটিংস</h3>
+                            <button onclick="openParaModal()" class="w-full sm:w-auto justify-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2">
+                                <i data-lucide="plus-circle" class="w-4 h-4"></i> নতুন পাড়া
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto border rounded-lg w-full">
+                            <table class="w-full text-xs sm:text-sm text-left min-w-[400px]">
+                                <thead class="bg-gray-100 text-gray-600 uppercase font-bold">
+                                    <tr><th class="px-4 py-3">পাড়ার নাম</th><th class="px-4 py-3 text-right">ডিফল্ট ধার্য</th><th class="px-4 py-3 text-center">অ্যাকশন</th></tr>
+                                </thead>
+                                <tbody id="paraSettingsTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="bg-orange-50 p-4 sm:p-6 rounded border border-orange-200">
+                        <h3 class="text-lg sm:text-xl font-bold text-orange-700 mb-2 sm:mb-4 flex items-center gap-2"><i data-lucide="upload-cloud" class="w-5 h-5 sm:w-6 sm:h-6"></i> পুরোনো হিসাব আপলোড</h3>
+                        <p class="text-xs sm:text-sm text-gray-600 mb-4">Excel ফাইল (.xlsx) সিলেক্ট করুন। এই ডেটা বর্তমান সিলেক্ট করা পূজোর সাথে যুক্ত হবে।</p>
+                        <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+                            <input type="file" id="legacyFile" class="border p-2 rounded bg-white w-full sm:flex-1">
+                            <select id="legacyType" class="border p-2 rounded font-bold w-full sm:w-auto">
+                                <option value="income">আয়ের হিসাব</option>
+                                <option value="expense">ব্যয়ের হিসাব</option>
+                            </select>
+                            <button onclick="processLegacyUpload()" class="bg-orange-600 text-white px-6 py-2 rounded font-bold shadow w-full sm:w-auto">Upload</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-green-50 p-4 sm:p-6 rounded border border-green-200">
+                        <h3 class="text-lg sm:text-xl font-bold text-green-800 mb-4 flex items-center gap-2"><i data-lucide="pen-tool" class="w-5 h-5 sm:w-6 sm:h-6"></i> ডিজিটাল সিগনেচার সেটিংস</h3>
+                        
+                        <div class="flex flex-col sm:flex-row gap-3 items-end mb-4">
+                            <div class="w-full sm:flex-1">
+                                <label class="text-xs font-bold text-gray-600">স্বাক্ষরকারীর নাম (Name)</label>
+                                <input type="text" id="sigNameInput" class="w-full border p-2 rounded" placeholder="e.g. Rahul Das">
+                            </div>
+                            <div class="w-full sm:flex-1">
+                                <label class="text-xs font-bold text-gray-600">পদবী (Designation)</label>
+                                <input type="text" id="sigDesigInput" class="w-full border p-2 rounded" placeholder="e.g. Secretary">
+                            </div>
+                            <button onclick="addSignatory()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded font-bold shadow w-full sm:w-auto transition">Add Signature</button>
+                        </div>
+
+                        <div class="overflow-x-auto border rounded bg-white w-full">
+                            <table class="w-full text-xs sm:text-sm text-left min-w-[400px]">
+                                <thead class="bg-gray-100 text-gray-600 uppercase font-bold">
+                                    <tr>
+                                        <th class="px-3 py-2 text-center w-16">Active</th>
+                                        <th class="px-3 py-2">Name</th>
+                                        <th class="px-3 py-2">Designation</th>
+                                        <th class="px-3 py-2 text-center w-16">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="signatoryTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+                  <!-- HISTORY TAB -->
+            <div id="tab-history" class="tab-content hidden space-y-4 sm:space-y-6 pb-24 w-full">
+                 <div class="bg-white p-4 sm:p-6 rounded shadow border-t-4 border-blue-900 w-full">
+                    <h3 class="text-lg sm:text-xl font-bold text-blue-900 mb-4 sm:mb-6 flex items-center gap-2"><i data-lucide="archive" class="w-5 h-5 sm:w-6 sm:h-6"></i> পুরোনো হিসাব খুঁজুন</h3>
+                    <div class="bg-gray-50 p-3 sm:p-4 rounded border mb-4 sm:mb-6">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                            <div><label class="text-xs font-bold text-gray-500">পুজো</label><select id="histPuja" class="w-full border p-2 rounded font-bold"><option>Durga Puja</option></select></div>
+                            <div><label class="text-xs font-bold text-gray-500">সাল (Year)</label><select id="histYear" class="w-full border p-2 rounded font-bold"><option>2026</option><option>2025</option><option value="">সব সাল</option></select></div>
+                            <div><label class="text-xs font-bold text-gray-500">ধরন</label><select id="histType" onchange="toggleHistoryFilters()" class="w-full border p-2 rounded font-bold"><option value="income">আয়</option><option value="expense">ব্যায়</option></select></div>
+                            <div id="histSourceBox"><label class="text-xs font-bold text-gray-500">উৎস</label><select id="histSource" class="w-full border p-2 rounded font-bold"><option value="all">সব</option><option value="para">পাড়ার নাম</option><option value="car">গাড়ী</option></select></div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3 mb-4 sm:mb-6">
+                        <input type="text" id="histSearch" class="flex-1 border p-2 sm:p-3 rounded" placeholder="Search...">
+                        <button onclick="searchHistory()" class="bg-blue-800 text-white px-8 py-2 sm:py-3 rounded font-bold">খুঁজুন</button>
+                    </div>
+                    <div class="overflow-x-auto border rounded w-full">
+                        <table class="w-full spreadsheet-table text-xs sm:text-sm min-w-[600px]">
+                            <thead><tr class="bg-blue-50"><th>তারিখ</th><th>বিবরণ</th><th>উৎস</th><th class="text-right">পরিমাণ</th><th>মন্তব্য</th></tr></thead>
+                            <tbody id="historyTableBody"></tbody>
+                            <tfoot id="historyTotal" class="bg-gray-100 font-bold hidden"><tr><td colspan="3" class="text-right p-2 sm:p-3">মোট:</td><td class="text-right p-2 sm:p-3 text-blue-800 text-base sm:text-lg" id="histTotalAmount">0</td><td></td></tr></tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODALS -->
+    <!-- AI MESSAGE MODAL -->
+    <div id="aiMessageModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white p-5 sm:p-6 rounded-lg shadow-2xl w-full max-w-md border-t-4 border-purple-500 relative">
+            <h3 class="text-lg sm:text-xl font-bold mb-2 text-purple-700 flex items-center gap-2"><i data-lucide="sparkles" class="w-5 h-5"></i> AI স্মার্ট মেসেজ</h3>
+            <p class="text-xs text-gray-500 mb-4 pb-2 border-b">এই মেসেজটি আপনি WhatsApp-এ পাঠাতে পারবেন।</p>
+            <div id="aiMessageLoading" class="hidden flex justify-center py-6">
+                <i data-lucide="loader-2" class="w-8 h-8 text-purple-500 animate-spin"></i>
+            </div>
+            <div id="aiMessageContentBox" class="bg-gray-50 p-3 rounded border border-gray-200 text-sm whitespace-pre-wrap font-medium text-gray-800 min-h-[100px] mb-4"></div>
+            <div class="flex justify-end gap-2">
+                <button onclick="closeModal('aiMessageModal')" class="px-4 py-2 border rounded font-medium">Cancel</button>
+                <button onclick="copyAIMessage()" class="px-5 py-2 bg-purple-600 text-white rounded font-bold hover:bg-purple-700 flex items-center gap-2"><i data-lucide="copy" class="w-4 h-4"></i> Copy Message</button>
+            </div>
+        </div>
+    </div>
+    <!-- COLLECTION PAYMENT -->
+    <div id="collectionModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white p-5 sm:p-6 rounded-lg shadow-2xl w-full max-w-md">
+            <h3 class="text-lg sm:text-xl font-bold mb-1 text-puja-red">চাঁদা জমা নিন</h3>
+            <p id="colModalName" class="text-xs sm:text-sm text-gray-500 font-bold border-b pb-3 mb-3"></p>
+            <input type="hidden" id="colModalId">
+            <div class="mb-3"><label class="block text-sm font-bold mb-1">নতুন জমা</label><input type="number" id="colModalPay" class="w-full border-2 border-green-100 p-2 rounded focus:border-green-500 text-lg"></div>
+            <div class="mb-5"><label class="block text-sm font-bold mb-1">মন্তব্য</label><input type="text" id="colModalRemarks" class="w-full border p-2 rounded"></div>
+            <div class="flex justify-end gap-2 sm:gap-3"><button onclick="closeModal('collectionModal')" class="px-4 py-2 border rounded">Cancel</button><button onclick="saveCollectionPayment()" class="px-5 sm:px-6 py-2 bg-green-600 text-white rounded font-bold">Deposit</button></div>
+        </div>
+    </div>
+    <!-- FULL EDIT MODAL -->
+    <div id="fullEditModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white p-5 sm:p-6 rounded-lg shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <h3 class="text-lg sm:text-xl font-bold mb-4 text-blue-600">তথ্য পরিবর্তন করুন</h3>
+            <input type="hidden" id="editFullId">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                <div><label class="text-xs font-bold">English Name</label><input type="text" id="editFullEn" class="w-full border p-2 rounded"></div>
+                <div><label class="text-xs font-bold">Bangla Name</label><input type="text" id="editFullBn" class="w-full border p-2 rounded"></div>
+            </div>
+            <div class="mb-3"><label class="text-xs font-bold">Para</label><select id="editFullPara" class="w-full border p-2 rounded"></select></div>
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div><label class="text-xs font-bold">ধার্য (Projected)</label><input type="number" id="editFullProj" class="w-full border p-2 rounded"></div>
+                <div><label class="text-xs font-bold">জমা (Paid)</label><input type="number" id="editFullPaid" class="w-full border p-2 rounded"></div>
+            </div>
+            <div class="flex justify-end gap-2"><button onclick="closeModal('fullEditModal')" class="px-4 py-2 border rounded">Cancel</button><button onclick="saveFullEdit()" class="px-5 py-2 bg-blue-600 text-white rounded font-bold">Update All</button></div>
+        </div>
+    </div>
+    <!-- EXPENSE EDIT -->
+    <div id="expenseEditModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white p-5 sm:p-6 rounded-lg shadow-2xl w-full max-w-md">
+            <h3 class="text-lg sm:text-xl font-bold mb-4 text-red-600">খরচ এডিট করুন</h3>
+            <input type="hidden" id="editExpId">
+            <div class="mb-3"><label class="text-xs font-bold">তারিখ</label><input type="date" id="editExpDate" class="w-full border p-2 rounded"></div>
+            <div class="mb-3"><label class="text-xs font-bold">কারণ</label><input type="text" id="editExpReason" class="w-full border p-2 rounded"></div>
+            <div class="mb-4"><label class="text-xs font-bold">পরিমাণ</label><input type="number" id="editExpAmount" class="w-full border p-2 rounded"></div>
+            <div class="flex justify-end gap-2"><button onclick="closeModal('expenseEditModal')" class="px-4 py-2 border rounded">Cancel</button><button onclick="saveExpenseEdit()" class="px-5 py-2 bg-red-600 text-white rounded font-bold">Update</button></div>
+        </div>
+    </div>
+    <!-- CAR PAYMENT -->
+    <div id="carPaymentModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white p-5 sm:p-6 rounded-lg shadow-2xl w-full max-w-md border-t-4 border-blue-600">
+            <h3 class="text-lg sm:text-xl font-bold mb-1 text-blue-800">গাড়ির চাঁদা আপডেট</h3>
+            <p id="carPayTitle" class="text-xs sm:text-sm font-mono font-bold text-gray-600 border-b pb-3 mb-3"></p>
+            <input type="hidden" id="carPayId">
+            <div class="bg-blue-50 p-2 sm:p-3 rounded mb-3 text-xs sm:text-sm">
+                <div class="flex justify-between"><span>মোট ধার্য:</span> <span class="font-bold" id="cpTotal">0</span></div>
+                <div class="flex justify-between"><span>ইতিমধ্যে জমা:</span> <span class="font-bold text-green-600" id="cpPaid">0</span></div>
+                <div class="flex justify-between border-t border-blue-200 mt-1 pt-1"><span>বর্তমান বাকী:</span> <span class="font-bold text-red-600" id="cpDue">0</span></div>
+            </div>
+            <div class="mb-3"><label class="block text-sm font-bold mb-1">নতুন জমা</label><input type="number" id="carNewPay" class="w-full border-2 border-green-100 p-2 rounded focus:border-green-500 text-lg"></div>
+            <div class="mb-5"><label class="block text-sm font-bold mb-1">নতুন মন্তব্য</label><input type="text" id="carNewRem" class="w-full border p-2 rounded"></div>
+            <div class="flex justify-end gap-2"><button onclick="closeModal('carPaymentModal')" class="px-4 py-2 border rounded">Cancel</button><button onclick="saveCarPayment()" class="px-5 py-2 bg-green-600 text-white rounded font-bold">Deposit Update</button></div>
+        </div>
+    </div>
+    <!-- CAR EDIT -->
+    <div id="carEditModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white p-5 sm:p-6 rounded-lg shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <h3 class="text-lg sm:text-xl font-bold mb-3 text-purple-600">গাড়ির তথ্য পরিবর্তন</h3>
+            <input type="hidden" id="ceId">
+            <div class="mb-2"><label class="text-xs font-bold">তারিখ</label><input type="date" id="ceDate" class="w-full border p-2 rounded"></div>
+            <div class="mb-2"><label class="text-xs font-bold">গাড়ীর নং</label><input type="text" id="ceNo" class="w-full border p-2 rounded font-mono uppercase"></div>
+            <div class="mb-2"><label class="text-xs font-bold">টাইপ</label><select id="ceType" class="w-full border p-2 rounded"><option value="Coal">Coal</option><option value="Local">Local</option></select></div>
+            <div class="flex gap-2 mb-2">
+                <div class="flex-1"><label class="text-xs font-bold">ধার্য</label><input type="number" id="ceAmount" class="w-full border p-2 rounded"></div>
+                <div class="flex-1"><label class="text-xs font-bold">জমা</label><input type="number" id="cePaid" class="w-full border p-2 rounded"></div>
+            </div>
+            <div class="mb-4"><label class="text-xs font-bold">মন্তব্য</label><input type="text" id="ceRem" class="w-full border p-2 rounded"></div>
+            <div class="flex justify-end gap-2"><button onclick="closeModal('carEditModal')" class="px-4 py-2 border rounded">Cancel</button><button onclick="saveCarFullEdit()" class="px-5 py-2 bg-purple-600 text-white rounded font-bold">Update All</button></div>
+        </div>
+    </div>
+    <!-- PARA MODAL -->
+    <div id="paraModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white p-5 sm:p-6 rounded-lg shadow-2xl w-full max-w-md border-t-4 border-blue-600">
+            <h3 class="text-lg sm:text-xl font-bold mb-4 text-gray-800" id="paraModalTitle">নতুন পাড়া যুক্ত করুন</h3>
+            <input type="hidden" id="paraEditIndex"> 
+            <div class="space-y-3 sm:space-y-4">
+                <div><label class="block text-sm font-bold mb-1 text-gray-600">পাড়ার নাম (Para Name)</label><input type="text" id="paraNameInput" class="w-full border p-2 sm:p-3 rounded focus:ring-2 focus:ring-blue-300"></div>
+                <div><label class="block text-sm font-bold mb-1 text-gray-600">ডিফল্ট ধার্য (Default Amount)</label><input type="number" id="paraAmountInput" class="w-full border p-2 sm:p-3 rounded focus:ring-2 focus:ring-blue-300"></div>
+            </div>
+            <div class="flex justify-end gap-2 mt-5"><button onclick="closeModal('paraModal')" class="px-4 py-2 border rounded">Cancel</button><button onclick="savePara()" class="px-5 py-2 bg-blue-600 text-white rounded font-bold">Save</button></div>
+        </div>
+    </div>
+<div id="receiptPreviewModal" class="fixed inset-0 bg-black bg-opacity-70 hidden z-[9999] flex flex-col items-center justify-center p-4 backdrop-blur-sm">
+        <div class="w-full max-w-lg bg-white rounded-lg overflow-hidden flex flex-col max-h-[90vh] shadow-2xl">
+            <div class="bg-gray-100 border-b p-3 flex justify-between items-center shrink-0">
+                <h3 class="font-bold text-gray-700 flex items-center gap-2"><i data-lucide="receipt" class="w-5 h-5 text-gray-600"></i> রিসিপ্ট প্রিভিউ</h3>
+                <div class="flex gap-2">
+                    <button onclick="shareReceipt(event)" class="bg-green-600 hover:bg-green-700 text-white p-2 rounded-full shadow flex items-center justify-center transition-colors" title="Share via WhatsApp/Others"><i data-lucide="share-2" class="w-4 h-4"></i></button>
+                    <button onclick="downloadReceipt(event)" class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full shadow flex items-center justify-center transition-colors" title="Download PDF"><i data-lucide="download" class="w-4 h-4"></i></button>
+                    <button onclick="closeModal('receiptPreviewModal')" class="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow flex items-center justify-center transition-colors" title="Close"><i data-lucide="x" class="w-4 h-4"></i></button>
+                </div>
+            </div>
+            <div class="p-4 overflow-y-auto bg-gray-200 flex justify-center w-full" id="receiptContentWrapper">
+                <div id="receiptContent" class="bg-white p-6 w-full max-w-[400px] shadow-sm relative border border-gray-300" style="font-family: 'Hind Siliguri', sans-serif;">
+                    </div>
+            </div>
+        </div>
+    </div>
+<script>
+    // Custom Pop-up Alert
+ // Custom Pop-up Alert
+    window.originalAlert = window.alert;
+    window.alert = function(message) {
+        
+        // ফিক্স ১: পপ-আপ আসার আগে ওপেন থাকা কীবোর্ড স্বয়ংক্রিয়ভাবে নামিয়ে দেওয়া
+        if(document.activeElement) {
+            document.activeElement.blur();
+        }
+
+        let alertBox = document.getElementById('custom-popup-alert');
+        if (!alertBox) {
+            alertBox = document.createElement('div');
+            alertBox.id = 'custom-popup-alert';
+            alertBox.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-xl shadow-2xl z-[9999] text-center border-t-4 border-green-500 min-w-[300px] transition-all duration-300 scale-95 opacity-0 flex flex-col items-center justify-center';
+            alertBox.innerHTML = `
+                <div class="flex justify-center mb-3">
+                    <div class="bg-green-100 p-3 rounded-full">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                </div>
+                <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-4" id="custom-popup-msg">Message</h3>
+                <button id="custom-popup-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-8 rounded shadow-lg transition-colors">OK</button>
+            `;
+            document.body.appendChild(alertBox);
+            
+            let backdrop = document.createElement('div');
+            backdrop.id = 'custom-popup-backdrop';
+            backdrop.className = 'fixed inset-0 bg-black bg-opacity-50 z-[9998] transition-opacity duration-300 opacity-0 hidden backdrop-blur-sm';
+            document.body.appendChild(backdrop);
+        }
+        
+        document.getElementById('custom-popup-msg').innerText = message;
+        
+        const box = document.getElementById('custom-popup-alert');
+        const bg = document.getElementById('custom-popup-backdrop');
+        
+        bg.classList.remove('hidden');
+        void box.offsetWidth;
+        
+        box.classList.remove('scale-95', 'opacity-0');
+        box.classList.add('scale-100', 'opacity-100');
+        bg.classList.remove('opacity-0');
+        bg.classList.add('opacity-100');
+        
+        document.getElementById('custom-popup-btn').onclick = function() {
+            box.classList.remove('scale-100', 'opacity-100');
+            box.classList.add('scale-95', 'opacity-0');
+            bg.classList.remove('opacity-100');
+            bg.classList.add('opacity-0');
+            
+            // ফিক্স ২: অ্যানিমেশন চলাকালীন সময়ে যেন টাচ আটকে না যায় (Touch pass-through)
+            box.style.pointerEvents = 'none';
+            bg.style.pointerEvents = 'none';
+
+            setTimeout(() => { 
+                bg.classList.add('hidden'); 
+                box.style.pointerEvents = 'auto';
+                bg.style.pointerEvents = 'auto';
+            }, 300);
+        };
+    };
+
+    // ==========================================
+    // 1. CONFIGURATION & GLOBALS
+    // ==========================================
+    const SCRIPT_URL ="https://script.google.com/macros/s/AKfycbyrM6cb63IpNV0hIqClT83H_X1Hu6u4wuAkcYO7LQw2XPvFMpBTPvsXcP86uIicI0U/exec";
+
+    
+let globalData = { income: [], expense: [], car: [], paras: [], signatures: [] };
+    let currentRole = null;
+    // ==========================================
+    // 2. CORE & DATA SYNC (UPDATED FOR CORS/REDIRECTS)
+    // ==========================================
+    // ===== NEW FEATURE START =====
+    function syncData(action, type, payload) {
+        const dataToSend = { action: action, type: type, payload: payload };
+        
+        // Added redirect: "follow" for proper Google Apps Script handling
+        fetch(SCRIPT_URL, {
+            method: "POST",
+            redirect: "follow", 
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(dataToSend)
+        })
+        .then(res => {
+            if(!res.ok) throw new Error("Network status was not ok");
+            return res.text();
+        })
+        .then(data => console.log("Server Sync Success:", data))
+        .catch(err => {
+            console.error("Server Sync Failed:", err);
+            window.originalAlert("Server Sync Failed! ডাটা আপাতত আপনার ব্রাউজারে সেভ হয়েছে। নেটওয়ার্ক চেক করুন।");
+        });
+
+        localStorage.setItem('pujaDataCache', JSON.stringify(globalData));
+        refreshUI();
+    }
+
+    async function fetchAllData() {
+        document.body.style.cursor = 'wait'; 
+        try {
+            // Added redirect: "follow" for proper Google Apps Script handling
+            const response = await fetch(SCRIPT_URL, {
+                method: "GET",
+                redirect: "follow"
+            }); 
+            
+            if (!response.ok) {
+                throw new Error("HTTP error! Status: " + response.status);
+            }
+            
+            // Read as text first to safely catch HTML responses if App Script permission fails
+            const textData = await response.text();
+            
+            try {
+                const data = JSON.parse(textData);
+                globalData.income = data.income || []; 
+                globalData.expense = data.expense || []; 
+                globalData.car = data.car || [];
+                globalData.paras = (data.paras && data.paras.length > 0) ? data.paras : ["North Para", "South Para"];
+               globalData.signatures = (data.signatures && data.signatures.length > 0) ? data.signatures.map(s => ({name: s.name, desig: s.desig, isActive: s.isActive === "Yes"})) : []; localStorage.setItem('pujaDataCache', JSON.stringify(globalData)); 
+                refreshUI();
+            } catch (jsonError) {
+                console.error("JSON Parse Error. Server returned:", textData.substring(0, 150));
+                throw new Error("App Script থেকে ভুল ডাটা এসেছে। পারমিশন চেক করুন।");
+            }
+            
+        } catch (error) { 
+            console.error("Fetch failed", error); 
+            window.originalAlert("সার্ভার থেকে ডাটা আনতে সমস্যা হয়েছে। দয়া করে ইন্টারনেট সংযোগ এবং Google Script পারমিশন চেক করুন।");
+            
+            // Show offline indicator
+            let msg = document.getElementById('today-day');
+            if (msg && globalData.income.length === 0) {
+                msg.innerHTML += ' <span class="text-red-500 font-bold ml-2">(Offline)</span>';
+            }
+        } finally { 
+            document.body.style.cursor = 'default'; 
+        }
+    }
+    // ===== NEW FEATURE END =====
+
+    function getPuja(item) {
+        return item.puja || "কালী পূজা ২০২৫";
+    }
+
+    const store = {
+        getIncome: () => globalData.income || [], 
+        getCar: () => globalData.car || [], 
+        getExpense: () => globalData.expense || [],
+        getParas: () => globalData.paras || [], 
+        setParas: (list) => { 
+            globalData.paras = list; 
+            syncData('save_settings', 'settings', list); 
+        }
+    };
+
+    function refreshUI() {
+        const pSel = document.getElementById('pujaSelect'); 
+        const hSel = document.getElementById('histPuja');
+        if (hSel.options.length <= 1) hSel.innerHTML = pSel.innerHTML;
+        
+        initDropdowns(); 
+        renderCollectionTable(); 
+        renderExpenseTable(); 
+        renderCarTable(); 
+        renderParaSettings(); 
+        renderSignatories(); // এই নতুন লাইনটি যুক্ত করুন
+        updateDashboard();
+    }
+
+
+function parseParaData(p) {
+        if (!p) return { name: '', amount: 0 };
+        
+        // ডাটা যদি অবজেক্ট হিসেবে থাকে
+        if (typeof p === 'object') {
+            return { name: p.name || '', amount: Number(p.amount) || 0 };
+        }
+        
+        // ডাটা যদি স্ট্রিং হিসেবে থাকে (পুরোনো ডাটা ফরম্যাটের জন্য)
+        try {
+            const parsed = JSON.parse(p);
+            return { name: parsed.name || '', amount: Number(parsed.amount) || 0 };
+        } catch(e) {
+            return { name: p, amount: 0 };
+        }
+    }
+
+    function cleanDoublePipe(text) {
+        if (!text) return { en: '', bn: '' };
+        
+        // যদি নামের মাঝে '|' থাকে, তবে দুটোকে আলাদা করবে
+        if (text.includes('|')) {
+            const parts = text.split('|').map(p => safeTrim(p));
+            return { 
+                en: parts[0] || '', 
+                bn: parts[1] || parts[0] || '' 
+            };
+        }
+        
+        // যদি '|' না থাকে, তবে ভাষা চেক করে নাম বসাবে
+        if (isBangla(text)) {
+            return { en: '', bn: safeTrim(text) };
+        } else {
+            return { en: safeTrim(text), bn: '' };
+        }
+    }
+
+
+
+    function init() {
+        setLocalTodayDate('billDate'); 
+        setLocalTodayDate('expDate'); 
+        setLocalTodayDate('carEntryDate'); 
+        setLocalTodayDate('collectionDate');
+        
+        const cached = localStorage.getItem('pujaDataCache'); 
+        if (cached) { 
+            try { 
+                globalData = JSON.parse(cached); 
+                refreshUI(); 
+            } catch(e) {} 
+        }
+        fetchAllData();
+    }
+
+    // ==========================================
+    // 3. AUTHENTICATION
+    // ==========================================
+    function handleLogin() {
+        const type = document.querySelector('input[name="loginType"]:checked').value;
+        const id = document.getElementById('loginId').value;
+        const pass = document.getElementById('loginPass').value;
+        
+        if ((type === 'admin' && id === 'admin' && pass === '1234') || 
+            (type === 'member' && id === 'member' && pass === '1234')) {
+            currentRole = type;
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            document.getElementById('user-display-name').innerText = type === 'admin' ? "Admin" : "Member";
+            
+            if (type !== 'admin') {
+                document.getElementById('nav-settings').classList.add('hidden');
+            } else {
+                document.getElementById('nav-settings').classList.remove('hidden');
+            }
+            
+            const today = new Date();
+            document.getElementById('today-date').innerText = today.toLocaleDateString('en-GB');
+            document.getElementById('today-day').innerText = today.toLocaleDateString('bn-BD', { weekday: 'long' });
+            
+            init();
+            switchTab('income');
+        } else {
+            alert("ভুল ইউজার আইডি বা পাসওয়ার্ড!");
+        }
+    }
+
+    function logout() {
+        location.reload();
+    }
+
+    // ==========================================
+    // 4. UTILITIES & TRANSLITERATION
+    // ==========================================
+    function setLocalTodayDate(elementId) {
+        const now = new Date(); 
+        const year = now.getFullYear(); 
+        const month = String(now.getMonth() + 1).padStart(2, '0'); 
+        const day = String(now.getDate()).padStart(2, '0');
+        const el = document.getElementById(elementId); 
+        if(el) el.value = `${year}-${month}-${day}`;
+    }
+
+    function normalizeDate(dateStr) {
+        if (!dateStr) return new Date().toISOString().split('T')[0];
+        if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) return dateStr;
+        const parts = dateStr.split(/[-/.]/);
+        if (parts.length === 3) { 
+            let day = parts[0].padStart(2, '0'); 
+            let month = parts[1].padStart(2, '0'); 
+            let year = parts[2]; 
+            if (year.length === 2) year = '20' + year; 
+            return `${year}-${month}-${day}`; 
+        }
+        try { return new Date(dateStr).toISOString().split('T')[0]; } catch (e) { return dateStr; }
+    }
+
+    function isBangla(str) { 
+        for (let i = 0; i < str.length; i++) { 
+            if (str.charCodeAt(i) >= 0x0980 && str.charCodeAt(i) <= 0x09FF) return true; 
+        } 
+        return false; 
+    }
+    
+    function safeTrim(str) {
+        if (!str) return '';
+        return str.replace(/^[ \t\n\r]+|[ \t\n\r]+$/g, '');
+    }
+
+ 
+ function safeTransliterate(text) {
+        if (!text) return '';
+        
+        // ১. সাধারণ টাইপিং ভুল সংশোধন (যেমন: রাজকীয -> রাজকীয়)
+        text = text.normalize("NFC");
+        text = text.replace(/ীয/g, 'ীয়'); 
+
+        // ২. Custom Dictionary (যে শব্দগুলো ম্যাপ দিয়ে ঠিক করা কঠিন, সেগুলো এখানে রাখুন)
+        const customDict = {
+            'সরস্বতী': 'Saraswati', 'দুর্গা': 'Durga', 'কালী': 'Kali',
+            'বাসন্তী': 'Basanti', 'লক্ষ্মী': 'Lakshmi', 'গণেশ': 'Ganesh',
+            'কার্তিক': 'Kartik', 'পূজা': 'Puja', 'পুজো': 'Pujo', 
+            'মডার্ণ': 'Modern', 'স্পোর্টিং': 'Sporting', 'ক্লাব': 'Club',
+            'আঢ্য': 'Adhya', 'রাজকীয়': 'Rajokiya', 'বন্দ্যোপাধ্যায়': 'Bandyopadhyay',
+            'চট্টোপাধ্যায়': 'Chattopadhyay', 'মুখোপাধ্যায়': 'Mukhopadhyay'
+        };
+
+        const map = {
+            'অ': 'a', 'আ': 'a', 'ই': 'i', 'ঈ': 'i', 'উ': 'u', 'ঊ': 'u', 'ঋ': 'ri', 'এ': 'e', 'ঐ': 'oi', 'ও': 'o', 'ঔ': 'ou',
+            'ক': 'k', 'খ': 'kh', 'গ': 'g', 'ঘ': 'gh', 'ঙ': 'ng',
+            'চ': 'ch', 'ছ': 'chh', 'জ': 'j', 'ঝ': 'jh', 'ঞ': 'n',
+            'ট': 't', 'ঠ': 'th', 'ড': 'd', 'ঢ': 'dh', 'ণ': 'n',
+            'ত': 't', 'থ': 'th', 'দ': 'd', 'ধ': 'dh', 'ন': 'n',
+            'প': 'p', 'ফ': 'f', 'ব': 'b', 'ভ': 'bh', 'ম': 'm',
+            'য': 'j', 'র': 'r', 'ল': 'l', 'শ': 'sh', 'ষ': 'sh', 'স': 's', 'হ': 'h',
+            'ড়': 'r', 'ঢ়': 'rh', 'য়': 'y', 'ৎ': 't', 'ং': 'ng', 'ঃ': 'h', 'ঁ': 'n',
+            'া': 'a', 'ি': 'i', 'ী': 'i', 'ু': 'u', 'ূ': 'u', 'ৃ': 'ri', 'ে': 'e', 'ৈ': 'oi', 'ো': 'o', 'ৌ': 'ou',
+            '্': '', '়': '' // Hasant & Nukta
+        };
+        
+        const consonants = "কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়";
+        const modifiers = "ািীুূৃেৈোৌ্";
+
+        let words = text.split(/[ \t]+/);
+        let finalWords = words.map(word => {
+            if (customDict[word]) return customDict[word];
+
+            let convertedWord = '';
+            for (let i = 0; i < word.length; i++) {
+                let char = word[i];
+                let nextChar = word[i + 1] || '';
+                let prevChar = i > 0 ? word[i - 1] : '';
+
+                // ===== FIX 1: য-ফলা (Ya-Phala) লজিক =====
+                // যদি 'য'-এর ঠিক আগে হসন্ত (্) থাকে, তবে সেটি 'j' না হয়ে 'ya' বা 'y' হবে
+                if (char === 'য' && prevChar === '্') {
+                    let val = 'y';
+                    if (!nextChar || !modifiers.includes(nextChar)) {
+                        val = 'ya'; // শব্দের শেষে বা পরে কোনো কার না থাকলে 'ya' হবে (যেমন: আঢ্য -> Adhya)
+                    }
+                    convertedWord += val;
+                    continue;
+                }
+
+                // ===== FIX 2: য + ় (Nukta) লজিক =====
+                // এনকোডিংয়ে য় যদি (য + ়) হিসেবে ভেঙে যায়, তবে 'j'-কে 'y' করে দেওয়া
+                if (char === '়' && prevChar === 'য') {
+                    if (convertedWord.endsWith('j')) {
+                        convertedWord = convertedWord.slice(0, -1) + 'y';
+                    }
+                    continue;
+                }
+
+                if (map[char] !== undefined) {
+                    convertedWord += map[char];
+                    
+                    // Inherent Vowel ('a') Injection
+                    if (consonants.includes(char) && nextChar && !modifiers.includes(nextChar) && consonants.includes(nextChar)) {
+                        convertedWord += 'a';
+                    }
+                } else {
+                    if (char.charCodeAt(0) >= 0x0980 && char.charCodeAt(0) <= 0x09FF) {
+                        continue; 
+                    }
+                    convertedWord += char;
+                }
+            }
+            return convertedWord.charAt(0).toUpperCase() + convertedWord.slice(1);
+        });
+
+        return finalWords.join(' ');
+    }
+ 
+ 
+
+    function closeModal(id) { 
+        document.getElementById(id).classList.add('hidden'); 
+    }
+
+    function getBengaliWord(n) {
+        const words = ["শূন্য", "এক", "দুই", "তিন", "চার", "পাঁচ", "ছয়", "সাত", "আট", "নয়", "দশ",
+        "এগারো", "বারো", "তেরো", "চোদ্দ", "পনেরো", "ষোলো", "সতেরো", "আঠারো", "উনিশ", "কুড়ি",
+        "একুশ", "বাইশ", "তেইশ", "চব্বিশ", "পঁচিশ", "ছাব্বিশ", "সাতাশ", "আঠাশ", "ঊনত্রিশ", "ত্রিশ",
+        "একত্রিশ", "বত্রিশ", "তেত্রিশ", "চৌত্রিশ", "পঁয়ত্রিশ", "ছত্রিশ", "সাঁইত্রিশ", "আটত্রিশ", "ঊনচল্লিশ", "চল্লিশ",
+        "একচল্লিশ", "বিয়াল্লিশ", "তেতাল্লিশ", "চুয়াল্লিশ", "পঁয়তাল্লিশ", "ছেচল্লিশ", "সাতচল্লিশ", "আটচল্লিশ", "ঊনপঞ্চাশ", "পঞ্চাশ",
+        "একান্ন", "বায়ান্ন", "তিপ্পান্ন", "চুয়ান্ন", "পঞ্চান্ন", "ছাপ্পান্ন", "সাতান্ন", "আটান্ন", "ঊনষাট", "ষাট",
+        "একষট্টি", "বাষট্টি", "তেষট্টি", "চৌষট্টি", "পঁয়ষট্টি", "ছেষট্টি", "সাতষট্টি", "আটষট্টি", "ঊনসত্তর", "সত্তর",
+        "একাত্তর", "বাহাত্তর", "তিয়াত্তর", "চুয়াত্তর", "পঁচাত্তর", "ছিয়াত্তর", "সাতাত্তর", "আটাত্তর", "ঊনআশি", "আশি",
+        "একাশি", "বিরাশি", "তিরাশি", "চুরাশি", "পঁচাশি", "ছিয়াশি", "সাতাশি", "আটাশি", "ঊননব্বই", "নব্বই",
+        "একানব্বই", "বিরানব্বই", "তিরানব্বই", "চুরানব্বই", "পঁচানব্বই", "ছিয়ানব্বই", "সাতানব্বই", "আটানব্বই", "নিরানব্বই"];
+        return words[n] || "";
+    }
+
+    function numberToBengaliWords(num) {
+        if (num === 0) return "শূন্য";
+        let res = "";
+        if (num >= 100000) {
+            let lakh = Math.floor(num / 100000);
+            res += getBengaliWord(lakh) + " লক্ষ ";
+            num = num % 100000;
+        }
+        if (num >= 1000) {
+            let thousand = Math.floor(num / 1000);
+            res += getBengaliWord(thousand) + " হাজার ";
+            num = num % 1000;
+        }
+        if (num >= 100) {
+            let hundred = Math.floor(num / 100);
+            res += getBengaliWord(hundred) + " শ ";
+            num = num % 100;
+        }
+        if (num > 0) {
+            res += getBengaliWord(num) + " ";
+        }
+        return res.trim();
+    }
+
+    // ==========================================
+    // RECEIPT PREVIEW, DOWNLOAD & SHARE MODULE
+    // ==========================================
+// ==========================================
+    // RECEIPT PREVIEW, DOWNLOAD & SHARE MODULE
+    // ==========================================
+    let currentReceiptItem = null; 
+
+    function previewReceipt(id) {
+        const item = store.getIncome().find(i => String(i.id) === String(id));
+        if(!item) return;
+
+        currentReceiptItem = item;
+        const activePujaName = document.getElementById('pujaSelect').value;
+        const dateStr = new Date(item.date).toLocaleDateString('en-GB');
+        const rcptNo = "RCPT-" + new Date().getFullYear() + "-" + String(item.id).slice(-4);
+        const amountWords = numberToBengaliWords(item.paid);
+
+        // Digital Signature Data Load
+        const activeSig = (globalData.signatures || []).find(s => s.isActive);
+        const sigNameText = activeSig ? activeSig.name : 'Not Assigned';
+        const sigDesigText = activeSig ? activeSig.desig : 'Authorized Signatory';
+
+        const now = new Date();
+        const pDate = now.toLocaleDateString('en-GB');
+        const pTime = now.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+
+        const content = `
+            <div class="text-center border-b-2 border-red-600 pb-3 mb-4">
+                <h1 class="text-xl font-bold text-red-700 m-0 leading-tight">মডার্ণ স্পোর্টিং ক্লাব</h1>
+                <p class="text-[10px] text-gray-600 m-0 mt-1">ঠিকানা: ধলতিথা, বসিরহাট, উত্তর ২৪ পরগনা, ৭৪৩৪১২</p>
+                <div class="inline-block bg-gray-100 border border-gray-300 px-3 py-1 rounded text-sm font-bold mt-2 text-gray-800">${activePujaName}</div>
+            </div>
+            
+            <div class="flex justify-between text-xs font-bold text-gray-700 mb-5 pb-2 border-b border-gray-100">
+                <div>রিসিপ্ট নং: <span class="text-gray-900">${rcptNo}</span></div>
+                <div>তারিখ: <span class="text-gray-900">${dateStr}</span></div>
+            </div>
+            
+            <div class="text-sm leading-loose text-gray-800 mb-6">
+                <p class="m-0 border-b border-dashed border-gray-200"><strong class="text-gray-600">নাম:</strong> <span class="font-bold">${item.bengali_name}</span> <span class="text-xs text-gray-500">(${item.english_name})</span></p>
+                <p class="m-0 border-b border-dashed border-gray-200"><strong class="text-gray-600">উৎস:</strong> ${item.para}</p>
+                <p class="m-0 border-b border-dashed border-gray-200"><strong class="text-gray-600">টাকার পরিমাণ:</strong> <span class="font-bold text-base">₹${item.paid}</span> ${item.due > 0 ? `<span class="text-red-600 text-xs ml-2">(বাকী: ₹${item.due})</span>` : ''}</p>
+                <p class="m-0"><strong class="text-gray-600">কথায়:</strong> ${amountWords} টাকা মাত্র</p>
+            </div>
+            
+            <div class="flex justify-between items-end mt-8">
+                <div class="border border-green-600 rounded bg-green-50 relative overflow-hidden flex flex-col justify-center p-1" style="width: 100px; height: 50px;">
+                    <div class="flex items-center gap-1 mb-[2px] border-b border-green-200 pb-[2px]">
+                        <span class="text-green-600 font-bold leading-none" style="font-size: 8px;">✔️</span>
+                        <span class="text-green-800 font-bold uppercase tracking-wide leading-none" style="font-size: 6px;">Signature Valid</span>
+                    </div>
+                    <div class="text-gray-800 font-mono" style="font-size: 6px; line-height: 1.3;">
+                        <p class="m-0 truncate">Signed by: <strong>${sigNameText}</strong></p>
+                        <p class="m-0 truncate">Desig: <strong>${sigDesigText}</strong></p>
+                        <p class="m-0 text-gray-600 mt-[2px] truncate">Date: ${pDate}</p>
+                        <p class="m-0 text-gray-600 truncate">Time: ${pTime}</p>
+                    </div>
+                </div>
+
+                <div class="border p-1 rounded-lg bg-white shadow-sm" style="width: 100px; height: 100px;">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=RCPT:${rcptNo}|Amt:${item.paid}" alt="QR" class="w-full h-full object-contain">
+                </div>
+            </div>
+        `;
+
+        document.getElementById('receiptContent').innerHTML = content;
+        document.getElementById('receiptPreviewModal').classList.remove('hidden');
+        lucide.createIcons();
+    }
+
+    // PDF সেটিংস এবং ফাইল নেম জেনারেটর
+    function getReceiptPdfOpt() {
+        if(!currentReceiptItem) return null;
+        
+        // ফাইল নেম ফরম্যাট: চাঁদা দাতার নাম_পূজা_তারিখ.pdf
+        const dateStr = new Date(currentReceiptItem.date).toLocaleDateString('en-GB').replace(/\//g, '-');
+        const puja = document.getElementById('pujaSelect').value.replace(/\s+/g, '_');
+        const name = currentReceiptItem.bengali_name.replace(/\s+/g, '_');
+        const fileName = `${name}_${puja}_${dateStr}.pdf`;
+
+        return {
+            margin: [0.2, 0.2, 0.2, 0.2], // [top, left, bottom, right]
+            filename: fileName,
+            image: { type: 'jpeg', quality: 1 },
+            html2canvas: { scale: 3, useCORS: true, logging: false }, // High Resolution
+            jsPDF: { unit: 'in', format: 'a5', orientation: 'portrait' }
+        };
+    }
+
+    // ১. ডাউনলোড ফাংশন
+    function downloadReceipt(event) {
+        const element = document.getElementById('receiptContent');
+        const opt = getReceiptPdfOpt();
+        
+        const btn = event.currentTarget;
+        const oldHtml = btn.innerHTML;
+        btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>';
+        lucide.createIcons();
+
+        html2pdf().set(opt).from(element).save().then(() => {
+            btn.innerHTML = oldHtml;
+            lucide.createIcons();
+        });
+    }
+
+    // ২. মোবাইল শেয়ার ফাংশন (WhatsApp/Messenger)
+    async function shareReceipt(event) {
+        // ব্রাউজার ফাইল শেয়ার সাপোর্ট করে কি না তা চেক করা
+        if (!navigator.canShare || !navigator.share) {
+            window.originalAlert("আপনার ব্রাউজারে বা ডিভাইসে সরাসরি PDF শেয়ার সাপোর্ট করছে না। দয়া করে Download আইকনে ক্লিক করে ফাইলটি কাউকে পাঠান।");
+            return;
+        }
+
+        const element = document.getElementById('receiptContent');
+        const opt = getReceiptPdfOpt();
+        
+        // লোডিং অ্যানিমেশন দেখানো
+        const btn = event.currentTarget;
+        const oldHtml = btn.innerHTML;
+        btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>';
+        lucide.createIcons();
+
+        try {
+            // HTML থেকে Blob (ফাইল) তৈরি করা
+            const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
+            const file = new File([pdfBlob], opt.filename, { type: 'application/pdf' });
+            
+            // Web Share API কল করে অ্যাপ অপশন খোলা
+            await navigator.share({
+                title: 'পূজার চাঁদার রিসিপ্ট',
+                text: `${currentReceiptItem.bengali_name} মহাশয়/মহাশয়া, আপনার চাঁদার রিসিপ্টটি সংযুক্ত করা হলো। ধন্যবাদ!`,
+                files: [file]
+            });
+        } catch (error) {
+            console.error("Share error:", error);
+            // ইউজার যদি শেয়ার উইন্ডো কেটে দেয় (AbortError), তাহলে অ্যালার্ট দেখানোর দরকার নেই
+            if (error.name !== 'AbortError') {
+                window.originalAlert("শেয়ার করতে সমস্যা হয়েছে। দয়া করে ডাউনলোড করে নিন।");
+            }
+        } finally {
+            // লোডিং অ্যানিমেশন বন্ধ করা
+            btn.innerHTML = oldHtml;
+            lucide.createIcons();
+        }
+    }
+    // ==========================================
+    // 5. AI INTEGRATION
+    // ==========================================
+    async function callGemini(prompt) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+        const payload = {
+            contents: [{ parts: [{ text: prompt }] }],
+            systemInstruction: { parts: [{ text: "You are a helpful, respectful Bengali AI assistant for a Puja Committee called 'মডার্ণ স্পোর্টিং ক্লাব'. Always respond in natural Bengali language." }] }
+        };
+        try {
+            const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const data = await res.json();
+            return data.candidates?.[0]?.content?.parts?.[0]?.text || "কোনো তথ্য পাওয়া যায়নি।";
+        } catch (error) {
+            return "দুঃখিত, বর্তমানে AI সার্ভারের সাথে সংযোগ করা যাচ্ছে নির্দেশ। দয়া করে কিছুক্ষণ পর আবার চেষ্টা করুন।";
+        }
+    }
+
+    async function generateAISummary() {
+        const box = document.getElementById('aiSummaryBox');
+        const textBox = document.getElementById('aiSummaryText');
+        box.classList.remove('hidden');
+        textBox.innerHTML = '<span class="animate-pulse">✨ AI আপনার ফাইন্যান্সিয়াল রিপোর্ট বিশ্লেষণ করছে... দয়া করে অপেক্ষা করুন...</span>';
+        
+        const reportTitle = document.getElementById('repResultTitle').innerText;
+        const totalAmount = document.getElementById('repTotalDisplay').innerText;
+        const rows = document.querySelectorAll('#repTableBody tr');
+        let tableDataStr = `Report Title: ${reportTitle}\nGrand Total: ${totalAmount}\n`;
+        
+        let limit = Math.min(rows.length, 30); 
+        for(let i=0; i<limit; i++) {
+            const cols = rows[i].querySelectorAll('td');
+            if(cols.length > 2) {
+                 tableDataStr += `- Date: ${safeTrim(cols[0].innerText)}, Desc: ${safeTrim(cols[1].innerText.replace(/\n/g,' '))}, Details: ${safeTrim(cols[cols.length-1].innerText)}\n`;
+            }
+        }
+        
+        const prompt = `Please provide a short, encouraging summary (in Bengali) of the following financial report for our Puja Committee. Mention the grand total, highlight if it's an income, expense, or all-in-one report, and give a brief positive observation about the club's financial activity.\n\nData:\n${tableDataStr}`;
+        const aiResponse = await callGemini(prompt);
+        textBox.innerHTML = aiResponse.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    }
+
+    async function generateAIMessage(id) {
+        const item = store.getIncome().find(i => String(i.id) === String(id));
+        if(!item) return;
+
+        const modal = document.getElementById('aiMessageModal');
+        const contentBox = document.getElementById('aiMessageContentBox');
+        const loading = document.getElementById('aiMessageLoading');
+        
+        modal.classList.remove('hidden'); 
+        contentBox.innerText = ''; 
+        contentBox.classList.add('hidden'); 
+        loading.classList.remove('hidden');
+
+        const isDue = Number(item.due) > 0;
+        const prompt = `Write a polite and warm WhatsApp message in Bengali from 'মডার্ণ স্পোর্টিং ক্লাব' to ${item.bengali_name}. 
+        They have contributed a total of ₹${item.paid}. 
+        ${isDue ? `They still have a due amount of ₹${item.due}. Politely remind them about the due and thank them for what they already paid.` : `They have no dues. Warmly thank them for their full donation.`} 
+        Keep the message concise, respectful, and suitable for WhatsApp.`;
+
+        const response = await callGemini(prompt);
+        loading.classList.add('hidden'); 
+        contentBox.classList.remove('hidden'); 
+        contentBox.innerText = response;
+    }
+
+    function copyAIMessage() {
+        const text = document.getElementById('aiMessageContentBox').innerText;
+        if(text) { 
+            document.execCommand('copy'); 
+            try { navigator.clipboard.writeText(text); } catch(e){} 
+            window.originalAlert("মেসেজটি কপি করা হয়েছে!"); 
+        }
+    }
+
+    // ==========================================
+    // 6. UI TAB SWITCHING & DROPDOWNS
+    // ==========================================
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+        document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+        document.querySelectorAll('.nav-link').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(`nav-${tabId}`).classList.add('active');
+        
+        const header = document.getElementById('main-header');
+        header.classList.remove('bg-purple-800', 'bg-red-700', 'bg-blue-900', 'bg-puja-red');
+        if(tabId === 'income') { header.classList.add('bg-purple-800'); switchSubTab('bill'); }
+        else if(tabId === 'expense') { header.classList.add('bg-red-700'); switchExpSubTab('add'); }
+        else { header.classList.add('bg-blue-900'); }
+
+        if(tabId === 'settings') renderParaSettings();
+        if(tabId === 'report') handleReportUI();
+    }
+    
+    function switchSubTab(subId) {
+        document.querySelectorAll('.sub-tab-btn').forEach(btn => { 
+            btn.classList.remove('income-active', 'border-b-2', 'border-purple-800', 'text-purple-800', 'font-bold'); 
+            btn.classList.add('text-gray-600'); 
+        });
+        const btn = document.querySelector(`button[data-target="sub-${subId}"]`);
+        if(btn) { 
+            btn.classList.add('income-active', 'border-b-2', 'border-purple-800', 'text-purple-800', 'font-bold'); 
+            btn.classList.remove('text-gray-600'); 
+        }
+        document.querySelectorAll('.sub-tab-content').forEach(c => c.classList.add('hidden'));
+        document.getElementById(`sub-${subId}`).classList.remove('hidden');
+        if(subId === 'collection') renderCollectionTable();
+        if(subId === 'car') renderCarTable();
+        if(subId === 'dashboard') updateDashboard();
+    }
+
+    function switchExpSubTab(subId) {
+        document.querySelectorAll('#tab-expense .sub-tab-btn').forEach(btn => { 
+            btn.classList.remove('active', 'border-b-2', 'border-red-600', 'text-red-600', 'font-bold'); 
+            btn.classList.add('text-gray-600'); 
+        });
+        const btn = document.querySelector(`button[data-target="sub-exp-${subId}"]`);
+        if(btn) { 
+            btn.classList.add('active', 'border-b-2', 'border-red-600', 'text-red-600', 'font-bold'); 
+            btn.classList.remove('text-gray-600'); 
+        }
+        document.querySelectorAll('.sub-exp-content').forEach(c => c.classList.add('hidden'));
+        document.getElementById(`sub-exp-${subId}`).classList.remove('hidden');
+        if(subId === 'view') { renderExpenseTable(); initExpDropdown(); }
+    }
+
+    function initDropdowns() {
+        const paras = store.getParas();
+        const select = document.getElementById('billPara'); 
+        const colSelect = document.getElementById('colParaSelect'); 
+        const editSelect = document.getElementById('editFullPara'); 
+        
+        // রিফ্রেশ করার আগে বর্তমান সিলেক্ট করা ভ্যালুগুলো সেভ করে রাখা হচ্ছে
+        const currentBillPara = select.value;
+        const currentColPara = colSelect.value;
+        const currentEditPara = editSelect.value;
+        
+        select.innerHTML = '<option value="">-- পাড়া নির্বাচন করুন --</option>'; 
+        colSelect.innerHTML = '<option value="all">-- সব পাড়া --</option>'; 
+        editSelect.innerHTML = '';
+        
+        paras.forEach(p => {
+            const data = parseParaData(p); 
+            select.add(new Option(data.name, data.name));
+            select.options[select.options.length-1].setAttribute('data-amount', data.amount); 
+            colSelect.add(new Option(data.name, data.name)); 
+            editSelect.add(new Option(data.name, data.name));
+        });
+        
+        select.onchange = function() { 
+            const defAmount = select.options[select.selectedIndex].getAttribute('data-amount'); 
+            if(defAmount && defAmount > 0) document.getElementById('billAmount').value = defAmount; 
+        };
+
+        // রিফ্রেশ করার পর আগের ভ্যালুগুলো আবার সেট করে দেওয়া হচ্ছে
+        if (currentBillPara) select.value = currentBillPara;
+        if (currentColPara) colSelect.value = currentColPara;
+        if (currentEditPara) editSelect.value = currentEditPara;
+    }
+
+    // ==========================================
+    // 7. INCOME (BILL) MODULE
+    // ==========================================
+    async function handleSmartInput(input, type) {
+        const rawVal = safeTrim(input.value).toLowerCase();
+        const box = document.getElementById('billNameSuggestions');
+        if (!rawVal) { box.classList.add('hidden'); return; }
+        
+        box.innerHTML = ''; 
+        box.classList.remove('hidden');
+
+        const toTitleCase = (str) => str.replace(/\b\w/g, char => char.toUpperCase());
+        const prettyVal = toTitleCase(safeTrim(input.value)); 
+        const exactInput = safeTrim(input.value);
+
+        let dataset = store.getIncome(); 
+        const matches = dataset.filter(item => 
+            (item.bengali_name && item.bengali_name.toLowerCase().includes(rawVal)) || 
+            (item.english_name && item.english_name.toLowerCase().includes(rawVal))
+        );
+        const uniquePast = [...new Map(matches.map(item => [item['english_name'] + item['bengali_name'], item])).values()];
+        
+        if(uniquePast.length > 0) {
+            uniquePast.slice(0, 5).forEach(m => {
+                const div = document.createElement('div'); 
+                div.className = 'suggestion-item suggestion-past text-sm sm:text-base';
+                div.innerHTML = `<span><strong>${m.english_name}</strong> <span class="text-xs text-gray-500 ml-1">(${m.bengali_name})</span></span> <span class="text-xs sm:text-sm font-bold text-green-700">Paste Reference</span>`;
+                div.onclick = () => selectSmartValue(m.english_name, m.bengali_name);
+                box.appendChild(div);
+            });
+        }
+
+        const inputIsBn = isBangla(exactInput);
+        let googleSuggestions = [];
+        
+        if (!inputIsBn) {
+            try {
+                const url = `https://inputtools.google.com/request?text=${encodeURIComponent(exactInput)}&itc=bn-t-i0-und&num=3&cp=0&cs=1&ie=utf-8&oe=utf-8`;
+                const res = await fetch(url); 
+                const json = await res.json();
+                if(json[0]==='SUCCESS'){
+                    googleSuggestions = json[1][0][1];
+                }
+            } catch(e){}
+        }
+
+        googleSuggestions.forEach(s => {
+            const div = document.createElement('div'); 
+            div.className = 'suggestion-item hover:bg-blue-50 text-sm sm:text-base border-t';
+            div.innerHTML = `<span><strong>${prettyVal}</strong> <span class="text-xs text-gray-500 ml-1">(${s})</span></span> <span class="text-xs sm:text-sm font-bold text-blue-600">Google API</span>`;
+            div.onclick = () => selectSmartValue(prettyVal, s);
+            box.appendChild(div);
+        });
+
+        if (inputIsBn) {
+            const autoEn = toTitleCase(safeTransliterate(exactInput));
+            const div = document.createElement('div'); 
+            div.className = 'suggestion-item bg-purple-50 text-sm sm:text-base border-t';
+            div.innerHTML = `<span><strong>${autoEn}</strong> <span class="text-xs text-gray-500 ml-1">(${exactInput})</span></span> <span class="text-xs sm:text-sm font-bold text-purple-600">Mapped Suggestion</span>`;
+            div.onclick = () => selectSmartValue(autoEn, exactInput);
+            box.appendChild(div);
+        }
+
+        if (!inputIsBn) {
+            const divEn = document.createElement('div'); 
+            divEn.className = 'suggestion-item bg-gray-50 text-sm sm:text-base border-t';
+            divEn.innerHTML = `<span><strong>${prettyVal}</strong></span> <span class="text-xs sm:text-sm text-gray-500">অন্যান্য (Keep English)</span>`;
+            divEn.onclick = () => selectSmartValue(prettyVal, prettyVal); 
+            box.appendChild(divEn);
+        } else {
+            const divBn = document.createElement('div'); 
+            divBn.className = 'suggestion-item bg-gray-50 text-sm sm:text-base border-t';
+            divBn.innerHTML = `<span><strong>${exactInput}</strong></span> <span class="text-xs sm:text-sm text-gray-500">অন্যান্য (Keep Bangla)</span>`;
+            divBn.onclick = () => selectSmartValue(exactInput, exactInput); 
+            box.appendChild(divBn);
+        }
+    }
+    
+    function selectSmartValue(en, bn) {
+        document.getElementById('billNameInput').value = `${en} | ${bn}`;
+        document.getElementById('billNameEnglish').value = en;
+        document.getElementById('billNameBangla').value = bn;
+        document.getElementById('billNameSuggestions').classList.add('hidden');
+    }
+
+   function clearBillForm() {
+        document.getElementById('billNameInput').value = ''; 
+        document.getElementById('billNameEnglish').value = ''; 
+        document.getElementById('billNameBangla').value = ''; 
+        
+        // পাড়া যদি আগে থেকেই সিলেক্ট করা থাকে, তবে তার ডিফল্ট চাঁদা রেখে দেওয়া হবে
+        const select = document.getElementById('billPara');
+        let defAmount = '';
+        if (select.selectedIndex > 0) {
+            defAmount = select.options[select.selectedIndex].getAttribute('data-amount') || '';
+        }
+        document.getElementById('billAmount').value = defAmount; 
+        
+        document.getElementById('billAdvance').value = ''; 
+        document.getElementById('billRemarks').value = '';
+    }
+
+    function saveBill() {
+        const rawName = document.getElementById('billNameInput').value; 
+        const cleaned = cleanDoublePipe(rawName); 
+        
+        let nameEn = document.getElementById('billNameEnglish').value || cleaned.en; 
+        let nameBn = document.getElementById('billNameBangla').value || cleaned.bn;
+        
+        if (rawName.includes('|') || !nameEn) { 
+            nameEn = cleaned.en; 
+            nameBn = cleaned.bn; 
+        }
+        
+        const para = document.getElementById('billPara').value; 
+        if (!para) { alert("দয়া করে পাড়া নির্বাচন করুন!"); return; } 
+        if (!nameEn) { alert("নাম লিখুন!"); return; }
+
+        const activePuja = document.getElementById('pujaSelect').value;
+        const projectedAmt = Number(document.getElementById('billAmount').value) || 0;
+        const advanceAmt = Number(document.getElementById('billAdvance').value) || 0;
+
+        const item = {
+            id: Date.now().toString(), 
+            puja: activePuja, 
+            date: document.getElementById('billDate').value, 
+            para: para,
+            english_name: nameEn, 
+            bengali_name: nameBn, 
+            projected: projectedAmt,
+            paid: advanceAmt, 
+            due: projectedAmt - advanceAmt, 
+            remarks: document.getElementById('billRemarks').value
+        };
+        
+        globalData.income.push(item); 
+        syncData('add', 'income', item);
+        
+        clearBillForm(); 
+        document.getElementById('billDate').valueAsDate = new Date(); 
+        alert("সফলভাবে বিল সেভ হয়েছে!");
+    }
+
+    function renderCollectionTable() {
+        const rawData = store.getIncome(); 
+        const activePuja = document.getElementById('pujaSelect').value;
+        const data = rawData.filter(d => getPuja(d) === activePuja);
+        const tbody = document.getElementById('collectionTableBody'); 
+        tbody.innerHTML = '';
+        
+        const filterPara = document.getElementById('colParaSelect').value; 
+        const search = document.getElementById('colSearch').value.toLowerCase();
+        let serial = 1; 
+        const sortedData = [...data].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        sortedData.forEach(row => {
+            if (filterPara !== 'all' && row.para !== filterPara) return;
+            if (search && !row.english_name.toLowerCase().includes(search) && !row.bengali_name.includes(search) && !String(serial).includes(search)) return;
+            
+            const projectedAmt = Number(row.projected) || 0; 
+            const paidAmt = Number(row.paid) || 0; 
+            const dueAmt = Number(row.due) || 0;
+            
+            let dueHtml = '';
+            if (projectedAmt === 0) { dueHtml = `<span class="text-gray-400 font-bold">-</span>`; } 
+            else if (dueAmt > 0) { dueHtml = `<span class="text-red-600 font-bold">₹${dueAmt}</span>`; } 
+            else { dueHtml = `<span class="text-green-600 font-bold">₹0</span>`; }
+
+            const tr = document.createElement('tr'); 
+            tr.className = "hover:bg-purple-50 cursor-pointer transition";
+            tr.onclick = (e) => { if(!e.target.closest('button')) openCollectionModal(row.id); };
+            tr.innerHTML = `
+               <td class="text-gray-500">${new Date(row.date).toLocaleDateString('en-GB')}</td><td class="text-center text-gray-500">${serial++}</td>
+                <td>${row.para}</td><td class="font-bold text-gray-700">${row.english_name}</td><td class="font-siliguri">${row.bengali_name}</td>
+                <td class="text-right font-mono text-gray-500 font-bold">${projectedAmt > 0 ? '₹'+projectedAmt : '-'}</td>
+                <td class="text-right font-mono text-green-600 font-bold">₹${paidAmt}</td><td class="text-right font-mono">${dueHtml}</td>
+                <td class="text-center">
+                    <div class="flex justify-center gap-1 sm:gap-2">
+                        <button onclick="previewReceipt('${row.id}')" class="bg-green-100 text-green-600 p-2 rounded hover:bg-green-600 hover:text-white transition" title="রিসিপ্ট প্রিন্ট"><i data-lucide="receipt" class="w-4 h-4"></i></button>
+                        <button onclick="generateAIMessage('${row.id}')" class="bg-purple-100 text-purple-600 p-2 rounded hover:bg-purple-600 hover:text-white transition" title="AI মেসেজ"><i data-lucide="sparkles" class="w-4 h-4"></i></button>
+                        <button onclick="openFullEditModal('${row.id}')" class="bg-blue-100 text-blue-600 p-2 rounded hover:bg-blue-600 hover:text-white transition" title="এডিট করুন"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                        <button onclick="deleteIncome('${row.id}')" class="bg-red-100 text-red-600 p-2 rounded hover:bg-red-600 hover:text-white transition" title="ডিলিট করুন"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+        lucide.createIcons();
+    }
+
+    function openCollectionModal(id) { 
+        const item = store.getIncome().find(i => String(i.id) === String(id)); 
+        if(!item) return; 
+        document.getElementById('colModalId').value = id; 
+        document.getElementById('colModalName').innerText = `${item.english_name} (${item.bengali_name}) | Due: ₹${item.due}`; 
+        document.getElementById('colModalPay').value = ''; 
+        document.getElementById('collectionModal').classList.remove('hidden'); 
+    }
+
+    function saveCollectionPayment() { 
+        const id = document.getElementById('colModalId').value; 
+        const pay = Number(document.getElementById('colModalPay').value); 
+        const rem = document.getElementById('colModalRemarks').value; 
+        const colDate = document.getElementById('collectionDate').value; 
+        
+        if(!colDate) { window.originalAlert("তারিখ দিন!"); return; } 
+        
+        let data = store.getIncome(); 
+        const idx = data.findIndex(i => String(i.id) === String(id)); 
+        if(idx !== -1) { 
+            data[idx].paid += pay; 
+            data[idx].due = data[idx].projected - data[idx].paid; 
+            data[idx].date = colDate; 
+            if(rem) data[idx].remarks = rem; 
+            
+            syncData('update', 'income', data[idx]); 
+            
+            closeModal('collectionModal'); 
+            document.getElementById('collectionDate').valueAsDate = new Date(); 
+            alert("সফলভাবে টাকা জমা হয়েছে!"); 
+        } 
+    }
+
+    function deleteIncome(id) { 
+        if(!confirm("আপনি কি নিশ্চিত?")) return; 
+        const index = globalData.income.findIndex(item => String(item.id) === String(id)); 
+        if (index > -1) { 
+            globalData.income.splice(index, 1); 
+            syncData('delete', 'income', {id: id}); 
+            alert("ডিলিট করা হয়েছে!"); 
+        } 
+    }
+
+    function openFullEditModal(id) { 
+        const item = store.getIncome().find(i => String(i.id) === String(id)); 
+        if(!item) return; 
+        document.getElementById('editFullId').value = id; 
+        document.getElementById('editFullEn').value = item.english_name; 
+        document.getElementById('editFullBn').value = item.bengali_name; 
+        document.getElementById('editFullPara').value = item.para; 
+        document.getElementById('editFullProj').value = item.projected; 
+        document.getElementById('editFullPaid').value = item.paid; 
+        document.getElementById('fullEditModal').classList.remove('hidden'); 
+    }
+
+    function saveFullEdit() { 
+        const id = document.getElementById('editFullId').value; 
+        let data = store.getIncome(); 
+        const idx = data.findIndex(i => String(i.id) === String(id)); 
+        if(idx !== -1) { 
+            data[idx].english_name = document.getElementById('editFullEn').value; 
+            data[idx].bengali_name = document.getElementById('editFullBn').value; 
+            data[idx].para = document.getElementById('editFullPara').value; 
+            data[idx].projected = Number(document.getElementById('editFullProj').value); 
+            data[idx].paid = Number(document.getElementById('editFullPaid').value); 
+            data[idx].due = data[idx].projected - data[idx].paid; 
+            
+            syncData('update', 'income', data[idx]); 
+            
+            closeModal('fullEditModal'); 
+            alert("আপডেট সফল হয়েছে!"); 
+        } 
+    }
+
+    // ==========================================
+    // 8. EXPENSE MODULE
+    // ==========================================
+    async function handleExpInput(input) {
+        const rawVal = safeTrim(input.value);
+        const topBox = document.getElementById('expPastSuggestions'); 
+        const botBox = document.getElementById('expSuggestions');
+        
+        if (!rawVal) { topBox.classList.add('hidden'); botBox.classList.add('hidden'); return; }
+        
+        topBox.innerHTML = ''; 
+        const pastExp = store.getExpense(); 
+        const matches = pastExp.filter(e => e.reason.toLowerCase().includes(rawVal.toLowerCase()));
+        const uniqueMatches = [...new Set(matches.map(e => e.reason))];
+        
+        if(uniqueMatches.length > 0) { 
+            topBox.classList.remove('hidden'); 
+            uniqueMatches.slice(0, 5).forEach(r => { 
+                const div = document.createElement('div'); 
+                div.className = 'suggestion-item suggestion-past text-sm sm:text-base'; 
+                div.innerHTML = `<span class="font-bold text-gray-700">${r}</span> <span class="text-xs sm:text-sm text-green-700">Past Ref</span>`; 
+                div.onclick = () => { input.value = r; topBox.classList.add('hidden'); botBox.classList.add('hidden'); }; 
+                topBox.appendChild(div); 
+            }); 
+        } else { topBox.classList.add('hidden'); }
+        
+        botBox.innerHTML = '';
+        if (isBangla(rawVal)) { 
+            const toTitleCase = (str) => str.replace(/\b\w/g, char => char.toUpperCase()); 
+            const autoEn = toTitleCase(safeTransliterate(rawVal)); 
+            botBox.classList.remove('hidden'); 
+            const div = document.createElement('div'); 
+            div.className = 'suggestion-item text-sm sm:text-base'; 
+            div.innerHTML = `<span><strong>${autoEn}</strong> <span class="text-xs text-gray-500 ml-1">(${rawVal})</span></span> <span class="text-xs sm:text-sm font-bold text-green-600">Auto Translate</span>`; 
+            div.onclick = () => { input.value = `${autoEn} | ${rawVal}`; botBox.classList.add('hidden'); topBox.classList.add('hidden'); }; 
+            botBox.appendChild(div); 
+        } else { 
+            try { 
+                const url = `https://inputtools.google.com/request?text=${encodeURIComponent(rawVal)}&itc=bn-t-i0-und&num=5&cp=0&cs=1&ie=utf-8&oe=utf-8`; 
+                const res = await fetch(url); const json = await res.json(); 
+                if(json[0]==='SUCCESS'){ 
+                    botBox.classList.remove('hidden'); 
+                    const sugs = json[1][0][1]; 
+                    sugs.forEach(s => { 
+                        const div = document.createElement('div'); 
+                        div.className = 'suggestion-item text-sm sm:text-base'; 
+                        div.innerHTML = `<span><strong>${rawVal}</strong> <span class="text-xs text-gray-500 ml-1">(${s})</span></span> <span class="text-xs sm:text-sm font-bold text-green-600">Bangla API</span>`; 
+                        div.onclick = () => { input.value = `${rawVal} | ${s}`; botBox.classList.add('hidden'); topBox.classList.add('hidden'); }; 
+                        botBox.appendChild(div); 
+                    }); 
+                } 
+            } catch(e){} 
+        }
+    }
+
+    function saveExpense() { 
+        const date = document.getElementById('expDate').value; 
+        const rawReason = document.getElementById('expReason').value; 
+        const amount = Number(document.getElementById('expAmount').value); 
+        
+        if(!rawReason || !amount) { window.originalAlert("তথ্য দিন"); return; } 
+        
+        let cleanReason = rawReason; 
+        if(rawReason.includes('|')) { 
+            const parts = rawReason.split('|').map(p=>safeTrim(p)).filter(Boolean); 
+            if (parts.length > 0) cleanReason = `${parts[0]} | ${parts[parts.length-1]}`; 
+        } 
+        
+        const activePuja = document.getElementById('pujaSelect').value; 
+        const item = { 
+            id: Date.now().toString(), 
+            puja: activePuja, 
+            date: date, 
+            reason: cleanReason, 
+            amount: amount 
+        }; 
+        
+        globalData.expense.push(item); 
+        syncData('add', 'expense', item); 
+        
+        document.getElementById('expReason').value = ''; 
+        document.getElementById('expAmount').value = ''; 
+        document.getElementById('expDate').valueAsDate = new Date(); 
+        alert("সফলভাবে খরচ সেভ হয়েছে!"); 
+    }
+
+    function initExpDropdown() { 
+        const activePuja = document.getElementById('pujaSelect').value; 
+        const data = store.getExpense().filter(d => getPuja(d) === activePuja); 
+        const select = document.getElementById('expFilterReason'); 
+        const unique = [...new Set(data.map(d => d.reason))]; 
+        select.innerHTML = '<option value="all">All</option>'; 
+        unique.forEach(r => select.add(new Option(r, r))); 
+    }
+
+    function renderExpenseTable() { 
+        const activePuja = document.getElementById('pujaSelect').value; 
+        const data = store.getExpense().filter(d => getPuja(d) === activePuja); 
+        const tbody = document.getElementById('expenseTableBody'); 
+        tbody.innerHTML = ''; 
+        
+        const start = document.getElementById('expStart').value; 
+        const end = document.getElementById('expEnd').value; 
+        const reason = document.getElementById('expFilterReason').value; 
+        const search = document.getElementById('expSearch').value.toLowerCase(); 
+        
+        data.forEach(row => { 
+            if(start && row.date < start) return; 
+            if(end && row.date > end) return; 
+            if(reason !== 'all' && row.reason !== reason) return; 
+            if(search && !row.reason.toLowerCase().includes(search)) return; 
+            
+            const tr = document.createElement('tr'); 
+            tr.className = "hover:bg-red-50 border-b"; 
+            tr.innerHTML = `<td class="p-3">${new Date(row.date).toLocaleDateString('en-GB')}</td><td class="p-3 font-bold text-gray-700">${row.reason}</td><td class="p-3 text-right font-mono">₹${row.amount}</td><td class="p-3 text-center"><div class="flex justify-center gap-2"><button onclick="openExpenseEdit('${row.id}')" class="bg-blue-100 text-blue-600 p-2 rounded hover:bg-blue-600 transition"><i data-lucide="pencil" class="w-4 h-4"></i></button><button onclick="deleteExpense('${row.id}')" class="bg-red-100 text-red-600 p-2 rounded hover:bg-red-600 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></td>`; 
+            tbody.appendChild(tr); 
+        }); 
+        lucide.createIcons(); 
+    }
+
+    function openExpenseEdit(id) { 
+        const item = store.getExpense().find(e => String(e.id) === String(id)); 
+        if(!item) return; 
+        document.getElementById('editExpId').value = id; 
+        document.getElementById('editExpDate').value = item.date; 
+        document.getElementById('editExpReason').value = item.reason; 
+        document.getElementById('editExpAmount').value = item.amount; 
+        document.getElementById('expenseEditModal').classList.remove('hidden'); 
+    }
+
+    function saveExpenseEdit() { 
+        const id = document.getElementById('editExpId').value; 
+        let data = store.getExpense(); 
+        const idx = data.findIndex(e => String(e.id) === String(id)); 
+        if(idx !== -1) { 
+            data[idx].date = document.getElementById('editExpDate').value; 
+            data[idx].reason = document.getElementById('editExpReason').value; 
+            data[idx].amount = Number(document.getElementById('editExpAmount').value); 
+            
+            syncData('update', 'expense', data[idx]); 
+            
+            closeModal('expenseEditModal'); 
+            alert("আপডেট সফল হয়েছে!"); 
+        } 
+    }
+
+    function deleteExpense(id) { 
+        if(!confirm("খরচটি ডিলিট করতে চান?")) return; 
+        const index = globalData.expense.findIndex(item => String(item.id) === String(id)); 
+        if (index > -1) { 
+            globalData.expense.splice(index, 1); 
+            syncData('delete', 'expense', {id: id}); 
+            alert("ডিলিট হয়েছে!"); 
+        } 
+    }
+
+    // ==========================================
+    // 9. CAR MODULE
+    // ==========================================
+ function formatCarNumberDisplay(input) {
+        let val = input.value.toUpperCase().replace(/\s/g, ''); 
+        if (val.length >= 8) { 
+            const matchLong = val.match(/^([A-Z]{2})(\d{2})([A-Z]{1,2})(\d{4})$/); 
+            const matchShort = val.match(/^([A-Z]{2})(\d{2})(\d{4})$/); 
+            if (matchLong) input.value = `${matchLong[1]} ${matchLong[2]} ${matchLong[3]} ${matchLong[4]}`; 
+            else if (matchShort) input.value = `${matchShort[1]} ${matchShort[2]} ${matchShort[3]}`; 
+        }
+        
+        const box = document.getElementById('carNumberSuggestions'); 
+        box.innerHTML = '';
+        
+        if(val.length >= 4) { 
+            const last4 = val.slice(-4); 
+            const allCars = store.getCar(); 
+            const matches = allCars.filter(c => c.carNumber.replace(/\s/g, '').endsWith(last4)); 
+            
+            if(matches.length > 0) { 
+                box.classList.remove('hidden'); 
+                matches.slice(0,5).forEach(c => { 
+                    const div = document.createElement('div'); 
+                    div.className = 'suggestion-item hover:bg-green-50 border-b p-2 cursor-pointer flex justify-between items-center text-sm sm:text-base'; 
+                    div.innerHTML = `<div><span class="font-mono font-bold text-blue-700">${c.carNumber}</span><br><span class="text-xs text-gray-500">${c.type}</span></div><span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-bold">জমা নিন</span>`; 
+                    
+                    // ফিক্স: মোবাইলের টাচ গ্লিচ এবং কীবোর্ড ইস্যু সমাধান
+                    const triggerAction = function(e) { 
+                        if (e) e.preventDefault(); // ইনপুট থেকে ফোকাস হারানো আটকাবে
+                        input.blur(); // কীবোর্ডটি মসৃণভাবে নামিয়ে দেবে
+                        input.value = c.carNumber; 
+                        box.classList.add('hidden'); 
+                        openCarPaymentModal(c.id); 
+                    };
+
+                    // শুধু onclick নয়, মোবাইলের জন্য ontouchstart ও দেওয়া হলো
+                    div.onmousedown = triggerAction; 
+                    div.ontouchstart = triggerAction;
+
+                    box.appendChild(div); 
+                }); 
+            } else { box.classList.add('hidden'); } 
+        } else { box.classList.add('hidden'); }
+    }
+
+    function calcCarDue() { 
+        document.getElementById('carDue').value = Number(document.getElementById('carAmount').value) - Number(document.getElementById('carPaid').value); 
+    }
+
+    function saveCarEntry() { 
+        const num = document.getElementById('carNumberInput').value; 
+        if(num.length < 4) { window.originalAlert("Invalid Car Number"); return; } 
+        
+        const activePuja = document.getElementById('pujaSelect').value; 
+        const item = { 
+            id: Date.now().toString(), 
+            puja: activePuja, 
+            carNumber: num, 
+            type: document.querySelector('input[name="carType"]:checked').value, 
+            date: document.getElementById('carEntryDate').value, 
+            paid: Number(document.getElementById('carPaid').value), 
+            due: Number(document.getElementById('carDue').value), 
+            remarks: document.getElementById('carRemarks').value 
+        }; 
+        
+        globalData.car.push(item); 
+        syncData('add', 'car', item); 
+        
+        document.getElementById('carNumberInput').value = ''; 
+        document.getElementById('carPaid').value = ''; 
+        document.getElementById('carDue').value = ''; 
+        document.getElementById('carRemarks').value = ''; 
+        document.getElementById('carEntryDate').valueAsDate = new Date(); 
+        alert("সফলভাবে গাড়ির এন্ট্রি সেভ হয়েছে!"); 
+    }
+
+    function renderCarTable() { 
+        const activePuja = document.getElementById('pujaSelect').value; 
+        const data = store.getCar().filter(d => getPuja(d) === activePuja); 
+        const tbody = document.getElementById('carTableBody'); 
+        tbody.innerHTML = ''; 
+        const searchRaw = safeTrim(document.getElementById('carSearchInput').value).toLowerCase(); 
+        const searchDateVariant = searchRaw.replace(/-/g, '/'); 
+        const sortedData = [...data].sort((a, b) => new Date(b.date) - new Date(a.date)); 
+        
+        sortedData.forEach(c => { 
+            const dateStr = new Date(c.date).toLocaleDateString('en-GB'); 
+            if (searchRaw) { 
+                const matchDate = dateStr.includes(searchRaw) || dateStr.includes(searchDateVariant); 
+                const matchNo = c.carNumber.toLowerCase().includes(searchRaw); 
+                const matchType = c.type.toLowerCase().includes(searchRaw); 
+                const matchRem = (c.remarks || '').toLowerCase().includes(searchRaw); 
+                if (!matchDate && !matchNo && !matchType && !matchRem) return; 
+            } 
+            
+            let dueHtml = ''; 
+            if ((c.paid + c.due) === 0) { dueHtml = `<span class="text-gray-400 font-bold">-</span>`; } 
+            else if (c.due > 0) { dueHtml = `<span class="text-red-600 font-bold">₹${c.due}</span>`; } 
+            else { dueHtml = `<span class="text-green-600 font-bold">₹0</span>`; } 
+            
+            const tr = document.createElement('tr'); 
+            tr.className = "hover:bg-blue-50 transition border-b"; 
+            const clickAction = `onclick="openCarPaymentModal('${c.id}')" style="cursor: pointer;"`; 
+            tr.innerHTML = `<td ${clickAction}>${dateStr}</td><td ${clickAction} class="font-mono font-bold text-blue-800">${c.carNumber}</td><td ${clickAction}>${c.type}</td><td ${clickAction} class="text-right font-bold text-green-600">₹${c.paid}</td><td ${clickAction} class="text-right font-bold">${dueHtml}</td><td ${clickAction} class="text-xs text-gray-500">${c.remarks || '-'}</td><td class="text-center"><div class="flex justify-center gap-2"><button onclick="openCarEditModal('${c.id}')" class="bg-blue-100 text-blue-600 p-2 rounded hover:bg-blue-600 transition"><i data-lucide="pencil" class="w-4 h-4"></i></button><button onclick="deleteCar('${c.id}')" class="bg-red-100 text-red-600 p-2 rounded hover:bg-red-600 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></td>`; 
+            tbody.appendChild(tr); 
+        }); 
+        lucide.createIcons(); 
+    }
+
+    function openCarPaymentModal(id) { 
+        const item = store.getCar().find(c => String(c.id) === String(id)); 
+        if(!item) return; 
+        const total = item.paid + item.due; 
+        document.getElementById('carPayId').value = id; 
+        document.getElementById('carPayTitle').innerText = `${item.carNumber} (${item.type})`; 
+        document.getElementById('cpTotal').innerText = `₹${total}`; 
+        document.getElementById('cpPaid').innerText = `₹${item.paid}`; 
+        document.getElementById('cpDue').innerText = `₹${item.due}`; 
+        document.getElementById('carNewPay').value = ''; 
+        document.getElementById('carNewRem').value = ''; 
+        document.getElementById('carPaymentModal').classList.remove('hidden'); 
+    }
+
+    function saveCarPayment() { 
+        const id = document.getElementById('carPayId').value; 
+        const newPay = Number(document.getElementById('carNewPay').value); 
+        const newRem = document.getElementById('carNewRem').value; 
+        const idx = globalData.car.findIndex(c => String(c.id) === String(id)); 
+        
+        if(idx !== -1) { 
+            const oldPaid = globalData.car[idx].paid; 
+            const total = oldPaid + globalData.car[idx].due; 
+            globalData.car[idx].paid = oldPaid + newPay; 
+            globalData.car[idx].due = total - globalData.car[idx].paid; 
+            const today = new Date().toLocaleDateString('en-GB'); 
+            const historyLog = ` [Paid: ₹${newPay} on ${today}]`; 
+            globalData.car[idx].remarks = (globalData.car[idx].remarks || '') + historyLog + (newRem ? ` - ${newRem}` : ''); 
+            
+            syncData('update', 'car', globalData.car[idx]); 
+            
+            closeModal('carPaymentModal'); 
+            alert("সফলভাবে টাকা জমা আপডেট হয়েছে!"); 
+        } 
+    }
+
+    function deleteCar(id) { 
+        if(!confirm("আপনি কি নিশ্চিত?")) return; 
+        const index = globalData.car.findIndex(c => String(c.id) === String(id)); 
+        if (index > -1) { 
+            globalData.car.splice(index, 1); 
+            syncData('delete', 'car', {id: id}); 
+            alert("ডিলিট হয়েছে!"); 
+        } 
+    }
+
+    function openCarEditModal(id) { 
+        const item = store.getCar().find(c => String(c.id) === String(id)); 
+        if(!item) return; 
+        document.getElementById('ceId').value = id; 
+        document.getElementById('ceDate').value = item.date; 
+        document.getElementById('ceNo').value = item.carNumber; 
+        document.getElementById('ceType').value = item.type; 
+        document.getElementById('cePaid').value = item.paid; 
+        document.getElementById('ceAmount').value = item.paid + item.due; 
+        document.getElementById('ceRem').value = item.remarks; 
+        document.getElementById('carEditModal').classList.remove('hidden'); 
+    }
+
+    function saveCarFullEdit() { 
+        const id = document.getElementById('ceId').value; 
+        const idx = globalData.car.findIndex(c => String(c.id) === String(id)); 
+        if(idx !== -1) { 
+            globalData.car[idx].date = document.getElementById('ceDate').value; 
+            globalData.car[idx].carNumber = document.getElementById('ceNo').value; 
+            globalData.car[idx].type = document.getElementById('ceType').value; 
+            const total = Number(document.getElementById('ceAmount').value); 
+            const paid = Number(document.getElementById('cePaid').value); 
+            globalData.car[idx].paid = paid; 
+            globalData.car[idx].due = total - paid; 
+            globalData.car[idx].remarks = document.getElementById('ceRem').value; 
+            
+            syncData('update', 'car', globalData.car[idx]); 
+            
+            closeModal('carEditModal'); 
+            alert("আপডেট সফল হয়েছে!"); 
+        } 
+    }
+
+    // ==========================================
+    // 10. DASHBOARD MODULE
+    // ==========================================
+    function updateDashboard() {
+        const activePuja = document.getElementById('pujaSelect').value; 
+        const today = new Date().toISOString().split('T')[0];
+        
+        const inc = store.getIncome().filter(d => getPuja(d) === activePuja); 
+        const car = store.getCar().filter(d => getPuja(d) === activePuja); 
+        const exp = store.getExpense().filter(d => getPuja(d) === activePuja);
+        
+        const totalInc = inc.reduce((s,x) => s + x.paid, 0) + car.reduce((s,x) => s + x.paid, 0);
+        const totalExp = exp.reduce((s,x) => s + x.amount, 0);
+        document.getElementById('dashTotalInc').innerText = '₹' + totalInc; 
+        document.getElementById('dashTotalExp').innerText = '₹' + totalExp; 
+        document.getElementById('dashBalance').innerText = '₹' + (totalInc - totalExp);
+
+        let incomeSources = {};
+        let seq = 1;
+        inc.forEach(item => {
+            if(!incomeSources[item.para]) incomeSources[item.para] = {today:0, total:0};
+            incomeSources[item.para].total += item.paid;
+            if(item.date === today) incomeSources[item.para].today += item.paid;
+        });
+        car.forEach(item => {
+            let label = "গাড়ির চাঁদা (" + item.type + ")";
+            if(!incomeSources[label]) incomeSources[label] = {today:0, total:0};
+            incomeSources[label].total += item.paid;
+            if(item.date === today) incomeSources[label].today += item.paid;
+        });
+
+        const dashIncTbody = document.getElementById('dashIncomeTableBody');
+        dashIncTbody.innerHTML = '';
+        for(let key in incomeSources) {
+            dashIncTbody.innerHTML += `<tr><td class="font-bold text-gray-700">${seq++}। ${key}</td><td class="text-right text-green-600 font-bold">₹${incomeSources[key].today}</td><td class="text-right text-blue-800 font-bold">₹${incomeSources[key].total}</td></tr>`;
+        }
+
+        const todayExp = exp.filter(e => e.date === today).reduce((s, x) => s + x.amount, 0);
+        document.getElementById('dashTodayExpAmt').innerText = '₹' + todayExp;
+        document.getElementById('dashTotalExpAmt').innerText = '₹' + totalExp;
+
+        const dashExpList = document.getElementById('dashRecentExpList');
+        dashExpList.innerHTML = '';
+        const recentExp = [...exp].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+        if(recentExp.length === 0) {
+            dashExpList.innerHTML = '<li class="text-xs text-gray-400">কোনো খরচ নেই।</li>';
+        } else {
+            recentExp.forEach(r => {
+                dashExpList.innerHTML += `<li class="flex justify-between items-center bg-white border p-2 rounded"><span class="text-xs truncate font-bold w-2/3">${r.reason}</span> <span class="text-sm font-bold text-red-600">₹${r.amount}</span></li>`;
+            });
+        }
+    }
+
+    // ==========================================
+    // 11. REPORTS MODULE
+    // ==========================================
+    function handleReportUI() {
+        const type = document.getElementById('repType').value; 
+        const source = document.getElementById('repSource').value;
+        const sourceBox = document.getElementById('repSourceBox'); 
+        const subFilters = document.getElementById('repSubFilters');
+        const paraListBox = document.getElementById('repParaListBox'); 
+        const statusBox = document.getElementById('repStatusBox');
+        const paraSelect = document.getElementById('repParaSelect');
+        
+        if (paraSelect.options.length <= 1) { 
+            store.getParas().forEach(p => { 
+                const data = parseParaData(p); 
+                paraSelect.add(new Option(data.name, data.name)); 
+            }); 
+        }
+
+        if (type === 'expense' || type === 'summary') { 
+            sourceBox.classList.add('hidden'); 
+            subFilters.classList.add('hidden'); 
+        } else {
+            sourceBox.classList.remove('hidden'); 
+            subFilters.classList.remove('hidden');
+            if (source === 'para') { 
+                paraListBox.classList.remove('hidden'); 
+                statusBox.className = "w-full"; 
+            } else { 
+                paraListBox.classList.add('hidden'); 
+                statusBox.className = "w-full col-span-2"; 
+            }
+        }
+    }
+
+    function generateReport() {
+        const start = document.getElementById('repStart').value; 
+        const end = document.getElementById('repEnd').value;
+        const type = document.getElementById('repType').value; 
+        const tbody = document.getElementById('repTableBody'); 
+        const thead = document.getElementById('repTableHead');
+        const activePuja = document.getElementById('pujaSelect').value;
+        
+        document.getElementById('reportResultArea').classList.remove('hidden');
+        document.getElementById('printBtn').classList.remove('hidden'); 
+        document.getElementById('pdfBtn').classList.remove('hidden'); 
+        document.getElementById('excelBtn').classList.remove('hidden'); 
+        document.getElementById('aiSummaryBtn').classList.remove('hidden');
+
+        tbody.innerHTML = ''; 
+        thead.innerHTML = ''; 
+        let totalAmount = 0; 
+        let columns = [];
+
+        if (type === 'summary') {
+            document.getElementById('repResultTitle').innerText = "আয়-ব্যায় বিস্তারিত হিসাব (All-in-One)";
+            columns = ["তারিখ", "বিবরণ (Description)", "উৎস/ধরন", "আয় (Income)", "ব্যয় (Expense)"];
+            
+            let incData = store.getIncome().filter(d => getPuja(d) === activePuja).map(i => ({date: i.date, desc: i.english_name + ' / ' + i.bengali_name, ref: 'Para: '+i.para, income: i.paid, expense: 0}));
+            let carData = store.getCar().filter(d => getPuja(d) === activePuja).map(c => ({date: c.date, desc: 'গাড়ী: ' + c.carNumber, ref: 'Car: '+c.type, income: c.paid, expense: 0}));
+            let expData = store.getExpense().filter(d => getPuja(d) === activePuja).map(e => ({date: e.date, desc: e.reason, ref: 'খরচ', income: 0, expense: e.amount}));
+            
+            let combined = [...incData, ...carData, ...expData].filter(item => { if(start && item.date < start) return false; if(end && item.date > end) return false; return true; });
+            combined.sort((a,b) => new Date(a.date) - new Date(b.date));
+            
+            let headerRow = '<tr>'; columns.forEach(c => headerRow += `<th class="border p-2 text-left bg-gray-100">${c}</th>`); headerRow += '</tr>'; thead.innerHTML = headerRow;
+            let totalIn = 0, totalEx = 0;
+            
+            combined.forEach(r => {
+                totalIn += r.income; totalEx += r.expense;
+                tbody.innerHTML += `<tr><td class="border p-2">${new Date(r.date).toLocaleDateString('en-GB')}</td><td class="border p-2 font-bold">${r.desc}</td><td class="border p-2 text-xs">${r.ref}</td><td class="border p-2 text-right text-green-600 font-bold">₹${r.income}</td><td class="border p-2 text-right text-red-600 font-bold">₹${r.expense}</td></tr>`;
+            });
+            document.getElementById('repTotalDisplay').innerText = `আয়: ₹${totalIn} | ব্যয়: ₹${totalEx} | স্থিতি: ₹${totalIn - totalEx}`;
+            return;
+        }
+
+        if (type === 'expense') {
+            document.getElementById('repResultTitle').innerText = "খরচের রিপোর্ট (Expense Report)"; 
+            columns = ["তারিখ", "বিবরণ (Reason)", "টাকা (Amount)"];
+            let data = store.getExpense().filter(d => getPuja(d) === activePuja);
+            let results = data.filter(item => { if(start && item.date < start) return false; if(end && item.date > end) return false; return true; });
+            
+            let headerRow = '<tr>'; columns.forEach(c => headerRow += `<th class="border p-2 text-left bg-gray-100">${c}</th>`); headerRow += '</tr>'; thead.innerHTML = headerRow;
+            results.sort((a,b) => new Date(a.date) - new Date(b.date));
+            results.forEach(r => { totalAmount += Number(r.amount) || 0; tbody.innerHTML += `<tr><td class="border p-2">${new Date(r.date).toLocaleDateString('en-GB')}</td><td class="border p-2 font-bold text-gray-700">${r.reason}</td><td class="border p-2 text-right font-mono font-bold">₹${r.amount}</td></tr>`; });
+        } else {
+            const source = document.getElementById('repSource').value; 
+            const paraFilter = document.getElementById('repParaSelect').value;
+            let sourceText = source === 'all' ? 'সব উৎস' : (source === 'para' ? 'পাড়া কালেকশন' : 'গাড়ির চাঁদা');
+            document.getElementById('repResultTitle').innerText = type === 'due_list' ? `চাঁদা বাকী রিপোর্ট - ${sourceText}` : `আয়ের রিপোর্ট - ${sourceText}`; 
+            columns = ["তারিখ", "নাম/গাড়ী", "উৎস", "ধার্য", "জমা (Paid)", "বাকী (Due)"];
+            
+            let rawData = []; 
+            const incomeData = store.getIncome().filter(d => getPuja(d) === activePuja) || []; 
+            const carData = store.getCar().filter(d => getPuja(d) === activePuja) || [];
+            
+            if (source === 'all') { rawData = [...incomeData.map(i => ({...i, t: 'para'})), ...carData.map(c => ({...c, t: 'car'}))]; } 
+            else if (source === 'para') { rawData = incomeData.map(i => ({...i, t: 'para'})); } 
+            else if (source === 'car') { rawData = carData.map(c => ({...c, t: 'car'})); }
+            
+            let results = rawData.filter(item => {
+                if(start && item.date < start) return false; if(end && item.date > end) return false;
+                if (source === 'para' && paraFilter !== 'all' && item.para !== paraFilter) return false;
+                const projected = Number(item.projected) || 0; const due = Number(item.due) || 0;
+                if(type === 'due_list') {
+                    if (projected <= 0 || due <= 0) return false;
+                }
+                return true;
+            });
+            let headerRow = '<tr>'; columns.forEach(c => headerRow += `<th class="border p-2 text-left bg-gray-100">${c}</th>`); headerRow += '</tr>'; thead.innerHTML = headerRow;
+            results.sort((a,b) => new Date(a.date) - new Date(b.date));
+            results.forEach(r => {
+                let name = r.t === 'para' ? `${r.english_name} <br><span class="text-xs text-gray-500">${r.bengali_name}</span>` : `<span class="font-mono font-bold text-blue-800">${r.carNumber}</span><br><span class="text-xs text-gray-500">${r.type}</span>`;
+                let src = r.t === 'para' ? r.para : 'Car Entry'; let paidAmt = Number(r.paid) || 0; let dueAmt = Number(r.due) || 0; let projectedAmt = Number(r.projected) || (paidAmt + dueAmt);
+                totalAmount += (type === 'due_list' ? dueAmt : paidAmt); 
+                let dueHtml = projectedAmt === 0 ? '-' : `₹${dueAmt}`; 
+                tbody.innerHTML += `<tr class="hover:bg-gray-50"><td class="border p-2 text-xs">${new Date(r.date).toLocaleDateString('en-GB')}</td><td class="border p-2">${name}</td><td class="border p-2 text-xs">${src}</td><td class="border p-2 text-right text-gray-400 font-mono">₹${projectedAmt}</td><td class="border p-2 text-right font-bold text-green-600 font-mono">₹${paidAmt}</td><td class="border p-2 text-right font-bold text-red-600 font-mono">${dueHtml}</td></tr>`;
+            });
+        }
+        if(type !== 'summary') document.getElementById('repTotalDisplay').innerText = '₹' + totalAmount;
+    }
+
+    function exportReportExcel() {
+        const table = document.getElementById('exportableTable');
+        const reportTitle = document.getElementById('repResultTitle').innerText.replace(/\s+/g, '_');
+        const wb = XLSX.utils.table_to_book(table, {sheet:"Report"});
+        XLSX.writeFile(wb, `${reportTitle}_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }
+
+    function printReportResult() {
+        const reportTitle = document.getElementById('repResultTitle').innerText;
+        const totalAmount = document.getElementById('repTotalDisplay').innerText;
+        const tableContent = document.querySelector('#reportResultArea table').outerHTML;
+        const startDate = document.getElementById('repStart').value; 
+        const endDate = document.getElementById('repEnd').value;
+        const dateRangeStr = (startDate && endDate) ? `সময়কাল: ${new Date(startDate).toLocaleDateString('en-GB')} থেকে ${new Date(endDate).toLocaleDateString('en-GB')}` : `তারিখ: ${new Date().toLocaleDateString('en-GB')}`;
+        const activePujaName = document.getElementById('pujaSelect').value;
+
+        const win = window.open('', '', 'height=800,width=1000');
+        win.document.write(`<html><head><title>Puja Report Print</title><script src="https://cdn.tailwindcss.com"><\/script><link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet"><style>body { font-family: 'Hind Siliguri', sans-serif; -webkit-print-color-adjust: exact; padding: 40px; } table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; } th { background-color: #f3f4f6 !important; border: 1px solid #9ca3af; padding: 8px; text-align: left; } td { border: 1px solid #d1d5db; padding: 6px; vertical-align: top; } .signature-box { margin-top: 50px; display: flex; justify-content: space-between; page-break-inside: avoid; } .sig-line { border-top: 1px solid black; width: 200px; text-align: center; padding-top: 5px; font-weight: bold; font-size: 12px; } @media print { @page { margin: 15mm; size: A4; } body { padding: 0; } }</style></head><body><div class="text-center mb-6 border-b-2 border-red-600 pb-4"><h1 class="text-3xl font-bold text-red-700">মডার্ণ স্পোর্টিং ক্লাব</h1><p class="text-sm text-gray-600 mt-1">ঠিকানা: ধলতিথা, বসিরহাট, উত্তর ২৪ পরগনা, ৭৪৩৪১২</p><h3 class="text-xl font-bold text-gray-800 mt-2 bg-gray-100 inline-block px-4 py-1 rounded border border-gray-300">${activePujaName}</h3><div class="mt-4 flex justify-between items-end"><div class="text-left"><h2 class="text-lg font-bold text-gray-800">${reportTitle}</h2><p class="text-xs font-bold text-gray-500 mt-1">${dateRangeStr}</p></div><div class="text-right"><p class="text-xs text-gray-400">Generated on: ${new Date().toLocaleString('en-GB')}</p></div></div></div>${tableContent}<div class="flex justify-end mt-4"><div class="bg-gray-100 border border-gray-300 p-3 rounded w-64"><div class="flex justify-between items-center"><span class="font-bold text-gray-700">সর্বমোট (Total):</span><span class="font-bold text-xl text-blue-700">${totalAmount}</span></div></div></div><div class="signature-box"><div class="sig-line">হিসাবরক্ষক (Accountant)<br><span class="text-xs font-normal">Date: ______________</span></div><div class="sig-line">সম্পাদক / সভাপতি<br><span class="text-xs font-normal">(Secretary / President)</span></div></div><script> setTimeout(() => { window.print(); window.close(); }, 800); <\/script></body></html>`);
+        win.document.close();
+    }
+
+    function downloadReportPDF() {
+        const reportTitle = document.getElementById('repResultTitle').innerText.replace(/\s+/g, '_');
+        const fileName = `${reportTitle}_${new Date().toISOString().split('T')[0]}.pdf`;
+        const activePujaName = document.getElementById('pujaSelect').value;
+        const tableContent = document.querySelector('#reportResultArea table').outerHTML;
+        const totalAmount = document.getElementById('repTotalDisplay').innerText;
+        const startDate = document.getElementById('repStart').value; 
+        const endDate = document.getElementById('repEnd').value;
+        const dateRangeStr = (startDate && endDate) ? `সময়কাল: ${new Date(startDate).toLocaleDateString('en-GB')} থেকে ${new Date(endDate).toLocaleDateString('en-GB')}` : `তারিখ: ${new Date().toLocaleDateString('en-GB')}`;
+
+        const content = `<div style="font-family: 'Hind Siliguri', sans-serif; padding: 20px; color: #1f2937;"><div style="text-align: center; border-bottom: 2px solid #dc2626; padding-bottom: 10px; margin-bottom: 20px;"><h1 style="font-size: 24px; font-weight: bold; color: #b91c1c; margin: 0;">মডার্ণ স্পোর্টিং ক্লাব</h1><p style="font-size: 12px; color: #4b5563; margin: 5px 0;">ঠিকানা: ধলতিথা, বসিরহাট, উত্তর ২৪ পরগনা, ৭৪৩৪১২</p><h3 style="font-size: 16px; font-weight: bold; background: #f3f4f6; display: inline-block; padding: 4px 10px; border: 1px solid #d1d5db; border-radius: 4px; margin: 5px 0;">${activePujaName}</h3><div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 15px;"><div style="text-align: left;"><h2 style="font-size: 14px; font-weight: bold; margin: 0;">${document.getElementById('repResultTitle').innerText}</h2><p style="font-size: 10px; font-weight: bold; color: #6b7280; margin: 2px 0;">${dateRangeStr}</p></div></div></div>${tableContent}<div style="display: flex; justify-content: flex-end; margin-top: 20px;"><div style="background-color: #f3f4f6; border: 1px solid #d1d5db; padding: 10px; border-radius: 4px; width: 200px;"><div style="display: flex; justify-content: space-between; font-weight: bold;"><span>সর্বমোট:</span><span style="color: #1d4ed8;">${totalAmount}</span></div></div></div><div style="margin-top: 60px; display: flex; justify-content: space-between;"><div style="border-top: 1px solid black; width: 150px; text-align: center; font-size: 10px; padding-top: 5px;">হিসাবরক্ষক</div><div style="border-top: 1px solid black; width: 150px; text-align: center; font-size: 10px; padding-top: 5px;">সম্পাদক / সভাপতি</div></div></div>`;
+        const element = document.createElement('div'); element.innerHTML = content;
+        const tables = element.getElementsByTagName('table'); for(let t of tables) { t.style.width = '100%'; t.style.borderCollapse = 'collapse'; t.style.fontSize = '10px'; }
+        const ths = element.getElementsByTagName('th'); for(let t of ths) { t.style.background = '#e5e7eb'; t.style.border = '1px solid #9ca3af'; t.style.padding = '4px'; }
+        const tds = element.getElementsByTagName('td'); for(let t of tds) { t.style.border = '1px solid #d1d5db'; t.style.padding = '4px'; }
+        const opt = { margin: 0.4, filename: fileName, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
+        const btn = document.getElementById('pdfBtn'); const oldText = btn.innerHTML; btn.innerHTML = 'Downloading...';
+        html2pdf().set(opt).from(element).save().then(() => { btn.innerHTML = oldText; });
+    }
+
+    // ==========================================
+    // 12. SETTINGS & HISTORY MODULE
+    // ==========================================
+    function processLegacyUpload() { 
+        const fileInp = document.getElementById('legacyFile'); 
+        const type = document.getElementById('legacyType').value; 
+        if (!fileInp.files.length) { window.originalAlert("ফাইল সিলেক্ট করুন!"); return; } 
+        
+        const file = fileInp.files[0]; 
+        const reader = new FileReader(); 
+        const activePuja = document.getElementById('pujaSelect').value; 
+        
+        reader.onload = function(e) { 
+            const data = new Uint8Array(e.target.result); 
+            const workbook = XLSX.read(data, {type: 'array'}); 
+            const sheet = workbook.Sheets[workbook.SheetNames[0]]; 
+            const json = XLSX.utils.sheet_to_json(sheet, {header: 1}); 
+            const rows = json.slice(1); 
+            let count = 0; 
+            
+            if (type === 'income') { 
+                rows.forEach(r => { 
+                    const amt = r[3]; 
+                    if (!amt && amt !== 0) return; 
+                    const item = { id: Date.now().toString() + Math.random(), puja: activePuja, date: new Date().toISOString().split('T')[0], para: r[0] || 'Legacy', english_name: r[1] || 'Unknown', bengali_name: r[2] || r[1] || 'অজানা', projected: Number(amt), paid: Number(amt), due: 0, remarks: r[4] || 'Legacy Import' }; 
+                    globalData.income.push(item); 
+                    syncData('add', 'income', item); 
+                    count++; 
+                }); 
+            } else { 
+                rows.forEach(r => { 
+                    let cleanDate; 
+                    if (typeof r[0] === 'number') cleanDate = new Date(Math.round((r[0] - 25569)*86400*1000)).toISOString().split('T')[0]; 
+                    else cleanDate = normalizeDate(r[0]); 
+                    const item = { id: Date.now().toString() + Math.random(), puja: activePuja, date: cleanDate, reason: r[1] + (r[2] ? ` (${r[2]})` : ''), amount: Number(r[3]), }; 
+                    globalData.expense.push(item); 
+                    syncData('add', 'expense', item); 
+                    count++; 
+                }); 
+            } 
+            alert(`${count} টি এন্ট্রি সফলভাবে ইম্পোর্ট হয়েছে!`); 
+        }; 
+        reader.readAsArrayBuffer(file); 
+    }
+
+    function searchHistory() { 
+        const year = document.getElementById('histYear').value; 
+        const type = document.getElementById('histType').value; 
+        const source = document.getElementById('histSource').value; 
+        const histPuja = document.getElementById('histPuja').value; 
+        const keyword = document.getElementById('histSearch').value.toLowerCase(); 
+        
+        let results = []; 
+        let grandTotal = 0; 
+        
+        if (type === 'income') { 
+            const bills = store.getIncome(); 
+            const cars = store.getCar(); 
+            if (source === 'all' || source === 'para') { 
+                bills.forEach(item => { 
+                    if ((getPuja(item) === histPuja) && (!year || item.date.startsWith(year)) && (!keyword || item.english_name.toLowerCase().includes(keyword) || item.bengali_name.includes(keyword) || item.para.toLowerCase().includes(keyword))) { 
+                        results.push({ date: item.date, desc: `${item.english_name} (${item.bengali_name})`, source: `Para: ${item.para}`, amount: item.paid, remarks: item.remarks || '-' }); 
+                    } 
+                }); 
+            } 
+            if (source === 'all' || source === 'car') { 
+                cars.forEach(item => { 
+                    if ((getPuja(item) === histPuja) && (!year || item.date.startsWith(year)) && (!keyword || item.carNumber.toLowerCase().includes(keyword) || item.type.toLowerCase().includes(keyword))) { 
+                        results.push({ date: item.date, desc: `Car No: ${item.carNumber}`, source: `Type: ${item.type}`, amount: item.paid, remarks: item.remarks || '-' }); 
+                    } 
+                }); 
+            } 
+        } else { 
+            const expenses = store.getExpense(); 
+            expenses.forEach(item => { 
+                if ((getPuja(item) === histPuja) && (!year || item.date.startsWith(year)) && (!keyword || item.reason.toLowerCase().includes(keyword))) { 
+                    results.push({ date: item.date, desc: item.reason, source: 'Expense', amount: item.amount, remarks: '-' }); 
+                } 
+            }); 
+        } 
+        
+        const tbody = document.getElementById('historyTableBody'); 
+        tbody.innerHTML = ''; 
+        if (results.length === 0) { 
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center p-6 text-red-500 font-bold">কোনো তথ্য পাওয়া যায়নি!</td></tr>`; 
+            document.getElementById('historyTotal').classList.add('hidden'); 
+            return; 
+        } 
+        results.sort((a, b) => new Date(b.date) - new Date(a.date)); 
+        results.forEach(row => { 
+            grandTotal += Number(row.amount); 
+            const tr = document.createElement('tr'); 
+            tr.className = "hover:bg-blue-50 transition"; 
+            tr.innerHTML = `<td class="p-3 border">${row.date}</td><td class="p-3 border font-bold">${row.desc}</td><td class="p-3 border text-xs uppercase font-semibold text-gray-500">${row.source}</td><td class="p-3 border text-right font-mono font-bold">₹${row.amount}</td><td class="p-3 border text-sm">${row.remarks}</td>`; 
+            tbody.appendChild(tr); 
+        }); 
+        document.getElementById('histTotalAmount').innerText = '₹' + grandTotal; 
+        document.getElementById('historyTotal').classList.remove('hidden'); 
+    }
+
+    function toggleHistoryFilters() { 
+        const type = document.getElementById('histType').value; 
+        const sourceBox = document.getElementById('histSourceBox'); 
+        if (type === 'income') sourceBox.classList.remove('hidden'); else sourceBox.classList.add('hidden'); 
+    }
+
+    function renderParaSettings() { 
+        const tbody = document.getElementById('paraSettingsTable'); 
+        tbody.innerHTML = ''; 
+        let paras = store.getParas(); 
+        if (!paras || paras.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="text-center p-4">কোনো পাড়া নেই।</td></tr>'; return; } 
+        paras.forEach((p, index) => { 
+            const data = parseParaData(p); 
+            const tr = document.createElement('tr'); 
+            tr.className = "border-b hover:bg-gray-50"; 
+            tr.innerHTML = `<td class="px-4 py-3 font-bold text-gray-700">${data.name}</td><td class="px-4 py-3 text-right font-mono text-blue-600">₹${data.amount}</td><td class="px-4 py-3 text-center"><button onclick="openParaModal(${index})" class="text-blue-500 hover:text-blue-700 mx-1"><i data-lucide="pencil" class="w-4 h-4"></i></button><button onclick="deletePara(${index})" class="text-red-500 hover:text-red-700 mx-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>`; 
+            tbody.appendChild(tr); 
+        }); 
+        lucide.createIcons(); 
+    }
+
+    function openParaModal(index = null) { 
+        const modal = document.getElementById('paraModal'); 
+        document.getElementById('paraNameInput').value = ''; 
+        document.getElementById('paraAmountInput').value = ''; 
+        document.getElementById('paraEditIndex').value = ''; 
+        modal.classList.remove('hidden'); 
+        
+        if (index !== null) { 
+            const data = parseParaData(store.getParas()[index]); 
+            document.getElementById('paraNameInput').value = data.name; 
+            document.getElementById('paraAmountInput').value = data.amount; 
+            document.getElementById('paraEditIndex').value = index; 
+        } 
+    }
+
+    function savePara() { 
+        const name = safeTrim(document.getElementById('paraNameInput').value); 
+        const amount = Number(document.getElementById('paraAmountInput').value); 
+        const indexStr = document.getElementById('paraEditIndex').value; 
+        
+        if (!name) { window.originalAlert("নাম লিখুন!"); return; } 
+        
+        let paras = store.getParas().map(p => parseParaData(p)); 
+        const newItem = { name: name, amount: amount }; 
+        if (indexStr !== '') paras[parseInt(indexStr)] = newItem; 
+        else paras.push(newItem); 
+        
+        store.setParas(paras); 
+        closeModal('paraModal'); 
+        alert("নতুন পাড়া সেভ হয়েছে!");
+    }
+
+    function deletePara(index) { 
+        if(!confirm("নিশ্চিত?")) return; 
+        let paras = store.getParas().map(p => parseParaData(p)); 
+        paras.splice(index, 1); 
+        store.setParas(paras); 
+    }
+
+    function handleManualRefresh() { 
+        const icon = document.getElementById('refreshSpinner'); 
+        if(icon) icon.classList.add('animate-spin'); 
+        fetchAllData().then(() => { 
+            setTimeout(() => { if(icon) icon.classList.remove('animate-spin'); }, 800); 
+        }).catch(err => { 
+            if(icon) icon.classList.remove('animate-spin'); 
+            console.error(err); 
+        }); 
+    }
+    
+   // ==========================================
+    // 13. DIGITAL SIGNATURE MODULE
+    // ==========================================
+    function getSignatories() { return JSON.parse(localStorage.getItem('signatoriesList') || '[]'); }
+    function setSignatories(list) { localStorage.setItem('signatoriesList', JSON.stringify(list)); }
+    function getActiveSignatory() { return JSON.parse(localStorage.getItem('activeSignatory') || 'null'); }
+    function setActiveSignatory(sig) { localStorage.setItem('activeSignatory', JSON.stringify(sig)); }
+
+ // ==========================================
+    // 13. DIGITAL SIGNATURE MODULE (BACKEND SYNC)
+    // ==========================================
+// ==========================================
+    // 13. DIGITAL SIGNATURE MODULE (BACKEND SYNC)
+    // ==========================================
+    function renderSignatories() {
+        const list = globalData.signatures || [];
+        const tbody = document.getElementById('signatoryTableBody');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        if (list.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-gray-500 font-bold">কোনো সিগনেচার অ্যাড করা নেই।</td></tr>';
+            return;
+        }
+
+        list.forEach((sig, index) => {
+            const isChecked = sig.isActive ? 'checked' : '';
+            const tr = document.createElement('tr');
+            tr.className = "border-b hover:bg-gray-50";
+            tr.innerHTML = `
+                <td class="px-3 py-2 text-center">
+                    <input type="radio" name="activeSig" value="${index}" ${isChecked} onchange="makeActiveSignatory(${index})" class="w-4 h-4 accent-green-600 cursor-pointer">
+                </td>
+                <td class="px-3 py-2 font-bold text-gray-800">${sig.name}</td>
+                <td class="px-3 py-2 text-gray-600">${sig.desig}</td>
+                <td class="px-3 py-2 text-center">
+                    <button onclick="deleteSignatory(${index})" class="text-red-500 hover:text-red-700 bg-red-50 p-1 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+        lucide.createIcons();
+    }
+
+    function addSignatory() {
+        const name = safeTrim(document.getElementById('sigNameInput').value);
+        const desig = safeTrim(document.getElementById('sigDesigInput').value);
+        if(!name || !desig) { window.originalAlert("নাম এবং পদবী দুটোই লিখুন!"); return; }
+        
+        if(!globalData.signatures) globalData.signatures = [];
+        const isFirst = globalData.signatures.length === 0;
+        
+        globalData.signatures.push({name, desig, isActive: isFirst});
+        syncData('save_signatures', 'signatures', globalData.signatures); 
+        
+        document.getElementById('sigNameInput').value = '';
+        document.getElementById('sigDesigInput').value = '';
+        renderSignatories();
+        window.originalAlert("নতুন সিগনেচার যুক্ত হয়েছে এবং শিটে সেভ হয়েছে!");
+    }
+
+    function deleteSignatory(index) {
+        if(!confirm("এই সিগনেচারটি মুছে ফেলতে চান?")) return;
+        globalData.signatures.splice(index, 1);
+        syncData('save_signatures', 'signatures', globalData.signatures);
+        renderSignatories();
+    }
+
+    function makeActiveSignatory(index) {
+        globalData.signatures.forEach((s, i) => { s.isActive = (i === index); });
+        syncData('save_signatures', 'signatures', globalData.signatures);
+        renderSignatories();
+    }
+    
+</script>
+</body>
+</html>

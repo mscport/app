@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>মডার্ণ স্পোর্টিং ক্লাব</title>
+    <!-- ফন্ট এবং আইকন লোড করা হচ্ছে -->
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #2E7D32; /* স্পোর্টস গ্রিন */
+            --secondary-color: #1b5e20;
+            --text-color: #333;
+            --white: #ffffff;
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Hind Siliguri', sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        /* হেডার সেকশন */
+        header {
+            text-align: center;
+            padding: 1.5rem 1rem;
+            width: 100%;
+            background: var(--white);
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+            border-bottom: 3px solid var(--primary-color);
+        }
+
+        h1 {
+            color: var(--primary-color);
+            font-size: 2.2rem;
+            margin-bottom: 0.2rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            line-height: 1.2;
+        }
+
+        .address {
+            color: #444;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        /* নতুন রেজিস্ট্রেশন তথ্য স্টাইল */
+        .reg-details {
+            font-size: 0.8rem; /* ছোট আকার */
+            color: #555;
+            line-height: 1.4;
+            background-color: #f8f9fa;
+            display: inline-block;
+            padding: 10px 25px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            margin-top: 5px;
+        }
+
+        .reg-details p {
+            margin: 3px 0;
+            font-weight: 500;
+        }
+
+        /* মেইন বাটন সেকশন */
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            width: 90%;
+            max-width: 400px;
+            padding: 1rem;
+            flex-grow: 1; 
+            justify-content: flex-start;
+        }
+
+        .main-btn {
+            background: linear-gradient(145deg, var(--primary-color), var(--secondary-color));
+            color: var(--white);
+            padding: 1rem;
+            text-align: center;
+            text-decoration: none;
+            font-size: 1.2rem;
+            font-weight: 600;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(46, 125, 50, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            display: block;
+        }
+
+        .main-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(46, 125, 50, 0.4);
+        }
+
+        .main-btn:active {
+            transform: translateY(1px);
+        }
+
+        /* ফুটার এবং সোশ্যাল আইকন */
+        footer {
+            width: 100%;
+            padding: 1rem;
+            background: #e9ecef;
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 0 10px;
+        }
+
+        .social-icons {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .social-link {
+            color: #555;
+            font-size: 1.8rem;
+            transition: color 0.3s;
+        }
+
+        .social-link:hover {
+            color: var(--primary-color);
+        }
+
+        .dev-btn {
+            background: #333;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 50px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+            font-size: 0.8rem;
+        }
+
+        .dev-btn:hover {
+            opacity: 1;
+        }
+
+        /* কপিরাইট স্টাইল */
+        .copyright-text {
+            font-size: 0.75rem; /* ছোট আকার */
+            color: #888; /* ধূসর কালার */
+            margin-top: 5px;
+            border-top: 1px solid #d1d1d1;
+            padding-top: 10px;
+            font-weight: 500;
+        }
+
+        /* মোডাল (লগইন এবং এডিট প্যানেল) */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .modal-header {
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .action-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1rem;
+            margin-top: 1rem;
+        }
+
+        .close-btn {
+            background: #dc3545;
+            margin-top: 0.5rem;
+        }
+
+        /* এডিট মোড ইনপুট */
+        .link-edit-container {
+            display: none;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        
+        .edit-row {
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .edit-row label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>মডার্ণ স্পোর্টিং ক্লাব</h1>
+        <p class="address">ইটিন্ডা রোড, ধলতিথা, বসিরহাট, উত্তর ২৪ পরগণা</p>
+        
+        <!-- নতুন রেজিস্ট্রেশন তথ্য -->
+        <div class="reg-details">
+            <p>স্থাপিতঃ ১৯৮৫</p>
+            <p>রেজিস্ট্রশন নং-S0035658</p>
+            <p>প্যান নম্বর- AACAI6060M</p>
+            <p>এনজিও আইডি-WB/2023/0359221</p>
+            <p>এম.এস.এম.ই.-UDYAM-WB-14-0149488</p>
+        </div>
+    </header>
+
+    <!-- বাটনসমূহ -->
+ <div class="button-container" id="mainMenu">
+        <a href="hisab.html" class="main-btn" id="btn-hisab">হিসাব কিতাব</a>
+        <a href="game.html" class="main-btn" id="btn-game">খেলা পরিচালনা</a>
+        <a href="yearly.html" class="main-btn" id="btn-yearly">বছরব্যাপী হিসাব</a>
+        <a href="#" class="main-btn" id="btn-notice">নোটিশ বোর্ড</a>
+        <a href="#" class="main-btn" id="btn-account">অ্যাকাউন্ট</a>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <div class="social-icons">
+                <a href="#" id="link-fb" class="social-link" title="Facebook"><i class="fab fa-facebook"></i></a>
+                <a href="#" id="link-insta" class="social-link" title="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="#" id="link-email" class="social-link" title="Email"><i class="fas fa-envelope"></i></a>
+            </div>
+            
+            <div class="developer-corner">
+                <button class="dev-btn" onclick="openDevModal()">Developer</button>
+            </div>
+        </div>
+
+        <!-- কপিরাইট লাইন -->
+        <div class="copyright-text">
+            নকশা, নির্মান ও উৎসে মডার্ণ স্পোর্টিং ক্লাব © ২০২৬
+        </div>
+    </footer>
+
+    <!-- ডেভেলপার মোডাল -->
+    <div id="devModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">ডেভেলপার লগইন</h3>
+                <span onclick="closeDevModal()" style="cursor:pointer; font-size:1.5rem;">&times;</span>
+            </div>
+            
+            <!-- লগইন ফর্ম -->
+            <div id="loginForm">
+                <div class="form-group">
+                    <input type="text" id="devId" placeholder="User ID">
+                </div>
+                <div class="form-group">
+                    <input type="password" id="devPass" placeholder="Password">
+                </div>
+                <button class="action-btn" onclick="checkLogin()">Login</button>
+            </div>
+
+            <!-- লিঙ্ক এডিট প্যানেল (লগইন সফল হলে দেখাবে) -->
+            <div id="editPanel" class="link-edit-container">
+                <p style="margin-bottom: 15px; color: green; font-size: 0.9rem;">সঠিক লিঙ্ক পেস্ট করে 'Update Links' এ ক্লিক করুন।</p>
+                
+                <div class="edit-row">
+                    <label>হিসাব কিতাব URL:</label>
+                    <input type="text" id="edit-hisab">
+                </div>
+                <div class="edit-row">
+                    <label>খেলা পরিচালনা URL:</label>
+                    <input type="text" id="edit-game">
+                </div>
+                <div class="edit-row">
+                    <label>বছরব্যাপী হিসাব URL:</label>
+                    <input type="text" id="edit-yearly">
+                </div>
+                <div class="edit-row">
+                    <label>নোটিশ বোর্ড URL:</label>
+                    <input type="text" id="edit-notice">
+                </div>
+                <div class="edit-row">
+                    <label>অ্যাকাউন্ট URL:</label>
+                    <input type="text" id="edit-account">
+                </div>
+                <div class="edit-row">
+                    <label>Facebook URL:</label>
+                    <input type="text" id="edit-fb">
+                </div>
+                <div class="edit-row">
+                    <label>Instagram URL:</label>
+                    <input type="text" id="edit-insta">
+                </div>
+                <div class="edit-row">
+                    <label>Email (mailto:):</label>
+                    <input type="text" id="edit-email">
+                </div>
+
+                <button class="action-btn" onclick="saveLinks()">Update Links</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // লিঙ্ক লোড করা (প্রথমবার ওপেন করার সময়)
+        document.addEventListener('DOMContentLoaded', () => {
+            loadLinks();
+        });
+
+        const linkIds = {
+            'hisab': 'btn-hisab',
+            'game': 'btn-game',
+            'yearly': 'btn-yearly',
+            'notice': 'btn-notice',
+            'account': 'btn-account',
+            'fb': 'link-fb',
+            'insta': 'link-insta',
+            'email': 'link-email'
+        };
+
+        function openDevModal() {
+            document.getElementById('devModal').style.display = 'flex';
+            // রিসেট ফর্ম
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('editPanel').style.display = 'none';
+            document.getElementById('modalTitle').innerText = 'ডেভেলপার লগইন';
+            document.getElementById('devId').value = '';
+            document.getElementById('devPass').value = '';
+        }
+
+        function closeDevModal() {
+            document.getElementById('devModal').style.display = 'none';
+        }
+
+        function checkLogin() {
+            const id = document.getElementById('devId').value;
+            const pass = document.getElementById('devPass').value;
+
+            if (id === 'mscdev' && pass === 'msc4523') {
+                showEditPanel();
+            } else {
+                alert('ভুল ইউজার আইডি বা পাসওয়ার্ড!');
+            }
+        }
+
+        function showEditPanel() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('editPanel').style.display = 'block';
+            document.getElementById('modalTitle').innerText = 'লিঙ্ক আপডেট প্যানেল';
+
+            // বর্তমান লিঙ্কগুলো ইনপুট বক্সে দেখানো
+            for (const [key, elementId] of Object.entries(linkIds)) {
+                const currentUrl = document.getElementById(elementId).getAttribute('href');
+                document.getElementById('edit-' + key).value = (currentUrl === '#' || currentUrl === null) ? '' : currentUrl;
+            }
+        }
+
+        function saveLinks() {
+            const newLinks = {};
+            
+            for (const key of Object.keys(linkIds)) {
+                const val = document.getElementById('edit-' + key).value.trim();
+                newLinks[key] = val || '#'; // ফাঁকা থাকলে # সেট হবে
+                
+                // বাটন আপডেট করা
+                if (document.getElementById(linkIds[key])) {
+                    document.getElementById(linkIds[key]).setAttribute('href', newLinks[key]);
+                }
+            }
+
+            // ব্রাউজারে সেভ করা (LocalStorage)
+            localStorage.setItem('msc_links_v2', JSON.stringify(newLinks));
+            
+            alert('সমস্ত লিঙ্ক সফলভাবে আপডেট করা হয়েছে!');
+            closeDevModal();
+        }
+
+        function loadLinks() {
+            const savedLinks = localStorage.getItem('msc_links_v2');
+            if (savedLinks) {
+                try {
+                    const links = JSON.parse(savedLinks);
+                    for (const [key, url] of Object.entries(links)) {
+                        if (linkIds[key] && document.getElementById(linkIds[key])) {
+                            document.getElementById(linkIds[key]).setAttribute('href', url);
+                        }
+                    }
+                } catch (e) {
+                    console.error("লিঙ্ক লোড করতে সমস্যা হয়েছে", e);
+                }
+            }
+        }
+
+        // উইন্ডো ক্লিক করলে মোডাল বন্ধ হবে
+        window.onclick = function(event) {
+            const modal = document.getElementById('devModal');
+            if (event.target == modal) {
+                closeDevModal();
+            }
+        }
+    </script>
+</body>
+</html>

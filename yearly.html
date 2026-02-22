@@ -1,0 +1,1721 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>মডার্ণ স্পোর্টিং ক্লাব - ফিন্যান্স ম্যানেজমেন্ট</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Icons (Lucide) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Barcode & QR Code -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <!-- HTML to PDF (Best for Bengali fonts) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tiro+Bangla:ital@0;1&display=swap');
+        body { font-family: 'Tiro Bangla', serif; }
+        .tab-btn.active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: bold; }
+        .hidden { display: none !important; }
+        
+        /* Updated Receipt Print Styles to fit perfectly in TOP HALF of A4 without mobile clipping */
+        #receipt-template {
+            width: 720px; /* Adjusted to fit exactly in A4 without clipping */
+            height: 480px; /* Safely fits the top half of A4 */
+            padding: 30px; 
+            background: white; 
+            border: 2px solid #333;
+            margin: auto; 
+            position: relative; 
+            color: black;
+            box-sizing: border-box;
+            overflow: hidden; /* Prevents stretching */
+        }
+        .receipt-header { text-align: center; margin-bottom: 15px; border-bottom: 2px dashed #ccc; padding-bottom: 10px;}
+        .receipt-title { font-size: 26px; font-weight: bold; color: #1e3a8a; }
+        .receipt-address { font-size: 14px; color: #4b5563; }
+        .qr-placeholder { position: absolute; top: 15px; right: 20px; width: 60px; height: 60px; }
+        .flex-between { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 15px; }
+        .receipt-body { margin-top: 20px; font-size: 16px; line-height: 1.6; }
+        .signature-area { display: flex; justify-content: space-between; margin-top: 30px; }
+        .sign-box { text-align: center; font-size: 15px;}
+        .sign-img { width: 90px; height: 45px; object-fit: contain; margin-bottom: 2px; border-bottom: 1px solid black; }
+        .barcode-area { text-align: center; margin-top: 20px; }
+        
+        /* Auto-suggestion list */
+        .suggestion-box {
+            position: absolute; background: white; border: 1px solid #ccc; width: 100%; z-index: 10;
+            max-height: 250px; overflow-y: auto; border-radius: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .suggestion-item { padding: 8px 12px; cursor: pointer; }
+        .suggestion-item:hover { background: #f3f4f6; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="min-h-screen flex items-center justify-center bg-blue-50">
+        <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+            <div class="text-center mb-6">
+                <i data-lucide="shield-check" class="w-16 h-16 text-blue-600 mx-auto mb-2"></i>
+                <h2 class="text-2xl font-bold text-gray-800">মডার্ণ স্পোর্টিং ক্লাব</h2>
+                <p class="text-gray-500">অ্যাকাউন্ট ম্যানেজমেন্ট সিস্টেম</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">ইউজার আইডি</label>
+                    <input type="text" id="login-username" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border" placeholder="admin / member">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">পাসওয়ার্ড</label>
+                    <input type="password" id="login-password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border" placeholder="1234">
+                </div>
+                <button onclick="handleLogin()" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+                    লগইন করুন
+                </button>
+                <p id="login-error" class="text-red-500 text-sm text-center hidden">ভুল ক্রেডেনশিয়াল!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Layout -->
+    <div id="app-screen" class="hidden min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="bg-white shadow-sm sticky top-0 z-20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <i data-lucide="building-2" class="text-blue-600 w-8 h-8 mr-2"></i>
+                        <span class="text-xl font-bold text-gray-900">মডার্ণ স্পোর্টিং ক্লাব</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span id="user-role-display" class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">Admin</span>
+                        <button onclick="logout()" class="text-gray-500 hover:text-red-600 flex items-center gap-1">
+                            <i data-lucide="log-out" class="w-4 h-4"></i> লগআউট
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- Navigation Tabs -->
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t">
+                <nav class="flex space-x-4 overflow-x-auto" aria-label="Tabs">
+                    <button onclick="switchTab('income-entry')" class="tab-btn active text-gray-600 py-3 px-3 block text-sm font-medium whitespace-nowrap">আয়ের হিসাব</button>
+                    <button onclick="switchTab('saved-income')" class="tab-btn text-gray-600 py-3 px-3 block text-sm font-medium whitespace-nowrap">SAVED আয়</button>
+                    <button onclick="switchTab('expense-entry')" class="tab-btn text-gray-600 py-3 px-3 block text-sm font-medium whitespace-nowrap">ব্যায়ের হিসাব</button>
+                    <button onclick="switchTab('saved-expense')" class="tab-btn text-gray-600 py-3 px-3 block text-sm font-medium whitespace-nowrap">SAVED ব্যায়</button>
+                    <button onclick="switchTab('dashboard')" class="tab-btn text-gray-600 py-3 px-3 block text-sm font-medium whitespace-nowrap">রিপোর্ট ও ড্যাশবোর্ড</button>
+                    <button id="nav-settings" onclick="switchTab('settings')" class="tab-btn text-gray-600 py-3 px-3 block text-sm font-medium whitespace-nowrap hidden">সেটিংস</button>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+            
+            <!-- 1. আয়ের হিসাব (Income Entry) -->
+            <div id="tab-income-entry" class="tab-content">
+                <div class="bg-white rounded-lg shadow p-6 max-w-2xl mx-auto">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4 border-b pb-2">নতুন আয় এন্ট্রি</h3>
+                    <div class="grid grid-cols-1 gap-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">ফাইন্যান্সিয়াল ইয়ার</label>
+                                <input type="text" id="inc-fy" readonly class="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm p-2">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">তারিখ</label>
+                                <input type="date" id="inc-date" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
+                            </div>
+                        </div>
+                        <div class="relative">
+                            <label class="block text-sm font-medium text-gray-700">প্রদানকারীর নাম (Donor)</label>
+                            <input type="text" id="inc-donor" onkeyup="handleTranslationSuggest(this, 'donor-suggestions')" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 p-2 border" autocomplete="off" placeholder="e.g. Sagar Sarkar | সাগর সরকার">
+                            <div id="donor-suggestions" class="suggestion-box hidden"></div>
+                        </div>
+                        <div class="relative">
+                            <label class="block text-sm font-medium text-gray-700">কোন খাতে দান (Category)</label>
+                            <input type="text" id="inc-category" onkeyup="handleTranslationSuggest(this, 'inc-cat-suggestions')" onclick="showDefaultCategories(this, 'inc-cat-suggestions', 'income')" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 p-2 border" autocomplete="off" placeholder="Type or click for options">
+                            <div id="inc-cat-suggestions" class="suggestion-box hidden"></div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">টাকার পরিমান</label>
+                            <input type="number" id="inc-amount" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 p-2 border" placeholder="e.g. 5000">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">মন্তব্য (যদি থাকে)</label>
+                            <input type="text" id="inc-remarks" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 p-2 border">
+                        </div>
+                        <div class="flex gap-4 mt-4">
+                            <button onclick="saveIncome()" class="flex-1 bg-green-600 text-white py-2 rounded-md hover:bg-green-700 font-medium flex justify-center items-center gap-2">
+                                <i data-lucide="save" class="w-4 h-4"></i> SAVE & DOWNLOAD SLIP
+                            </button>
+                            <button onclick="clearForm('income')" class="flex-1 bg-gray-200 text-gray-800 py-2 rounded-md hover:bg-gray-300 font-medium">CLEAR</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. SAVED আয় -->
+            <div id="tab-saved-income" class="tab-content hidden">
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="p-4 border-b flex justify-between items-center bg-gray-50">
+                        <h3 class="text-lg font-medium">আয়ের তালিকা</h3>
+                        <div class="relative">
+                            <input type="text" id="search-income" onkeyup="renderIncomeTable()" placeholder="Search by any key..." class="border rounded-md pl-8 pr-3 py-1 text-sm focus:ring-blue-500 focus:border-blue-500">
+                            <i data-lucide="search" class="w-4 h-4 absolute left-2 top-2 text-gray-400"></i>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">রিসিপ্ট নং & তারিখ</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">দাতার নাম</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">কোন খাতে</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">পরিমাণ (₹)</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="income-table-body" class="bg-white divide-y divide-gray-200">
+                                <!-- Rendered via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Pagination -->
+                    <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6 flex justify-between items-center" id="income-pagination">
+                        <!-- JS renders this -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. ব্যায়ের হিসাব (Expense Entry) -->
+            <div id="tab-expense-entry" class="tab-content hidden">
+                <div class="bg-white rounded-lg shadow p-6 max-w-2xl mx-auto">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4 border-b pb-2">নতুন ব্যায় এন্ট্রি</h3>
+                    <div class="grid grid-cols-1 gap-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">ফাইন্যান্সিয়াল ইয়ার</label>
+                                <input type="text" id="exp-fy" readonly class="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm p-2">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">তারিখ</label>
+                                <input type="date" id="exp-date" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
+                            </div>
+                        </div>
+                        <div class="relative">
+                            <label class="block text-sm font-medium text-gray-700">খরচের কারণ (Reason)</label>
+                            <input type="text" id="exp-reason" onkeyup="handleTranslationSuggest(this, 'exp-reason-suggestions')" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 p-2 border" autocomplete="off" placeholder="Type for phonetics...">
+                            <div id="exp-reason-suggestions" class="suggestion-box hidden"></div>
+                        </div>
+                        <div class="relative">
+                            <label class="block text-sm font-medium text-gray-700">কোন খাতে খরচ (Category)</label>
+                            <input type="text" id="exp-category" onkeyup="handleTranslationSuggest(this, 'exp-cat-suggestions')" onclick="showDefaultCategories(this, 'exp-cat-suggestions', 'expense')" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 p-2 border" autocomplete="off" placeholder="Type or click for options">
+                            <div id="exp-cat-suggestions" class="suggestion-box hidden"></div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">টাকার পরিমান</label>
+                            <input type="number" id="exp-amount" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 p-2 border">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">মন্তব্য (যদি থাকে)</label>
+                            <input type="text" id="exp-remarks" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 p-2 border">
+                        </div>
+                        
+                        <!-- Image Upload Area with Compression Logic -->
+                        <div class="border-2 border-dashed border-gray-300 rounded-md p-4 mt-2 bg-gray-50 relative">
+                            <label class="block text-sm font-medium text-gray-700 mb-3">বিলের ছবি আপলোড করুন</label>
+                            
+                            <!-- UPDATED: Camera & File Force Selection Buttons -->
+                            <div class="flex flex-wrap items-center gap-3">
+                                <label class="cursor-pointer bg-blue-100 text-blue-800 py-2 px-4 rounded-md hover:bg-blue-200 flex items-center gap-2 transition-colors border border-blue-300 shadow-sm text-sm font-bold">
+                                    <i data-lucide="camera"></i> ক্যামেরা দিয়ে তুলুন
+                                    <input type="file" id="exp-image-cam" accept="image/*" capture="environment" class="hidden" onchange="handleImageSelect(event)">
+                                </label>
+                                <label class="cursor-pointer bg-green-100 text-green-800 py-2 px-4 rounded-md hover:bg-green-200 flex items-center gap-2 transition-colors border border-green-300 shadow-sm text-sm font-bold">
+                                    <i data-lucide="image"></i> গ্যালারি থেকে নিন
+                                    <input type="file" id="exp-image-file" accept="image/*" class="hidden" onchange="handleImageSelect(event)">
+                                </label>
+                                <span id="img-status" class="text-sm text-gray-600 font-medium w-full mt-1">কোনো ছবি নেই</span>
+                            </div>
+                            
+                            <!-- Image Preview Area -->
+                            <div id="img-preview-container" class="hidden mt-4 relative inline-block">
+                                <img id="exp-img-preview" src="" class="max-h-32 rounded border shadow-sm">
+                                <button onclick="removeImage()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow">
+                                    <i data-lucide="x" class="w-4 h-4"></i>
+                                </button>
+                                <p class="text-xs text-green-600 mt-1"><i data-lucide="check-circle-2" class="w-3 h-3 inline"></i> Compressed & Ready (300KB> )</p>
+                            </div>
+                            <!-- Hidden canvas for compression -->
+                            <canvas id="compression-canvas" class="hidden"></canvas>
+                        </div>
+
+                        <div class="flex gap-4 mt-4">
+                            <button onclick="saveExpense()" class="flex-1 bg-red-600 text-white py-2 rounded-md hover:bg-red-700 font-medium flex justify-center items-center gap-2">
+                                <i data-lucide="save" class="w-4 h-4"></i> SAVE EXPENSE
+                            </button>
+                            <button onclick="clearForm('expense')" class="flex-1 bg-gray-200 text-gray-800 py-2 rounded-md hover:bg-gray-300 font-medium">CLEAR</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. SAVED ব্যায় -->
+            <div id="tab-saved-expense" class="tab-content hidden">
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="p-4 border-b flex justify-between items-center bg-gray-50">
+                        <h3 class="text-lg font-medium">ব্যায়ের তালিকা</h3>
+                        <div class="relative">
+                            <input type="text" id="search-expense" onkeyup="renderExpenseTable()" placeholder="Search by any key..." class="border rounded-md pl-8 pr-3 py-1 text-sm focus:ring-blue-500 focus:border-blue-500">
+                            <i data-lucide="search" class="w-4 h-4 absolute left-2 top-2 text-gray-400"></i>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">তারিখ</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ব্যায়ের কারণ</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">খাত</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">পরিমাণ (₹)</th>
+                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">বিল</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expense-table-body" class="bg-white divide-y divide-gray-200">
+                                <!-- Rendered via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                     <!-- Pagination -->
+                     <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6 flex justify-between items-center" id="expense-pagination"></div>
+                </div>
+            </div>
+
+            <!-- 5. রিপোর্ট ও ড্যাশবোর্ড -->
+            <div id="tab-dashboard" class="tab-content hidden">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="bg-green-100 p-6 rounded-lg shadow-sm border border-green-200">
+                        <h4 class="text-green-800 font-medium">মোট আয়</h4>
+                        <p class="text-3xl font-bold text-green-600 mt-2" id="dash-total-income">₹ 0</p>
+                    </div>
+                    <div class="bg-red-100 p-6 rounded-lg shadow-sm border border-red-200">
+                        <h4 class="text-red-800 font-medium">মোট ব্যায়</h4>
+                        <p class="text-3xl font-bold text-red-600 mt-2" id="dash-total-expense">₹ 0</p>
+                    </div>
+                    <div class="bg-blue-100 p-6 rounded-lg shadow-sm border border-blue-200">
+                        <h4 class="text-blue-800 font-medium">বর্তমান ব্যালেন্স</h4>
+                        <p class="text-3xl font-bold text-blue-600 mt-2" id="dash-balance">₹ 0</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-lg font-medium mb-4">রিপোর্ট জেনারেট করুন</h3>
+                    <div class="flex flex-wrap gap-4 items-end">
+                        <div>
+                            <label class="block text-sm text-gray-600">From Date</label>
+                            <input type="date" id="report-start" class="border rounded p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-600">To Date</label>
+                            <input type="date" id="report-end" class="border rounded p-2">
+                        </div>
+                        <button onclick="generateReport()" class="bg-indigo-600 text-white px-4 py-2 rounded flex items-center gap-2 hover:bg-indigo-700">
+                            <i data-lucide="file-text" class="w-4 h-4"></i> জেনারেট পিডিএফ
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">AI বুদ্ধিমত্তা ব্যবহার করে নির্দিষ্ট তারিখের ব্যালেন্সশীট তৈরি হবে।</p>
+                </div>
+            </div>
+
+            <!-- 6. সেটিংস (Admin Only) -->
+            <div id="tab-settings" class="tab-content hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Categories -->
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="text-lg font-medium mb-4 flex items-center gap-2"><i data-lucide="list"></i> খাত পরিচালনা</h3>
+                        
+                        <div class="mb-6">
+                            <h4 class="text-sm font-semibold text-gray-600 mb-2">আয়ের খাত</h4>
+                            <div class="flex gap-2 mb-2">
+                                <input type="text" id="new-inc-cat" class="border rounded px-2 py-1 flex-1 text-sm" placeholder="নতুন আয়ের খাত">
+                                <button onclick="addCategory('income')" class="bg-blue-600 text-white px-3 py-1 rounded text-sm">+</button>
+                            </div>
+                            <ul id="settings-inc-cat-list" class="text-sm space-y-1 max-h-40 overflow-y-auto"></ul>
+                        </div>
+
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-600 mb-2">ব্যায়ের খাত</h4>
+                            <div class="flex gap-2 mb-2">
+                                <input type="text" id="new-exp-cat" class="border rounded px-2 py-1 flex-1 text-sm" placeholder="নতুন ব্যায়ের খাত">
+                                <button onclick="addCategory('expense')" class="bg-red-600 text-white px-3 py-1 rounded text-sm">+</button>
+                            </div>
+                            <ul id="settings-exp-cat-list" class="text-sm space-y-1 max-h-40 overflow-y-auto"></ul>
+                        </div>
+                    </div>
+
+                    <!-- Signatories -->
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <h3 class="text-lg font-medium mb-4 flex items-center gap-2"><i data-lucide="pen-tool"></i> স্বাক্ষরকারী পরিচালনা (Signatory)</h3>
+                        <div class="bg-gray-50 p-4 rounded border mb-4">
+                            <input type="text" id="sig-name" placeholder="নাম" class="w-full border rounded p-2 mb-2 text-sm">
+                            <input type="text" id="sig-desig" placeholder="Designation (e.g. Secretary)" class="w-full border rounded p-2 mb-2 text-sm">
+                            <label class="block text-xs text-gray-500 mb-1">স্বাক্ষর আপলোড (অটোমেটিক 100x50 resize হবে)</label>
+                            <input type="file" id="sig-file" accept="image/*" onchange="handleSignatureUpload(event)" class="w-full text-sm mb-2">
+                            <img id="sig-preview-temp" class="hidden h-12 border bg-white mb-2">
+                            <button onclick="saveSignatory()" class="w-full bg-gray-800 text-white py-2 rounded text-sm">সংযোজন করুন</button>
+                        </div>
+                        <div id="signatories-list" class="space-y-3">
+                            <!-- JS Populated -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- Edit/View Modal Generic Container -->
+    <div id="action-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
+                <h3 id="modal-title" class="text-lg font-semibold">Edit Data</h3>
+                <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700"><i data-lucide="x"></i></button>
+            </div>
+            <div id="modal-content" class="p-6 overflow-y-auto flex-1">
+                <!-- Dynamic Content goes here based on action -->
+            </div>
+            <div id="modal-footer" class="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3">
+                <button onclick="closeModal()" class="px-4 py-2 bg-gray-200 rounded text-gray-800">Cancel</button>
+                <button id="modal-save-btn" class="px-4 py-2 bg-blue-600 rounded text-white hidden">Update</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- HIDDEN RECEIPT TEMPLATE FOR PDF GENERATION -->
+    <!-- Added absolute positioning and fixed width to prevent mobile screen clipping during PDF rendering -->
+    <div style="display: none; position: absolute; left: -9999px; top: -9999px; width: 800px; background: white; z-index: -9999;">
+        <div id="receipt-render-area" style="width: 800px; padding: 10px; background: white;">
+            <div id="receipt-template">
+                <div class="receipt-header">
+                    <div class="receipt-title">মডার্ণ স্পোর্টিং ক্লাব</div>
+                    <div class="receipt-address">ইটিন্ডা রোড, ধলতিথা, বসিরহাট, উত্তর ২৪ পরগণা, পিন-৭৪৩৪১২</div>
+                    <canvas id="receipt-qr" class="qr-placeholder"></canvas>
+                </div>
+                
+                <div class="flex-between" style="font-weight: bold;">
+                    <div>রিসিপ্ট নং: <span id="pr-receipt-no">MSC/2023-24/001</span></div>
+                    <div>তারিখ: <span id="pr-date">12/10/2023</span></div>
+                </div>
+
+                <div class="receipt-body">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr><td style="width: 180px;">দাতার নাম</td><td>: <strong id="pr-donor"></strong></td></tr>
+                        <tr><td>কোন খাতে দান</td><td>: <span id="pr-category"></span></td></tr>
+                        <tr><td>টাকার পরিমাণ (সংখ্যায়)</td><td>: <strong style="font-size: 20px;">₹ <span id="pr-amount-num"></span>/-</strong></td></tr>
+                        <tr><td>টাকার পরিমাণ (কথায়)</td><td>: <span id="pr-amount-words"></span> মাত্র</td></tr>
+                    </table>
+                </div>
+
+                <div class="barcode-area">
+                    <svg id="receipt-barcode"></svg>
+                </div>
+
+                <div class="signature-area">
+                    <div class="sign-box" id="pr-sec-sign-area">
+                        <!-- Signatures injected here -->
+                        <div style="border-top: 1px solid black; padding-top: 5px;">Secretary Signature</div>
+                    </div>
+                    <div class="sign-box" id="pr-tre-sign-area">
+                        <!-- Signatures injected here -->
+                        <div style="border-top: 1px solid black; padding-top: 5px;">Treasurer Signature</div>
+                    </div>
+                </div>
+                <div style="text-align: center; font-size: 10px; color: gray; margin-top: 10px;">
+                    [System Generated Slip already signed no need signature]
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ==================== JAVASCRIPT LOGIC ==================== -->
+    <script>
+        // --- 1. STATE & DATA (Simulating Google Sheet / Database) ---
+        const State = {
+            currentUser: null, // null, 'admin', 'member'
+            currentTab: 'income-entry',
+            fy: '',
+            incomeCat: ['মাসিক চাঁদা', 'টুর্নামেন্ট অনুদান', 'পূজা ডোনেশন', 'অন্যান্য'],
+            expenseCat: ['ইলেকট্রিক বিল', 'মাঠ সংস্কার', 'টুর্নামেন্ট খরচ', 'চা/জলখাবার', 'অন্যান্য'],
+            signatories: [
+                // Mock default signature for preview
+                { id: 1, name: 'Abcd Efgh', desig: 'Secretary', base64: '' } 
+            ],
+            incomeData: [],
+            expenseData: [],
+            
+            // Pagination state
+            incPage: 0,
+            expPage: 0,
+            rowsPerPage: 50,
+
+            // Temp memory for uploaded files before save
+            tempBase64Image: null
+        };
+
+        // ==========================================
+        // 🌟 GOOGLE SHEET WEB APP URL (এখানে আপনার লিংক দিন)
+        // ==========================================
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwIi8fw-tI0PQeT4scP2nMqUlNkXhH_VpNkG7VMLNBBJk9hcTdIznGXLKBZpSBvL8a6/exec"; 
+
+        // Initialize Icons
+        lucide.createIcons();
+
+        // On Load initialization
+        window.onload = () => {
+    calculateFY();
+    populateSelects();
+    mockData(); 
+    fetchDataFromBackend();
+};
+
+        function calculateFY() {
+            const today = new Date();
+            let year = today.getFullYear();
+            let nextYear = year + 1;
+            if (today.getMonth() < 3) { // Before April
+                year = year - 1;
+                nextYear = year + 1;
+            }
+            State.fy = `${year}-${nextYear.toString().slice(-2)}`;
+            document.getElementById('inc-fy').value = State.fy;
+            document.getElementById('exp-fy').value = State.fy;
+            
+            // Set current date
+            const dateStr = today.toISOString().split('T')[0];
+            document.getElementById('inc-date').value = dateStr;
+            document.getElementById('exp-date').value = dateStr;
+        }
+
+        function mockData() {
+            for(let i=1; i<=15; i++) {
+                State.incomeData.push({
+                    id: `MSC/${State.fy}/${i.toString().padStart(3,'0')}`,
+                    date: '2023-10-15', donor: `Sagar Sarkar | সাগর সরকার`, category: 'মাসিক চাঁদা', amount: 500 * i, remarks: ''
+                });
+                State.expenseData.push({
+                    id: `EXP-${Date.now()}-${i}`,
+                    date: '2023-10-16', reason: `Electric Bill ${i}`, category: 'ইলেকট্রিক বিল', amount: 1200, remarks: '', imageBase64: null
+                });
+            }
+        }
+
+        // --- 2. LOGIN LOGIC ---
+        function handleLogin() {
+            const u = document.getElementById('login-username').value;
+            const p = document.getElementById('login-password').value;
+            const err = document.getElementById('login-error');
+
+            if (u === 'admin' && p === '1234') {
+                State.currentUser = 'admin';
+                finishLogin();
+            } else if (u === 'member' && p === '1234') {
+                State.currentUser = 'member';
+                finishLogin();
+            } else {
+                err.classList.remove('hidden');
+            }
+        }
+
+        function finishLogin() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-screen').classList.remove('hidden');
+            
+            const roleDisplay = document.getElementById('user-role-display');
+            roleDisplay.textContent = State.currentUser.toUpperCase();
+            
+            if (State.currentUser === 'admin') {
+                document.getElementById('nav-settings').classList.remove('hidden');
+                roleDisplay.className = "bg-red-100 text-red-800 text-xs font-semibold px-2.5 py-0.5 rounded";
+            } else {
+                document.getElementById('nav-settings').classList.add('hidden');
+                roleDisplay.className = "bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded";
+            }
+            
+            switchTab('income-entry');
+            updateDashboard();
+        }
+
+        function logout() {
+            State.currentUser = null;
+            document.getElementById('app-screen').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('login-username').value = '';
+            document.getElementById('login-password').value = '';
+        }
+
+        // --- 3. NAVIGATION ---
+        function switchTab(tabId) {
+            State.currentTab = tabId;
+            // Hide all
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            // Show target
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            
+            // Update nav styling
+            const btns = document.querySelectorAll('.tab-btn');
+            btns.forEach(btn => {
+                if(btn.textContent.trim().toLowerCase().includes(tabId.split('-')[0])) {
+                    // Fuzzy match for simple setup
+                }
+            });
+            // exact match workaround via onclick string
+            document.querySelectorAll(`[onclick="switchTab('${tabId}')"]`).forEach(el => el.classList.add('active'));
+
+            // specific tab logic
+            if(tabId === 'saved-income') renderIncomeTable();
+            if(tabId === 'saved-expense') renderExpenseTable();
+            if(tabId === 'settings') renderSettings();
+            if(tabId === 'dashboard') updateDashboard();
+        }
+
+        // --- 4. TRANSLATION SIMULATION (WILL BE OVERRIDDEN BELOW) ---
+        const dictionary = {
+            'raju': 'রাজু', 'club': 'ক্লাব', 'donation': 'দান', 'bill': 'বিল'
+        };
+        
+        function handleTranslationSuggest(inputEl, boxId) {
+            const val = inputEl.value.toLowerCase();
+            const box = document.getElementById(boxId);
+            
+            if(val.length < 2) { box.classList.add('hidden'); return; }
+            
+            box.innerHTML = '';
+            let hasSuggestions = false;
+
+            // Simple mock logic: if english typing, suggest bengali pseudo-translation
+            let suggestionText = dictionary[val] || val + " (বাংলা)"; 
+            
+            const div = document.createElement('div');
+            div.className = 'suggestion-item';
+            div.innerHTML = `Translate to: <b>${suggestionText}</b> <span class="text-xs text-gray-400 ml-2">Google API Sim</span>`;
+            div.onclick = () => {
+                inputEl.value = suggestionText;
+                box.classList.add('hidden');
+            };
+            box.appendChild(div);
+            hasSuggestions = true;
+
+            // Fetch history match (simulated)
+            const historyData = inputEl.id.includes('inc') ? State.incomeData.map(d=>d.donor) : State.expenseData.map(d=>d.reason);
+            const matches = [...new Set(historyData.filter(d => d.toLowerCase().includes(val)))].slice(0,3);
+            
+            matches.forEach(m => {
+                const hDiv = document.createElement('div');
+                hDiv.className = 'suggestion-item text-gray-600';
+                hDiv.innerHTML = `<i data-lucide="history" class="w-3 h-3 inline"></i> ${m}`;
+                hDiv.onclick = () => {
+                    inputEl.value = m;
+                    box.classList.add('hidden');
+                };
+                box.appendChild(hDiv);
+                hasSuggestions = true;
+            });
+
+            if(hasSuggestions) {
+                box.classList.remove('hidden');
+                lucide.createIcons();
+            } else {
+                box.classList.add('hidden');
+            }
+        }
+
+        // Hide suggestions on outside click
+        document.addEventListener('click', (e) => {
+            if(!e.target.closest('.relative')) {
+                document.querySelectorAll('.suggestion-box').forEach(b => b.classList.add('hidden'));
+            }
+        });
+
+        // --- 5. INCOME LOGIC ---
+        function populateSelects() {
+            const incSel = document.getElementById('inc-category');
+            if(incSel) incSel.innerHTML = State.incomeCat.map(c => `<option value="${c}">${c}</option>`).join('');
+            
+            const expSel = document.getElementById('exp-category');
+            if(expSel) expSel.innerHTML = State.expenseCat.map(c => `<option value="${c}">${c}</option>`).join('');
+        }
+
+        function generateReceiptNo() {
+            const count = State.incomeData.length + 1;
+            return `MSC/${State.fy}/${count.toString().padStart(3, '0')}`;
+        }
+
+        async function saveIncome() {
+            const date = document.getElementById('inc-date').value;
+            const donor = document.getElementById('inc-donor').value;
+            const cat = document.getElementById('inc-category').value;
+            const amt = document.getElementById('inc-amount').value;
+            const remarks = document.getElementById('inc-remarks').value;
+
+            if(!donor || !amt) { alert("নাম এবং পরিমাণ আবশ্যক!"); return; }
+
+            const receiptNo = generateReceiptNo();
+            const newData = { id: receiptNo, date, donor, category: cat, amount: Number(amt), remarks };
+            
+            State.incomeData.push(newData);
+            
+      // Backend এ ডেটা পাঠানোর লজিক (Fetch API)
+if(WEB_APP_URL !== "আপনার_গুগল_শিটের_ওয়েব_অ্যাপ_লিংক_এখানে_দিন") {
+    fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: "addIncome", data: newData })
+    })
+    .then(res => res.json())
+    .then(data => console.log("Income Saved to Google Sheet:", data))
+    .catch(err => console.error("Error saving to sheet:", err));
+}
+
+            // Generate PDF Automatically
+            await generatePDFReceipt(newData);
+
+            clearForm('income');
+            // Show Success UI (Not alert as per rules, using subtle visual cue)
+            const btn = document.querySelector('button[onclick="saveIncome()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> SAVED!`;
+            btn.classList.replace('bg-green-600', 'bg-blue-600');
+            lucide.createIcons();
+            setTimeout(() => { btn.innerHTML = originalText; btn.classList.replace('bg-blue-600', 'bg-green-600'); lucide.createIcons();}, 2000);
+        }
+
+        // --- 6. EXPENSE LOGIC & IMAGE UPLOAD ---
+     function handleImageSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // ফাইলের সাইজ চেক (ঐচ্ছিক): খুব বেশি বড় ফাইল হলে ইউজারকে ওয়ার্নিং দিতে পারেন
+    const fileSizeMB = file.size / (1024 * 1024);
+    if(fileSizeMB > 5) {
+        alert("ফাইলের সাইজ ৫ এমবি এর চেয়ে বড়। আপলোড হতে একটু বেশি সময় লাগতে পারে।");
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        // কোনো কমপ্রেশন (Canvas) ছাড়াই ডাইরেক্ট অরিজিনাল হাই-কোয়ালিটি Base64 নেওয়া হচ্ছে
+        const originalDataUrl = e.target.result;
+        
+        State.tempBase64Image = originalDataUrl;
+        
+        // Update UI
+        document.getElementById('exp-img-preview').src = originalDataUrl;
+        document.getElementById('img-preview-container').classList.remove('hidden');
+        document.getElementById('img-status').textContent = 'Attached (High Quality)';
+        
+        // ক্যানভাসের আর দরকার নেই, তাই চাইলে success মেসেজ আপডেট করতে পারেন
+        const msgElem = document.querySelector('#img-preview-container p.text-xs');
+        if(msgElem) msgElem.innerHTML = `<i data-lucide="check-circle-2" class="w-3 h-3 inline"></i> Original Quality Ready`;
+        lucide.createIcons();
+    }
+    // ফাইলটিকে ডাইরেক্ট DataURL এ কনভার্ট করা হচ্ছে
+    reader.readAsDataURL(file);
+}
+        function removeImage() {
+            State.tempBase64Image = null;
+            document.getElementById('exp-img-preview').src = '';
+            document.getElementById('img-preview-container').classList.add('hidden');
+            const camInput = document.getElementById('exp-image-cam');
+            if (camInput) camInput.value = '';
+            const fileInput = document.getElementById('exp-image-file');
+            if (fileInput) fileInput.value = '';
+            document.getElementById('img-status').textContent = 'কোনো ছবি নেই';
+        }
+
+        function saveExpense() {
+            const date = document.getElementById('exp-date').value;
+            const reason = document.getElementById('exp-reason').value;
+            const cat = document.getElementById('exp-category').value;
+            const amt = document.getElementById('exp-amount').value;
+            const remarks = document.getElementById('exp-remarks').value;
+
+            if(!reason || !amt) { alert("কারণ এবং পরিমাণ আবশ্যক!"); return; }
+
+            const newData = {
+                id: `EXP-${Date.now()}`, // Unique ID
+                date, reason, category: cat, amount: Number(amt), remarks,
+                imageBase64: State.tempBase64Image // Compressed image
+            };
+
+            State.expenseData.push(newData);
+
+            // Backend এ ডেটা পাঠানোর লজিক (Fetch API)
+if(WEB_APP_URL !== "আপনার_গুগল_শিটের_ওয়েব_অ্যাপ_লিংক_এখানে_দিন") {
+    fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+            action: "addExpense",
+            data: newData
+        })
+    })
+    .then(res => res.json())
+    .then(data => console.log("Expense Saved to Google Sheet:", data))
+    .catch(err => console.error("Error saving to sheet:", err));
+}
+
+            // Show Custom POPUP as requested
+            showCustomPopup(`
+                <h3 class="text-xl font-bold mb-4 border-b pb-2">খরচ সংরক্ষিত হয়েছে</h3>
+                <table class="w-full text-left">
+                    <tr><td class="py-1 text-gray-600">খরচের সিরিয়াল নং</td><td>: ${newData.id}</td></tr>
+                    <tr><td class="py-1 text-gray-600">তারিখ</td><td>: ${formatDate(date)}</td></tr>
+                    <tr><td class="py-1 text-gray-600">খরচের কারণ</td><td>: ${reason}</td></tr>
+                    <tr><td class="py-1 text-gray-600">কোন খাতে খরচ</td><td>: ${cat}</td></tr>
+                    <tr><td class="py-1 text-gray-600">পরিমাণ</td><td>: ₹ ${amt}</td></tr>
+                    ${remarks ? `<tr><td class="py-1 text-gray-600">Remarks</td><td>: ${remarks}</td></tr>` : ''}
+                </table>
+                <div class="mt-6 flex justify-end">
+                    <button onclick="closeModal()" class="bg-blue-600 text-white px-4 py-2 rounded">ঠিক আছে</button>
+                </div>
+            `, "Success");
+
+            clearForm('expense');
+        }
+
+        function clearForm(type) {
+            if(type === 'income') {
+                document.getElementById('inc-donor').value = '';
+                document.getElementById('inc-amount').value = '';
+                document.getElementById('inc-remarks').value = '';
+                document.getElementById('inc-category').value = '';
+            } else {
+                document.getElementById('exp-reason').value = '';
+                document.getElementById('exp-amount').value = '';
+                document.getElementById('exp-remarks').value = '';
+                document.getElementById('exp-category').value = '';
+                removeImage();
+            }
+            calculateFY(); // Reset date
+        }
+
+        // --- 7. TABLES & PAGINATION ---
+        function renderIncomeTable() {
+            const tbody = document.getElementById('income-table-body');
+            const search = document.getElementById('search-income').value.toLowerCase();
+            
+            let filtered = State.incomeData.filter(d => 
+                d.donor.toLowerCase().includes(search) || d.id.toLowerCase().includes(search) || d.category.toLowerCase().includes(search)
+            );
+            
+            // Pagination math
+            const totalPages = Math.ceil(filtered.length / State.rowsPerPage);
+            const start = State.incPage * State.rowsPerPage;
+            const paginated = filtered.slice(start, start + State.rowsPerPage);
+
+            tbody.innerHTML = paginated.map(d => `
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">${d.id}<br><span class="text-xs text-gray-500">${formatDate(d.date)}</span></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${d.donor}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${d.category}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">₹ ${d.amount}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button onclick="viewIncome('${d.id}')" class="text-blue-600 hover:text-blue-900 mr-3" title="View/Download PDF"><i data-lucide="file-text" class="w-4 h-4"></i></button>
+                        ${State.currentUser === 'admin' ? `<button onclick="editIncome('${d.id}')" class="text-indigo-600 hover:text-indigo-900"><i data-lucide="edit-2" class="w-4 h-4"></i></button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+
+            renderPagination('income', totalPages, filtered.length, start);
+            lucide.createIcons();
+        }
+
+        function renderExpenseTable() {
+            const tbody = document.getElementById('expense-table-body');
+            const search = document.getElementById('search-expense').value.toLowerCase();
+            
+            let filtered = State.expenseData.filter(d => 
+                d.reason.toLowerCase().includes(search) || d.category.toLowerCase().includes(search)
+            );
+            
+            const totalPages = Math.ceil(filtered.length / State.rowsPerPage);
+            const start = State.expPage * State.rowsPerPage;
+            const paginated = filtered.slice(start, start + State.rowsPerPage);
+
+            tbody.innerHTML = paginated.map(d => `
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formatDate(d.date)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${d.reason}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${d.category}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-red-600">₹ ${d.amount}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+                        ${(d.imageBase64 || d.imageUrl) ? `<button onclick="viewExpenseImage('${d.id}')" class="text-blue-600 hover:text-blue-800 focus:outline-none flex justify-center w-full" title="View Attachment"><i data-lucide="paperclip" class="w-4 h-4"></i></button>` : '-'}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        ${State.currentUser === 'admin' ? `<button onclick="editExpense('${d.id}')" class="text-indigo-600 hover:text-indigo-900"><i data-lucide="edit-2" class="w-4 h-4"></i></button>` : '<span class="text-gray-300 text-xs">Admin Only</span>'}
+                    </td>
+                </tr>
+            `).join('');
+
+            renderPagination('expense', totalPages, filtered.length, start);
+            lucide.createIcons();
+        }
+
+        function renderPagination(type, totalPages, totalItems, startIdx) {
+            const container = document.getElementById(`${type}-pagination`);
+            if(totalItems === 0) { container.innerHTML = '<p class="text-sm text-gray-500">No data found</p>'; return; }
+
+            let html = `<div class="text-sm text-gray-700">Showing <span class="font-medium">${startIdx + 1}</span> to <span class="font-medium">${Math.min(startIdx + State.rowsPerPage, totalItems)}</span> of <span class="font-medium">${totalItems}</span> results</div>`;
+            
+            html += `<div class="flex gap-1">`;
+            html += `<button onclick="changePage('${type}', -1)" class="px-3 py-1 border rounded text-gray-600 hover:bg-gray-50" ${State[`${type.substring(0,3)}Page`] === 0 ? 'disabled' : ''}>&laquo;</button>`;
+            
+            // simple logic for page numbers
+            for(let i=0; i<totalPages; i++) {
+                if(i < 5 || i === totalPages-1 || Math.abs(i - State[`${type.substring(0,3)}Page`]) <= 1) {
+                    html += `<button onclick="setPage('${type}', ${i})" class="px-3 py-1 border rounded ${State[`${type.substring(0,3)}Page`] === i ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}">${i+1}</button>`;
+                } else if (i === 5 && totalPages > 6) {
+                    html += `<span class="px-2 py-1">...</span>`;
+                }
+            }
+
+            html += `<button onclick="changePage('${type}', 1)" class="px-3 py-1 border rounded text-gray-600 hover:bg-gray-50" ${State[`${type.substring(0,3)}Page`] === totalPages-1 ? 'disabled' : ''}>&raquo;</button>`;
+            html += `</div>`;
+            
+            container.innerHTML = html;
+        }
+
+        function changePage(type, dir) {
+            const prop = `${type.substring(0,3)}Page`;
+            State[prop] += dir;
+            type === 'income' ? renderIncomeTable() : renderExpenseTable();
+        }
+        function setPage(type, pageNum) {
+            State[`${type.substring(0,3)}Page`] = pageNum;
+            type === 'income' ? renderIncomeTable() : renderExpenseTable();
+        }
+
+        // --- 8. EDIT MODALS (ADMIN ONLY) ---
+        function editIncome(id) {
+            const data = State.incomeData.find(d => d.id === id);
+            if(!data) return;
+
+            const html = `
+                <div class="grid gap-4">
+                    <div class="flex justify-between items-center bg-gray-100 p-2 rounded">
+                        <span class="font-bold text-gray-700">রিসিপ্ট নং: ${data.id}</span>
+                        <div>
+                            <label class="text-xs text-gray-500">তারিখ পরিবর্তন</label>
+                            <input type="date" id="edit-inc-date" value="${data.date}" class="border rounded p-1 text-sm">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm">দাতার নাম</label>
+                        <input type="text" id="edit-inc-donor" value="${data.donor}" class="w-full border rounded p-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm">খাত</label>
+                        <select id="edit-inc-cat" class="w-full border rounded p-2">
+                            ${State.incomeCat.map(c => `<option value="${c}" ${c===data.category?'selected':''}>${c}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm">পরিমাণ</label>
+                        <input type="number" id="edit-inc-amt" value="${data.amount}" class="w-full border rounded p-2">
+                    </div>
+                </div>
+            `;
+
+            showModal('Update Income', html, () => {
+                data.date = document.getElementById('edit-inc-date').value;
+                data.donor = document.getElementById('edit-inc-donor').value;
+                data.category = document.getElementById('edit-inc-cat').value;
+                data.amount = Number(document.getElementById('edit-inc-amt').value);
+                // SYNC APP SCRIPT HERE
+                renderIncomeTable();
+                updateDashboard();
+                closeModal();
+            });
+        }
+
+        function editExpense(id) {
+            const data = State.expenseData.find(d => d.id === id);
+            if(!data) return;
+
+            State.tempBase64Image = data.imageBase64; // load existing
+
+            const html = `
+                <div class="grid gap-4">
+                    <div>
+                        <label class="block text-sm">তারিখ</label>
+                        <input type="date" id="edit-exp-date" value="${data.date}" class="w-full border rounded p-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm">খরচের কারণ</label>
+                        <input type="text" id="edit-exp-reason" value="${data.reason}" class="w-full border rounded p-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm">খাত</label>
+                        <select id="edit-exp-cat" class="w-full border rounded p-2">
+                            ${State.expenseCat.map(c => `<option value="${c}" ${c===data.category?'selected':''}>${c}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm">পরিমাণ</label>
+                        <input type="number" id="edit-exp-amt" value="${data.amount}" class="w-full border rounded p-2">
+                    </div>
+                    <div class="border p-3 rounded bg-gray-50">
+                        <label class="block text-sm mb-2">বিল Attachment</label>
+                        ${State.tempBase64Image ? `
+                            <div class="relative inline-block" id="edit-img-wrap">
+                                <img src="${State.tempBase64Image}" class="h-20 border rounded">
+                                <button onclick="State.tempBase64Image=null; document.getElementById('edit-img-wrap').style.display='none'" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><i data-lucide="x" class="w-3 h-3"></i></button>
+                            </div>
+                        ` : ''}
+                        <input type="file" onchange="handleImageSelect(event)" class="mt-2 text-sm w-full">
+                        <p class="text-xs text-gray-500 mt-1">(নতুন ছবি দিলে পুরানোটি মুছে যাবে)</p>
+                    </div>
+                </div>
+            `;
+
+            showModal('Update Expense', html, () => {
+                data.date = document.getElementById('edit-exp-date').value;
+                data.reason = document.getElementById('edit-exp-reason').value;
+                data.category = document.getElementById('edit-exp-cat').value;
+                data.amount = Number(document.getElementById('edit-exp-amt').value);
+                data.imageBase64 = State.tempBase64Image;
+                // SYNC APP SCRIPT HERE
+                renderExpenseTable();
+                updateDashboard();
+                closeModal();
+                State.tempBase64Image = null; // reset
+            });
+            setTimeout(() => lucide.createIcons(), 10);
+        }
+
+        // --- 9. MODAL UTILS ---
+        function showModal(title, contentHtml, onSave) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-content').innerHTML = contentHtml;
+            const saveBtn = document.getElementById('modal-save-btn');
+            
+            if(onSave) {
+                saveBtn.classList.remove('hidden');
+                saveBtn.onclick = onSave;
+            } else {
+                saveBtn.classList.add('hidden');
+            }
+            
+            document.getElementById('action-modal').classList.remove('hidden');
+        }
+
+        function showCustomPopup(html, title="Notice") {
+            showModal(title, html, null); // no save btn, just close
+        }
+
+        function closeModal() {
+            document.getElementById('action-modal').classList.add('hidden');
+        }
+
+        // --- 10. PDF GENERATION (RECEIPT) ---
+        function viewIncome(id) {
+            const data = State.incomeData.find(d => d.id === id);
+            
+            // Pop-up logic exactly as requested
+            let html = `
+                <div class="border p-4 rounded text-sm relative" style="font-family: 'Tiro Bangla', serif;">
+                    <div class="text-center border-b pb-2 mb-4">
+                        <h2 class="text-xl font-bold text-blue-900">মডার্ণ স্পোর্টিং ক্লাব</h2>
+                        <p class="text-gray-600 text-xs">ইটিন্ডা রোড,ধলতিথা,বসিরহাট,উত্তর ২৪ পরগণা,পিন-৭৪৩৪১২</p>
+                        <i data-lucide="qr-code" class="absolute top-4 right-4 w-12 h-12 text-gray-400"></i>
+                    </div>
+                    <div class="flex justify-between font-bold mb-4">
+                        <span>রিসিপ্ট নং: ${data.id}</span>
+                        <span>তারিখ: ${formatDate(data.date)}</span>
+                    </div>
+                    <table class="w-full mb-6">
+                        <tr><td class="py-1 w-1/3">দাতার নাম</td><td>: ${data.donor}</td></tr>
+                        <tr><td class="py-1">কোন খাতে দান</td><td>: ${data.category}</td></tr>
+                        <tr><td class="py-1">টাকার পরিমাণ (সংখ্যায়)</td><td>: ₹ ${data.amount}/-</td></tr>
+                        <tr><td class="py-1">টাকার পরিমাণ (কথায়)</td><td>: ${numberToBengaliWords(data.amount)} মাত্র</td></tr>
+                    </table>
+                    <div class="text-center mb-8">
+                        <svg id="popup-barcode"></svg>
+                    </div>
+                    <div class="text-center text-xs text-gray-400 mt-4 border-t pt-2">
+                        [System Generated Slip already signed no need signature]
+                    </div>
+                    <div class="mt-4 flex justify-end gap-2">
+                        <button onclick="generatePDFReceiptById('${data.id}')" class="bg-green-600 text-white px-4 py-2 rounded text-sm flex items-center gap-1"><i data-lucide="download" class="w-4 h-4"></i> Download PDF</button>
+                    </div>
+                </div>
+            `;
+            showModal('View Receipt', html, null);
+            setTimeout(() => {
+                JsBarcode("#popup-barcode", data.id, { format: "CODE128", height: 30, displayValue: true, fontSize: 12 });
+                lucide.createIcons();
+            }, 100);
+        }
+
+        function generatePDFReceiptById(id) {
+            const data = State.incomeData.find(d => d.id === id);
+            generatePDFReceipt(data);
+        }
+
+        async function generatePDFReceipt(data) {
+            // ORIGINAL LOGIC RETAINED AND OVERRIDDEN BELOW IN NEW FEATURES SECTION
+            // FOR AGGRESSIVE PDF DOWNLOAD BEHAVIOR
+            document.getElementById('pr-receipt-no').innerText = data.id;
+            document.getElementById('pr-date').innerText = formatDate(data.date);
+            document.getElementById('pr-donor').innerText = data.donor;
+            document.getElementById('pr-category').innerText = data.category;
+            document.getElementById('pr-amount-num').innerText = data.amount;
+            document.getElementById('pr-amount-words').innerText = numberToBengaliWords(data.amount);
+
+            new QRious({
+                element: document.getElementById('receipt-qr'),
+                value: data.id, size: 80
+            });
+
+            JsBarcode("#receipt-barcode", data.id, { format: "CODE128", width: 1.5, height: 40, displayValue: true });
+
+            const secSign = State.signatories.find(s => s.desig.toLowerCase().includes('sec'));
+            const treSign = State.signatories.find(s => s.desig.toLowerCase().includes('tre'));
+            
+            const secArea = document.getElementById('pr-sec-sign-area');
+            const treArea = document.getElementById('pr-tre-sign-area');
+            
+            secArea.innerHTML = secSign && secSign.base64 ? `<img src="${secSign.base64}" class="sign-img">` : `<div style="height:40px; margin-bottom:2px;"></div>`;
+            secArea.innerHTML += `<div style="border-top: 1px solid black; padding-top: 5px;">Secretary Signature</div>`;
+            
+            treArea.innerHTML = treSign && treSign.base64 ? `<img src="${treSign.base64}" class="sign-img">` : `<div style="height:40px; margin-bottom:2px;"></div>`;
+            treArea.innerHTML += `<div style="border-top: 1px solid black; padding-top: 5px;">Treasurer Signature</div>`;
+
+            const element = document.getElementById('receipt-template');
+            const parentContainer = document.getElementById('receipt-render-area').parentNode;
+            parentContainer.style.display = 'block'; 
+
+            const opt = {
+                margin:       0.1,
+                filename:     `${data.id.replace(/\//g, '-')}.pdf`,
+                image:        { type: 'jpeg', quality: 1 },
+                html2canvas:  { scale: 2, useCORS: true, windowWidth: 760 }, 
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            await html2pdf().set(opt).from(element).save();
+            parentContainer.style.display = 'none';
+        }
+
+        // --- 11. DASHBOARD & REPORTS ---
+        function updateDashboard() {
+            const tInc = State.incomeData.reduce((sum, d) => sum + d.amount, 0);
+            const tExp = State.expenseData.reduce((sum, d) => sum + d.amount, 0);
+            const bal = tInc - tExp;
+
+            document.getElementById('dash-total-income').innerText = `₹ ${tInc}`;
+            document.getElementById('dash-total-expense').innerText = `₹ ${tExp}`;
+            document.getElementById('dash-balance').innerText = `₹ ${bal}`;
+        }
+
+        function generateReport() {
+            const start = document.getElementById('report-start').value;
+            const end = document.getElementById('report-end').value;
+            
+            const html = `
+                <div id="report-print-area" style="padding: 20px; font-family: 'Tiro Bangla', serif;">
+                    <h2 style="text-align:center; color:#1e3a8a;">মডার্ণ স্পোর্টিং ক্লাব</h2>
+                    <h3 style="text-align:center;">আর্থিক ব্যালেন্সশীট (AI Generated)</h3>
+                    <p style="text-align:center; font-size:12px; margin-bottom: 20px;">
+                        ${start ? `From: ${start}` : 'All Time'} ${end ? `To: ${end}` : ''}
+                    </p>
+                    <table style="width:100%; border-collapse: collapse; margin-bottom: 20px;" border="1">
+                        <tr style="background:#f3f4f6;">
+                            <th style="padding:8px;">বিবরণ</th><th style="padding:8px; text-align:right;">পরিমাণ (₹)</th>
+                        </tr>
+                        <tr><td style="padding:8px;">মোট আয়</td><td style="padding:8px; text-align:right; color:green;">${document.getElementById('dash-total-income').innerText}</td></tr>
+                        <tr><td style="padding:8px;">মোট ব্যায়</td><td style="padding:8px; text-align:right; color:red;">${document.getElementById('dash-total-expense').innerText}</td></tr>
+                        <tr style="font-weight:bold; background:#e0e7ff;"><td style="padding:8px;">অবশিষ্ট ব্যালেন্স</td><td style="padding:8px; text-align:right;">${document.getElementById('dash-balance').innerText}</td></tr>
+                    </table>
+                    <p style="font-size:10px; text-align:center; color:gray;">Generated on: ${new Date().toLocaleString()}</p>
+                </div>
+            `;
+            
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            document.body.appendChild(tempDiv);
+            
+            html2pdf().set({
+                margin: 1, filename: 'Balance_Sheet.pdf', html2canvas: { scale: 2 }, jsPDF: { format: 'a4' }
+            }).from(tempDiv.firstElementChild).save().then(()=>{
+                document.body.removeChild(tempDiv);
+            });
+        }
+
+        // --- 12. SETTINGS ---
+        function renderSettings() {
+            document.getElementById('settings-inc-cat-list').innerHTML = State.incomeCat.map((c, i) => `
+                <li class="flex justify-between items-center bg-gray-50 p-2 rounded border">
+                    ${c} <button onclick="deleteCategory('income', ${i})" class="text-red-500 hover:text-red-700"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </li>
+            `).join('');
+
+            document.getElementById('settings-exp-cat-list').innerHTML = State.expenseCat.map((c, i) => `
+                <li class="flex justify-between items-center bg-gray-50 p-2 rounded border">
+                    ${c} <button onclick="deleteCategory('expense', ${i})" class="text-red-500 hover:text-red-700"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </li>
+            `).join('');
+
+            document.getElementById('signatories-list').innerHTML = State.signatories.map((s, i) => `
+                <div class="flex justify-between items-center bg-white border p-3 rounded shadow-sm">
+                    <div>
+                        <p class="font-bold text-sm">${s.name}</p>
+                        <p class="text-xs text-gray-500">${s.desig}</p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        ${s.base64 ? `<img src="${s.base64}" class="w-20 h-10 object-contain border bg-gray-50">` : '<span class="text-xs text-red-500">No Sign</span>'}
+                        <button onclick="deleteSignatory(${i})" class="text-red-500 hover:bg-red-50 p-1 rounded"><i data-lucide="trash" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        function addCategory(type) {
+            const input = document.getElementById(type === 'income' ? 'new-inc-cat' : 'new-exp-cat');
+            const val = input.value.trim();
+            if(val) {
+                if(type === 'income') State.incomeCat.push(val); else State.expenseCat.push(val);
+                input.value = '';
+                populateSelects();
+                renderSettings();
+            }
+        }
+        function deleteCategory(type, index) {
+            if(confirm("Delete this category?")) {
+                if(type === 'income') State.incomeCat.splice(index, 1); else State.expenseCat.splice(index, 1);
+                populateSelects();
+                renderSettings();
+            }
+        }
+
+        let tempSigBase64 = '';
+        function handleSignatureUpload(e) {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 100; canvas.height = 50;
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = "white";
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0, 100, 50); 
+                    tempSigBase64 = canvas.toDataURL('image/jpeg', 0.8);
+                    
+                    const preview = document.getElementById('sig-preview-temp');
+                    preview.src = tempSigBase64;
+                    preview.classList.remove('hidden');
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function saveSignatory() {
+            const name = document.getElementById('sig-name').value;
+            const desig = document.getElementById('sig-desig').value;
+            if(!name || !desig) { alert("নাম এবং পদবি আবশ্যক"); return; }
+            
+            State.signatories.push({ id: Date.now(), name, desig, base64: tempSigBase64 });
+            
+            document.getElementById('sig-name').value = '';
+            document.getElementById('sig-desig').value = '';
+            document.getElementById('sig-file').value = '';
+            document.getElementById('sig-preview-temp').classList.add('hidden');
+            tempSigBase64 = '';
+            
+            renderSettings();
+        }
+        function deleteSignatory(index) {
+            State.signatories.splice(index, 1);
+            renderSettings();
+        }
+
+        function formatDate(dateStr) {
+            if(!dateStr) return '';
+            const [y, m, d] = dateStr.split('-');
+            return `${d}/${m}/${y}`;
+        }
+
+        function numberToBengaliWords(number) {
+            const words = {
+                0: 'শূন্য', 1: 'এক', 2: 'দুই', 3: 'তিন', 4: 'চার', 5: 'পাঁচ', 6: 'ছয়', 7: 'সাত', 8: 'আট', 9: 'নয়',
+                10: 'দশ', 11: 'এগারো', 12: 'বারো', 13: 'তেরো', 14: 'চোদ্দ', 15: 'পনেরো', 16: 'ষোলো', 17: 'সতেরো', 18: 'আঠারো', 19: 'উনিশ',
+                20: 'কুড়ি', 21: 'একুশ', 22: 'বাইশ', 23: 'তেইশ', 24: 'চব্বিশ', 25: 'পঁচিশ', 26: 'ছাব্বিশ', 27: 'সাতাশ', 28: 'আঠাশ', 29: 'উনত্রিশ',
+                30: 'ত্রিশ', 31: 'একত্রিশ', 32: 'বত্রিশ', 33: 'তেত্রিশ', 34: 'চৌত্রিশ', 35: 'পঁয়ত্রিশ', 36: 'ছত্রিশ', 37: 'সাঁইত্রিশ', 38: 'আটত্রিশ', 39: 'উনচল্লিশ',
+                40: 'চল্লিশ', 41: 'একচল্লিশ', 42: 'বিয়াল্লিশ', 43: 'তেতাল্লিশ', 44: 'চুয়াল্লিশ', 45: 'পঁয়তাল্লিশ', 46: 'ছেচল্লিশ', 47: 'সাতচল্লিশ', 48: 'আটচল্লিশ', 49: 'উনপঞ্চাশ',
+                50: 'পঞ্চাশ', 51: 'একান্ন', 52: 'বায়ান্ন', 53: 'তিপ্পান্ন', 54: 'চুয়ান্ন', 55: 'পঞ্চান্ন', 56: 'ছাপ্পান্ন', 57: 'সাতান্ন', 58: 'আটান্ন', 59: 'উনষাট',
+                60: 'ষাট', 61: 'একষট্টি', 62: 'বাষট্টি', 63: 'তেষট্টি', 64: 'চৌষট্টি', 65: 'পঁয়ষট্টি', 66: 'ছেষট্টি', 67: 'সাতষট্টি', 68: 'আটষট্টি', 69: 'উনসত্তর',
+                70: 'সত্তর', 71: 'একাত্তর', 72: 'বাহাত্তর', 73: 'তিয়াত্তর', 74: 'চুয়াত্তর', 75: 'পঁচাত্তর', 76: 'ছিয়াত্তর', 77: 'সাতাত্তর', 78: 'আটাত্তর', 79: 'উনআশি',
+                80: 'আশি', 81: 'একাশি', 82: 'বিরাশি', 83: 'তিরাশি', 84: 'চুরাশি', 85: 'পঁচাশি', 86: 'ছিয়াশি', 87: 'সাতাশি', 88: 'অষ্টআশি', 89: 'উননব্বই',
+                90: 'নব্বই', 91: 'একানব্বই', 92: 'বিরানব্বই', 93: 'তিরানব্বই', 94: 'চুরানব্বই', 95: 'পঁচানব্বই', 96: 'ছিয়ানব্বই', 97: 'সাতানব্বই', 98: 'আটানব্বই', 99: 'নিরানব্বই'
+            };
+
+            if (number === 0) return words[0];
+
+            let str = '';
+            let n = parseInt(number);
+
+            let crore = Math.floor(n / 10000000);
+            n -= crore * 10000000;
+            let lakh = Math.floor(n / 100000);
+            n -= lakh * 100000;
+            let thousand = Math.floor(n / 1000);
+            n -= thousand * 1000;
+            let hundred = Math.floor(n / 100);
+            n -= hundred * 100;
+            let tens = n;
+
+            if (crore > 0) { str += (crore > 99 ? numberToBengaliWords(crore) : words[crore]) + ' কোটি '; }
+            if (lakh > 0) { str += words[lakh] + ' লক্ষ '; }
+            if (thousand > 0) { str += words[thousand] + ' হাজার '; }
+            if (hundred > 0) { str += words[hundred] + ' শত '; }
+            if (tens > 0) { str += words[tens]; }
+
+            return str.trim();
+        }
+
+        function viewExpenseImage(id) {
+            // OVERRIDDEN BELOW IN NEW FEATURES SECTION TO FIX BROKEN PREVIEW
+            const data = State.expenseData.find(d => d.id === id);
+            if(data && data.imageBase64) {
+                const imgHtml = `
+                    <div class="flex justify-center p-2 mb-4">
+                        <img src="${data.imageBase64}" class="max-w-full max-h-[60vh] rounded shadow border">
+                    </div>
+                    <div class="text-center">
+                        <button onclick="closeModal()" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 font-medium">বন্ধ করুন</button>
+                    </div>
+                `;
+                showCustomPopup(imgHtml, "বিলের ছবি (Bill Attachment)");
+            }
+        }
+
+        let transDebounceTimer;
+        async function handleTranslationSuggest(inputEl, boxId) {
+            clearTimeout(transDebounceTimer);
+            const val = inputEl.value;
+            const box = document.getElementById(boxId);
+            
+            if(val.trim().length < 1) { box.classList.add('hidden'); return; }
+            
+            box.innerHTML = '<div class="p-2 text-xs text-gray-500 italic">Searching suggestions...</div>';
+            box.classList.remove('hidden');
+
+            transDebounceTimer = setTimeout(async () => {
+                box.innerHTML = '';
+                let hasSuggestions = false;
+
+                let historyData = [];
+                if(inputEl.id.includes('inc-donor')) historyData = State.incomeData.map(d=>d.donor);
+                else if(inputEl.id.includes('inc-category')) historyData = State.incomeData.map(d=>d.category).concat(State.incomeCat);
+                else if(inputEl.id.includes('exp-reason')) historyData = State.expenseData.map(d=>d.reason);
+                else if(inputEl.id.includes('exp-category')) historyData = State.expenseData.map(d=>d.category).concat(State.expenseCat);
+                
+                const matches = [...new Set(historyData.filter(d => d.toLowerCase().includes(val.toLowerCase()) || d.includes(val)))].slice(0, 3);
+                
+                matches.forEach(m => {
+                    const hDiv = document.createElement('div');
+                    hDiv.className = 'suggestion-item text-gray-800 hover:bg-gray-100 border-b border-gray-100 font-semibold bg-yellow-50';
+                    hDiv.innerHTML = `<i data-lucide="history" class="w-3 h-3 inline mr-1 text-yellow-600"></i> Past Ref: ${m}`;
+                    hDiv.onclick = () => {
+                        inputEl.value = m;
+                        box.classList.add('hidden');
+                    };
+                    box.appendChild(hDiv);
+                    hasSuggestions = true;
+                });
+
+                const isBengali = /[\u0980-\u09FF]/.test(val);
+                let englishText = isBengali ? convertBnToEn(val) : val;
+                let localBengaliText = isBengali ? val : convertEnToBn(val);
+
+                if(englishText.length > 0) {
+                    englishText = englishText.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                }
+
+                let apiSuggestions = [];
+                if (!isBengali && navigator.onLine) {
+                    try {
+                        const response = await fetch(`https://inputtools.google.com/request?text=${encodeURIComponent(val)}&itc=bn-t-i0-und&num=5`);
+                        const data = await response.json();
+                        if (data[0] === "SUCCESS") {
+                            apiSuggestions = data[1][0][1];
+                        }
+                    } catch(e) {
+                        console.warn("Google API failed, falling back to local map", e);
+                    }
+                }
+
+                if (apiSuggestions && apiSuggestions.length > 0) {
+                    apiSuggestions.forEach(sug => {
+                        const suggestionText = `${englishText} | ${sug}`;
+                        const div = document.createElement('div');
+                        div.className = 'suggestion-item text-green-800 bg-green-50 border-b border-green-100';
+                        div.innerHTML = `<i data-lucide="cloud" class="w-4 h-4 inline mr-1 text-green-600"></i> Web API: ${suggestionText}`;
+                        div.onclick = () => {
+                            inputEl.value = suggestionText;
+                            box.classList.add('hidden');
+                        };
+                        box.appendChild(div);
+                        hasSuggestions = true;
+                    });
+                }
+
+                const fallbackText = `${englishText} | ${localBengaliText}`;
+                const fDiv = document.createElement('div');
+                fDiv.className = 'suggestion-item font-bold text-blue-800 bg-blue-50 border-b border-blue-100';
+                fDiv.innerHTML = `<i data-lucide="languages" class="w-4 h-4 inline mr-1 text-blue-600"></i> Logic Map: ${fallbackText}`;
+                fDiv.onclick = () => {
+                    inputEl.value = fallbackText;
+                    box.classList.add('hidden');
+                };
+                box.appendChild(fDiv);
+                hasSuggestions = true;
+
+                if(hasSuggestions) {
+                    box.classList.remove('hidden');
+                    if(window.lucide) lucide.createIcons();
+                } else {
+                    box.classList.add('hidden');
+                }
+            }, 300);
+        }
+
+        function convertEnToBn(text) {
+            const map = { 'aa':'আ','sh':'শ','ch':'চ','th':'থ','ph':'ফ','kh':'খ','gh':'ঘ','dh':'ধ','bh':'ভ','jh':'ঝ','ng':'ঙ', 'a':'আ','b':'ব','c':'ক','d':'দ','e':'এ','f':'ফ','g':'গ','h':'হ','i':'ই','j':'জ','k':'ক','l':'ল','m':'ম','n':'ন','o':'ও','p':'প','q':'ক','r':'র','s':'স','t':'ট','u':'উ','v':'ভ','w':'ও','x':'ক্স','y':'য়','z':'জ' };
+            let res = '';
+            let t = text.toLowerCase();
+            for(let i=0; i<t.length; i++){
+                if(t[i+1] && map[t[i]+t[i+1]]) { res += map[t[i]+t[i+1]]; i++; }
+                else if(map[t[i]]) { res += map[t[i]]; }
+                else { res += t[i]; }
+            }
+            return res;
+        }
+
+        function convertBnToEn(text) {
+            const map = { 'অ':'a','আ':'a','ই':'i','ঈ':'ee','উ':'u','ঊ':'oo','এ':'e','ঐ':'oi','ও':'o','ঔ':'ou','ক':'k','খ':'kh','গ':'g','ঘ':'gh','ঙ':'ng','চ':'ch','ছ':'chh','জ':'j','ঝ':'jh','ঞ':'n','ট':'t','ঠ':'th','ড':'d','ঢ':'dh','ণ':'n','ত':'t','থ':'th','দ':'d','ধ':'dh','ন':'n','প':'p','ফ':'f','ব':'b','ভ':'bh','ম':'m','য':'j','র':'r','ল':'l','শ':'sh','ষ':'sh','স':'s','হ':'h','ড়':'r','ঢ়':'rh','য়':'y','ৎ':'t','া':'a','ি':'i','ী':'ee','ু':'u','ূ':'oo','ে':'e','ৈ':'oi','ো':'o','ৌ':'ou','ং':'ng','ঃ':'h','্':'' };
+            let res = '';
+            for(let i=0; i<text.length; i++){
+                if(map[text[i]]) res += map[text[i]]; else res += text[i];
+            }
+            return res;
+        }
+
+        function showDefaultCategories(inputEl, boxId, type) {
+            const box = document.getElementById(boxId);
+            if(inputEl.value.trim() !== '') return;
+            
+            box.innerHTML = '';
+            const cats = type === 'income' ? State.incomeCat : State.expenseCat;
+            
+            cats.forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item text-gray-700 hover:bg-gray-100 border-t border-gray-100';
+                div.innerHTML = `<i data-lucide="list" class="w-3 h-3 inline mr-1 text-gray-400"></i> ${c}`;
+                div.onclick = () => {
+                    inputEl.value = c;
+                    box.classList.add('hidden');
+                };
+                box.appendChild(div);
+            });
+            
+            if(cats.length > 0) {
+                box.classList.remove('hidden');
+                if(window.lucide) lucide.createIcons();
+            }
+        }
+
+
+        // ==========================================
+        // --- NEW FEATURES ADDED BELOW THIS LINE ---
+        // ==========================================
+
+        // 1. FORCED AGGRESSIVE PDF DOWNLOAD (Prompts user for Path automatically)
+        window.generatePDFReceipt = async function(data) {
+            // Setup exactly as before to avoid breaking layout
+            document.getElementById('pr-receipt-no').innerText = data.id;
+            document.getElementById('pr-date').innerText = formatDate(data.date);
+            document.getElementById('pr-donor').innerText = data.donor;
+            document.getElementById('pr-category').innerText = data.category;
+            document.getElementById('pr-amount-num').innerText = data.amount;
+            document.getElementById('pr-amount-words').innerText = numberToBengaliWords(data.amount);
+
+            new QRious({
+                element: document.getElementById('receipt-qr'),
+                value: data.id, size: 80
+            });
+
+            JsBarcode("#receipt-barcode", data.id, { format: "CODE128", width: 1.5, height: 40, displayValue: true });
+
+            const secSign = State.signatories.find(s => s.desig.toLowerCase().includes('sec'));
+            const treSign = State.signatories.find(s => s.desig.toLowerCase().includes('tre'));
+            
+            const secArea = document.getElementById('pr-sec-sign-area');
+            const treArea = document.getElementById('pr-tre-sign-area');
+            
+            secArea.innerHTML = secSign && secSign.base64 ? `<img src="${secSign.base64}" class="sign-img">` : `<div style="height:40px; margin-bottom:2px;"></div>`;
+            secArea.innerHTML += `<div style="border-top: 1px solid black; padding-top: 5px;">Secretary Signature</div>`;
+            
+            treArea.innerHTML = treSign && treSign.base64 ? `<img src="${treSign.base64}" class="sign-img">` : `<div style="height:40px; margin-bottom:2px;"></div>`;
+            treArea.innerHTML += `<div style="border-top: 1px solid black; padding-top: 5px;">Treasurer Signature</div>`;
+
+            const element = document.getElementById('receipt-template');
+            const parentContainer = document.getElementById('receipt-render-area').parentNode;
+            parentContainer.style.display = 'block'; 
+
+            const opt = {
+                margin:       0.1, 
+                filename:     `${data.id.replace(/\//g, '-')}_Receipt.pdf`,
+                image:        { type: 'jpeg', quality: 1 },
+                html2canvas:  { scale: 2, useCORS: true, windowWidth: 760 }, 
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            try {
+                // Aggressive BLOB download forces Mobile devices to ask for Storage Access/Path
+                const pdfWorker = html2pdf().set(opt).from(element);
+                const pdfBlob = await pdfWorker.outputPdf('blob');
+                const blobUrl = URL.createObjectURL(pdfBlob);
+                
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = blobUrl;
+                a.download = opt.filename;
+                document.body.appendChild(a);
+                a.click();
+                
+                // Cleanup URL memory after triggering
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(blobUrl);
+                }, 1500);
+
+            } catch (error) {
+                console.error("Advanced Download Error, falling back...", error);
+                await html2pdf().set(opt).from(element).save();
+            } finally {
+                parentContainer.style.display = 'none'; 
+            }
+        };
+
+
+        // 2. ROBUST FULL SCREEN IMAGE VIEWER TO FIX BROKEN PREVIEWS
+   window.viewExpenseImage = function(id) {
+    const data = State.expenseData.find(d => d.id === id);
+    // যদি ডাটাতে সরাসরি Base64 ছবি থাকে, তবে সেটাই দেখাবে
+    if(data && (data.imageBase64 || data.imageUrl)) {
+        let imageData = data.imageBase64 || data.imageUrl;
+        let fsModal = document.getElementById('fullscreen-img-modal');
+        
+        if(!fsModal) {
+            fsModal = document.createElement('div');
+            fsModal.id = 'fullscreen-img-modal';
+            fsModal.className = 'fixed inset-0 z-[9999] bg-black bg-opacity-95 flex flex-col items-center justify-center hidden p-4';
+            fsModal.innerHTML = `
+                <div class="w-full flex justify-between items-center absolute top-0 left-0 p-4 bg-black/50">
+                    <span class="text-white font-bold">বিলের ছবি</span>
+                    <button onclick="document.getElementById('fullscreen-img-modal').classList.add('hidden')" class="bg-red-600 text-white p-2 rounded-full">✕</button>
+                </div>
+                <div class="w-full h-full flex items-center justify-center">
+                    <img id="fs-img-view" src="" class="max-w-full max-h-[80vh] border border-gray-700 rounded shadow-2xl bg-white">
+                </div>
+                <div class="absolute bottom-10">
+                    <a id="fs-img-download" href="#" download="Bill.jpg" class="bg-blue-600 text-white px-8 py-3 rounded-full font-bold">ডাউনলোড করুন (Save)</a>
+                </div>`;
+            document.body.appendChild(fsModal);
+        }
+        
+        document.getElementById('fs-img-view').src = imageData;
+        document.getElementById('fs-img-download').href = imageData;
+        fsModal.classList.remove('hidden');
+    } else {
+        alert("দুঃখিত! এই বিলটির কোনো ছবি খুঁজে পাওয়া যাচ্ছে না।");
+    }
+};
+// ==========================================
+    // 3. DELETE FUNCTIONALITY FOR INCOME AND EXPENSE WITH BACKEND SYNC
+    // ==========================================
+    window.deleteRecord = async function(type, id) {
+        if(!confirm("আপনি কি নিশ্চিত যে এই রেকর্ডটি ডিলিট করতে চান? এই কাজ পরিবর্তনযোগ্য নয়!")) return;
+
+        // Remove from local state
+        if(type === 'income') {
+            State.incomeData = State.incomeData.filter(d => d.id !== id);
+        } else {
+            State.expenseData = State.expenseData.filter(d => d.id !== id);
+        }
+        
+        // Re-render and update dashboard
+        if (type === 'income') renderIncomeTable();
+        if (type === 'expense') renderExpenseTable();
+        updateDashboard();
+
+        // Backend Web App Call (Google Sheet Sync)
+        if(typeof WEB_APP_URL !== 'undefined' && WEB_APP_URL !== "আপনার_গুগল_শিটের_ওয়েব_অ্যাপ_লিংক_এখানে_দিন") {
+            try {
+                fetch(WEB_APP_URL, {
+                    method: 'POST',   
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: type === 'income' ? "deleteIncome" : "deleteExpense",
+                        id: id
+                    })
+                }).then(() => console.log(type + " deleted from Google Sheet"))
+                  .catch(err => console.error("Error deleting from sheet:", err));
+            } catch(e) {
+                console.error("Network error: ", e);
+            }
+        }
+
+        // Show a temporary success message
+        showCustomPopup(`
+            <h3 class="text-lg font-bold text-red-600 mb-4 flex items-center gap-2"><i data-lucide="trash-2"></i> রেকর্ড মুছে ফেলা হয়েছে</h3>
+            <p class="text-gray-700">সফলভাবে ডিলিট করা হয়েছে। (ID: ${id})</p>
+            <div class="mt-6 flex justify-end">
+                <button onclick="closeModal()" class="bg-gray-800 text-white px-4 py-2 rounded">ঠিক আছে</button>
+            </div>
+        `, "Deleted Successfully");
+        setTimeout(() => lucide.createIcons(), 10);
+    };
+
+    // Hooking into existing render functions to add the Delete Button dynamically without modifying original functions
+    const originalRenderIncome = renderIncomeTable;
+    renderIncomeTable = function() {
+        originalRenderIncome(); // Call existing function
+        // Inject delete buttons seamlessly
+        const rows = document.querySelectorAll('#income-table-body tr');
+        rows.forEach(row => {
+            const actionTd = row.querySelector('td:last-child');
+            const idText = row.querySelector('td:first-child').innerText.split('\n')[0].trim();
+            if(actionTd && State.currentUser === 'admin' && !actionTd.innerHTML.includes('deleteRecord')) {
+                actionTd.innerHTML += `<button onclick="deleteRecord('income', '${idText}')" class="text-red-600 hover:text-red-900 ml-3" title="Delete Record"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
+            }
+        });
+        if(window.lucide) lucide.createIcons();
+    };
+
+    const originalRenderExpense = renderExpenseTable;
+    renderExpenseTable = function() {
+        originalRenderExpense(); // Call existing function
+        // Inject delete buttons seamlessly
+        const rows = document.querySelectorAll('#expense-table-body tr');
+        rows.forEach(row => {
+            const actionTd = row.querySelector('td:last-child');
+            if(actionTd && State.currentUser === 'admin' && !actionTd.innerHTML.includes('deleteRecord')) {
+                const editBtn = actionTd.querySelector('button[onclick^="editExpense"]');
+                if(editBtn) {
+                    const match = editBtn.getAttribute('onclick').match(/'([^']+)'/);
+                    if(match) {
+                        const id = match[1];
+                        actionTd.innerHTML += `<button onclick="deleteRecord('expense', '${id}')" class="text-red-600 hover:text-red-900 ml-3" title="Delete Record"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
+                    }
+                }
+            }
+        });
+        if(window.lucide) lucide.createIcons();
+    };
+    
+    // ==========================================
+
+// 4. STOP FAKE DATA & ENABLE LOCAL STORAGE PERSISTENCE
+
+// ==========================================
+
+
+// ১. ফেক (Dummy) ডাটা আসা বন্ধ করা হলো এবং লোকাল মেমোরি থেকে ডাটা লোড করা হলো
+
+window.mockData = function() {
+
+const savedIncome = localStorage.getItem('msc_local_income');
+
+const savedExpense = localStorage.getItem('msc_local_expense');
+
+// যদি আগে থেকে লোকাল স্টোরেজে ডাটা থাকে, তবে সেটাই দেখাবে। না থাকলে খালি থাকবে।
+
+if(savedIncome) State.incomeData = JSON.parse(savedIncome);
+
+if(savedExpense) State.expenseData = JSON.parse(savedExpense);
+
+};
+
+
+// ২. নতুন ডাটা সেভ বা ডিলিট করার পর তা ব্রাউজারে পার্মানেন্টলি সেভ করার লজিক
+
+const renderIncStorageHook = window.renderIncomeTable;
+
+window.renderIncomeTable = function() {
+
+renderIncStorageHook(); // আগের রেন্ডার লজিক কল করা হলো
+
+localStorage.setItem('msc_local_income', JSON.stringify(State.incomeData)); // ডাটা সেভ
+
+};
+
+
+const renderExpStorageHook = window.renderExpenseTable;
+
+window.renderExpenseTable = function() {
+
+renderExpStorageHook(); // আগের রেন্ডার লজিক কল করা হলো
+
+localStorage.setItem('msc_local_expense', JSON.stringify(State.expenseData)); // ডাটা সেভ
+
+};
+
+
+// Google Sheet থেকে ডাটা ফেচ করার নতুন ফাংশন
+async function fetchDataFromBackend() {
+    if(WEB_APP_URL === "আপনার_গুগল_শিটের_ওয়েব_অ্যাপ_লিংক_এখানে_দিন" || !WEB_APP_URL) return;
+    
+    try {
+        // GET request পাঠানো হচ্ছে ডাটা আনার জন্য
+        const response = await fetch(`${WEB_APP_URL}?action=getData`);
+        const result = await response.json();
+        
+        if(result && result.status === "success") {
+            State.incomeData = result.incomeData || [];
+            State.expenseData = result.expenseData || [];
+            
+            // লোকাল স্টোরেজ আপডেট করে দেওয়া
+            localStorage.setItem('msc_local_income', JSON.stringify(State.incomeData));
+            localStorage.setItem('msc_local_expense', JSON.stringify(State.expenseData));
+            
+            // বর্তমান ট্যাবের টেবিল আপডেট করা
+            if(State.currentTab === 'saved-income') renderIncomeTable();
+            if(State.currentTab === 'saved-expense') renderExpenseTable();
+            updateDashboard();
+            console.log("Data fetched from backend successfully!");
+        }
+    } catch(error) {
+        console.error("Backend থেকে ডাটা আনতে সমস্যা হচ্ছে:", error);
+    }
+}
+    
+    
+    </script>
+</body>
+</html>

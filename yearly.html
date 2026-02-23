@@ -40,7 +40,7 @@
         .receipt-body { margin-top: 20px; font-size: 16px; line-height: 1.6; }
         .signature-area { display: flex; justify-content: space-between; margin-top: 30px; }
         .sign-box { text-align: center; font-size: 15px;}
-        .sign-img { width: 90px; height: 45px; object-fit: contain; margin-bottom: 2px; border-bottom: 1px solid black; }
+        .sign-img { width: 240px; height: 90px; object-fit: contain; margin-bottom: 2px; border-bottom: 1px solid black; }
         .barcode-area { text-align: center; margin-top: 20px; }
         
         /* Auto-suggestion list */
@@ -396,10 +396,8 @@
     </div>
 
 
-    <!-- HIDDEN RECEIPT TEMPLATE FOR PDF GENERATION -->
-    <!-- Added absolute positioning and fixed width to prevent mobile screen clipping during PDF rendering -->
-    <div style="display: none; position: absolute; left: -9999px; top: -9999px; width: 800px; background: white; z-index: -9999;">
-        <div id="receipt-render-area" style="width: 800px; padding: 10px; background: white;">
+    <div id="pdf-wrapper" style="position: fixed; top: 0; left: 0; z-index: -9999; opacity: 0; pointer-events: none; width: 800px; background: white;">
+        <div id="receipt-render-area" style="width: 800px; padding: 20px; background: white;">
             <div id="receipt-template">
                 <div class="receipt-header">
                     <div class="receipt-title">মডার্ণ স্পোর্টিং ক্লাব</div>
@@ -427,11 +425,9 @@
 
                 <div class="signature-area">
                     <div class="sign-box" id="pr-sec-sign-area">
-                        <!-- Signatures injected here -->
                         <div style="border-top: 1px solid black; padding-top: 5px;">Secretary Signature</div>
                     </div>
                     <div class="sign-box" id="pr-tre-sign-area">
-                        <!-- Signatures injected here -->
                         <div style="border-top: 1px solid black; padding-top: 5px;">Treasurer Signature</div>
                     </div>
                 </div>
@@ -471,7 +467,7 @@
         // ==========================================
         // 🌟 GOOGLE SHEET WEB APP URL (এখানে আপনার লিংক দিন)
         // ==========================================
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxZgbTdQjLWB_r5n1ucezemPX_NSD8KSkJZ50a_SOqTEDhdgou7B5xA_Wao6yGJAG0V/exec"; 
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzhostFDUTw6fNCBYNQHMw6ukE_J4QXCkEVW1DCxaeMmdhKrZoNAkgormyfUnDq--EB/exec";
 
         // Initialize Icons
         lucide.createIcons();
@@ -1214,11 +1210,15 @@ function editExpense(id) {
             const secArea = document.getElementById('pr-sec-sign-area');
             const treArea = document.getElementById('pr-tre-sign-area');
             
-            secArea.innerHTML = secSign && secSign.base64 ? `<img src="${secSign.base64}" class="sign-img">` : `<div style="height:40px; margin-bottom:2px;"></div>`;
-            secArea.innerHTML += `<div style="border-top: 1px solid black; padding-top: 5px;">Secretary Signature</div>`;
-            
-            treArea.innerHTML = treSign && treSign.base64 ? `<img src="${treSign.base64}" class="sign-img">` : `<div style="height:40px; margin-bottom:2px;"></div>`;
-            treArea.innerHTML += `<div style="border-top: 1px solid black; padding-top: 5px;">Treasurer Signature</div>`;
+            // Secretary Signature Setup
+const secImgSrc = secSign ? (secSign.base64 || secSign.imageUrl || secSign.url) : null;
+secArea.innerHTML = secImgSrc ? `<img src="${secImgSrc}" class="sign-img" crossorigin="anonymous">` : `<div style="height:40px; margin-bottom:2px;"></div>`;
+secArea.innerHTML += `<div style="border-top: 1px solid black; padding-top: 5px;">Secretary Signature</div>`;
+
+// Treasurer Signature Setup
+const treImgSrc = treSign ? (treSign.base64 || treSign.imageUrl || treSign.url) : null;
+treArea.innerHTML = treImgSrc ? `<img src="${treImgSrc}" class="sign-img" crossorigin="anonymous">` : `<div style="height:40px; margin-bottom:2px;"></div>`;
+treArea.innerHTML += `<div style="border-top: 1px solid black; padding-top: 5px;">Treasurer Signature</div>`;
 
             const element = document.getElementById('receipt-template');
             const parentContainer = document.getElementById('receipt-render-area').parentNode;
@@ -1329,50 +1329,96 @@ function editExpense(id) {
             }
         }
 
-        let tempSigBase64 = '';
-        function handleSignatureUpload(e) {
-            const file = e.target.files[0];
-            if(!file) return;
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = 100; canvas.height = 50;
-                    const ctx = canvas.getContext('2d');
-                    ctx.fillStyle = "white";
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    ctx.drawImage(img, 0, 0, 100, 50); 
-                    tempSigBase64 = canvas.toDataURL('image/jpeg', 0.8);
-                    
-                    const preview = document.getElementById('sig-preview-temp');
-                    preview.src = tempSigBase64;
-                    preview.classList.remove('hidden');
-                };
-                img.src = event.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
+    let tempSigBase64 = '';
+function handleSignatureUpload(e) {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            
+            // সিগনেচারের সাইজ ২৪০x৯০ রাখা হলো
+            const MAX_WIDTH = 240;
+            let width = img.width;
+            let height = img.height;
+            
+            if (width > MAX_WIDTH) {
+                height = Math.round(height * (MAX_WIDTH / width));
+                width = MAX_WIDTH;
+            }
+            
+            canvas.width = width; 
+            canvas.height = height; 
+            
+            const ctx = canvas.getContext('2d');
+            
+            // 🟢 অত্যন্ত জরুরি: সাদা ব্যাকগ্রাউন্ড দেওয়া হলো, নাহলে JPEG তে ছবি কালো হয়ে যাবে
+            ctx.fillStyle = "#ffffff"; 
+            ctx.fillRect(0, 0, width, height);
+            
+            // ছবি আঁকা
+            ctx.drawImage(img, 0, 0, width, height); 
+            
+            // 🟢 PNG-এর বদলে JPEG এবং 0.6 কোয়ালিটি ব্যবহার করা হলো 
+            // এতে ছবির সাইজ মাত্র ৫-১০ KB হবে এবং গুগল শিটে ১০০% সেভ হবে!
+            tempSigBase64 = canvas.toDataURL('image/jpeg', 0.6);
+            
+            const preview = document.getElementById('sig-preview-temp');
+            preview.src = tempSigBase64;
+            preview.classList.remove('hidden');
+        };
+        img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+}
 
-        function saveSignatory() {
-            const name = document.getElementById('sig-name').value;
-            const desig = document.getElementById('sig-desig').value;
-            if(!name || !desig) { alert("নাম এবং পদবি আবশ্যক"); return; }
-            
-            State.signatories.push({ id: Date.now(), name, desig, base64: tempSigBase64 });
-            
-            document.getElementById('sig-name').value = '';
-            document.getElementById('sig-desig').value = '';
-            document.getElementById('sig-file').value = '';
-            document.getElementById('sig-preview-temp').classList.add('hidden');
-            tempSigBase64 = '';
-            
-            renderSettings();
-        }
-        function deleteSignatory(index) {
-            State.signatories.splice(index, 1);
-            renderSettings();
-        }
+function saveSignatory() {
+    const name = document.getElementById('sig-name').value;
+    const desig = document.getElementById('sig-desig').value;
+    if(!name || !desig) { alert("নাম এবং পদবি আবশ্যক"); return; }
+    
+    State.signatories.push({ id: Date.now(), name, desig, base64: tempSigBase64 });
+    
+    document.getElementById('sig-name').value = '';
+    document.getElementById('sig-desig').value = '';
+    document.getElementById('sig-file').value = '';
+    document.getElementById('sig-preview-temp').classList.add('hidden');
+    tempSigBase64 = '';
+    
+    renderSettings();
+    syncSettingsToBackend(); // গুগল শিটে পাঠানো হচ্ছে
+}
+
+function deleteSignatory(index) {
+    if(confirm("স্বাক্ষরটি মুছে ফেলতে চান?")) {
+        State.signatories.splice(index, 1);
+        renderSettings();
+        syncSettingsToBackend(); // গুগল শিটে আপডেট পাঠানো হচ্ছে
+    }
+}
+
+function addCategory(type) {
+    const input = document.getElementById(type === 'income' ? 'new-inc-cat' : 'new-exp-cat');
+    const val = input.value.trim();
+    if(val) {
+        if(type === 'income') State.incomeCat.push(val); else State.expenseCat.push(val);
+        input.value = '';
+        populateSelects();
+        renderSettings();
+        syncSettingsToBackend(); // গুগল শিটে পাঠানো হচ্ছে
+    }
+}
+
+function deleteCategory(type, index) {
+    if(confirm("Delete this category?")) {
+        if(type === 'income') State.incomeCat.splice(index, 1); else State.expenseCat.splice(index, 1);
+        populateSelects();
+        renderSettings();
+        syncSettingsToBackend(); // গুগল শিটে আপডেট পাঠানো হচ্ছে
+    }
+}
 
         function formatDate(dateStr) {
             if(!dateStr) return '';
@@ -1598,22 +1644,23 @@ function editExpense(id) {
             const secArea = document.getElementById('pr-sec-sign-area');
             const treArea = document.getElementById('pr-tre-sign-area');
             
-            secArea.innerHTML = secSign && secSign.base64 ? `<img src="${secSign.base64}" class="sign-img">` : `<div style="height:40px; margin-bottom:2px;"></div>`;
-            secArea.innerHTML += `<div style="border-top: 1px solid black; padding-top: 5px;">Secretary Signature</div>`;
-            
-            treArea.innerHTML = treSign && treSign.base64 ? `<img src="${treSign.base64}" class="sign-img">` : `<div style="height:40px; margin-bottom:2px;"></div>`;
-            treArea.innerHTML += `<div style="border-top: 1px solid black; padding-top: 5px;">Treasurer Signature</div>`;
+            secArea.innerHTML = secSign && secSign.base64 ? `<img src="${secSign.base64}" class="sign-img">` : `<div style="height:90px; width: 240px; margin-bottom:0px;"></div>`;
+secArea.innerHTML += `<div style="border-top: 0px solid black; padding-top: 5px; text-align: center;">Secretary Signature</div>`;
+
+treArea.innerHTML = treSign && treSign.base64 ? `<img src="${treSign.base64}" class="sign-img">` : `<div style="height:90px; width: 240px; margin-bottom:0px;"></div>`;
+treArea.innerHTML += `<div style="border-top: 0px solid black; padding-top: 5px; text-align: center;">Treasurer Signature</div>`;
 
             const element = document.getElementById('receipt-template');
             const parentContainer = document.getElementById('receipt-render-area').parentNode;
             parentContainer.style.display = 'block'; 
 
-            const opt = {
-                margin:       0.1, 
+           // PDF Options Update: Forcing STRICT Portrait (A4)
+           const opt = {
+                margin:       [10, 0, 0, 0], // উপরে ১০ মিমি মার্জিন
                 filename:     `${data.id.replace(/\//g, '-')}_Receipt.pdf`,
                 image:        { type: 'jpeg', quality: 1 },
-                html2canvas:  { scale: 2, useCORS: true, windowWidth: 760 }, 
-                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+                html2canvas:  { scale: 2, useCORS: true, windowWidth: 800 }, 
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'p' } // 'p' মানে Portrait বা লম্বালম্বি
             };
 
             try {
@@ -1811,9 +1858,7 @@ localStorage.setItem('msc_local_expense', JSON.stringify(State.expenseData)); //
 // Google Sheet থেকে ডাটা ফেচ করার নতুন ফাংশন
 async function fetchDataFromBackend() {
     if(WEB_APP_URL === "আপনার_গুগল_শিটের_ওয়েব_অ্যাপ_লিংক_এখানে_দিন" || !WEB_APP_URL) return;
-    
     try {
-        // GET request পাঠানো হচ্ছে ডাটা আনার জন্য
         const response = await fetch(`${WEB_APP_URL}?action=getData`);
         const result = await response.json();
         
@@ -1821,22 +1866,55 @@ async function fetchDataFromBackend() {
             State.incomeData = result.incomeData || [];
             State.expenseData = result.expenseData || [];
             
-            // লোকাল স্টোরেজ আপডেট করে দেওয়া
-            localStorage.setItem('msc_local_income', JSON.stringify(State.incomeData));
-            localStorage.setItem('msc_local_expense', JSON.stringify(State.expenseData));
+            // শিট থেকে ক্যাটাগরি ও সিগনেচার লোড হচ্ছে
+            if(result.incomeCat && result.incomeCat.length > 0) State.incomeCat = result.incomeCat;
+            if(result.expenseCat && result.expenseCat.length > 0) State.expenseCat = result.expenseCat;
+            if(result.signatories && result.signatories.length > 0) State.signatories = result.signatories;
             
-            // বর্তমান ট্যাবের টেবিল আপডেট করা
+            populateSelects();
+            renderSettings();
+            
             if(State.currentTab === 'saved-income') renderIncomeTable();
             if(State.currentTab === 'saved-expense') renderExpenseTable();
             updateDashboard();
-            console.log("Data fetched from backend successfully!");
         }
     } catch(error) {
         console.error("Backend থেকে ডাটা আনতে সমস্যা হচ্ছে:", error);
     }
 }
     
-    
+
+// --- YEARLY.html আপডেট ---
+// syncSettingsToBackend ফাংশনটি নিচের কোড দিয়ে আপডেট করুন
+
+async function syncSettingsToBackend() {
+    if(WEB_APP_URL === "আপনার_গুগল_শিটের_ওয়েব_অ্যাপ_লিংক_এখানে_দিন" || !WEB_APP_URL) return;
+    try {
+        const response = await fetch(WEB_APP_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ 
+                action: "saveSettings", 
+                data: {
+                    incomeCat: State.incomeCat,
+                    expenseCat: State.expenseCat,
+                    signatories: State.signatories
+                }
+            })
+        });
+        
+        const result = await response.json();
+        
+        // যদি সার্ভার ড্রাইভ লিংক জেনারেট করে পাঠায়, তবে স্টেট আপডেট হবে
+        if(result.status === 'success' && result.updatedSigns) {
+            State.signatories = result.updatedSigns;
+            renderSettings(); // ইউআই রি-রেন্ডার
+            console.log("Settings synced with Drive URLs");
+        }
+    } catch(e) {
+        console.error("Settings sync failed:", e);
+    }
+}
     </script>
 </body>
 </html>

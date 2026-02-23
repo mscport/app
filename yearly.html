@@ -40,7 +40,7 @@
         .receipt-body { margin-top: 20px; font-size: 16px; line-height: 1.6; }
         .signature-area { display: flex; justify-content: space-between; margin-top: 30px; }
         .sign-box { text-align: center; font-size: 15px;}
-        .sign-img { width: 240px; height: 90px; object-fit: contain; margin-bottom: 2px; border-bottom: 1px solid black; }
+        .sign-img { width: 130px; height: 23px; object-fit: contain; margin-bottom: 2px; border-bottom: 1px solid black; }
         .barcode-area { text-align: center; margin-top: 20px; }
         
         /* Auto-suggestion list */
@@ -1356,7 +1356,7 @@ function handleSignatureUpload(e) {
             const canvas = document.createElement('canvas');
             
             // সিগনেচারের সাইজ ২৪০x৯০ রাখা হলো
-            const MAX_WIDTH = 240;
+            const MAX_WIDTH = 130;
             let width = img.width;
             let height = img.height;
             

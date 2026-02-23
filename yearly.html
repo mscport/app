@@ -448,10 +448,7 @@
             fy: '',
             incomeCat: ['মাসিক চাঁদা', 'টুর্নামেন্ট অনুদান', 'পূজা ডোনেশন', 'অন্যান্য'],
             expenseCat: ['ইলেকট্রিক বিল', 'মাঠ সংস্কার', 'টুর্নামেন্ট খরচ', 'চা/জলখাবার', 'অন্যান্য'],
-            signatories: [
-                // Mock default signature for preview
-                { id: 1, name: 'Abcd Efgh', desig: 'Secretary', base64: '' } 
-            ],
+            signatories: [],
             incomeData: [],
             expenseData: [],
             
@@ -1181,15 +1178,11 @@ function editExpense(id) {
                 lucide.createIcons();
             }, 100);
         }
-
-        function generatePDFReceiptById(id) {
+function generatePDFReceiptById(id) {
             const data = State.incomeData.find(d => d.id === id);
-            generatePDFReceipt(data);
+            if(data) generatePDFReceipt(data);
         }
-
-        async function generatePDFReceipt(data) {
-            // ORIGINAL LOGIC RETAINED AND OVERRIDDEN BELOW IN NEW FEATURES SECTION
-            // FOR AGGRESSIVE PDF DOWNLOAD BEHAVIOR
+async function generatePDFReceipt(data) {
             document.getElementById('pr-receipt-no').innerText = data.id;
             document.getElementById('pr-date').innerText = formatDate(data.date);
             document.getElementById('pr-donor').innerText = data.donor;
@@ -1204,38 +1197,61 @@ function editExpense(id) {
 
             JsBarcode("#receipt-barcode", data.id, { format: "CODE128", width: 1.5, height: 40, displayValue: true });
 
-            const secSign = State.signatories.find(s => s.desig.toLowerCase().includes('sec'));
-            const treSign = State.signatories.find(s => s.desig.toLowerCase().includes('tre'));
+            // BUG FIX 1: ফাঁকা সিগনেচার ফিল্টার করে বাদ দেওয়া এবং reverse() করে সবার শেষের (আসল) সিগনেচারটা পিক করা
+            const validSigns = State.signatories.filter(s => s.base64 && s.base64.length > 50);
+            const secSign = validSigns.slice().reverse().find(s => s.desig && s.desig.toLowerCase().includes('sec'));
+            const treSign = validSigns.slice().reverse().find(s => s.desig && s.desig.toLowerCase().includes('tre'));
             
             const secArea = document.getElementById('pr-sec-sign-area');
             const treArea = document.getElementById('pr-tre-sign-area');
             
-            // Secretary Signature Setup
-const secImgSrc = secSign ? (secSign.base64 || secSign.imageUrl || secSign.url) : null;
-secArea.innerHTML = secImgSrc ? `<img src="${secImgSrc}" class="sign-img" crossorigin="anonymous">` : `<div style="height:40px; margin-bottom:2px;"></div>`;
-secArea.innerHTML += `<div style="border-top: 1px solid black; padding-top: 5px;">Secretary Signature</div>`;
-
-// Treasurer Signature Setup
-const treImgSrc = treSign ? (treSign.base64 || treSign.imageUrl || treSign.url) : null;
-treArea.innerHTML = treImgSrc ? `<img src="${treImgSrc}" class="sign-img" crossorigin="anonymous">` : `<div style="height:40px; margin-bottom:2px;"></div>`;
-treArea.innerHTML += `<div style="border-top: 1px solid black; padding-top: 5px;">Treasurer Signature</div>`;
+            // BUG FIX 2: innerHTML += ব্যবহার না করে একবারে পুরোটা সেট করা (DOM যেন ধ্বংস না হয়)
+            secArea.innerHTML = (secSign ? `<img src="${secSign.base64}" class="sign-img">` : `<div style="height:40px; margin-bottom:2px;"></div>`) 
+                              + `<div style="border-top: 1px solid black; padding-top: 5px;">Secretary Signature</div>`;
+            
+            treArea.innerHTML = (treSign ? `<img src="${treSign.base64}" class="sign-img">` : `<div style="height:40px; margin-bottom:2px;"></div>`) 
+                              + `<div style="border-top: 1px solid black; padding-top: 5px;">Treasurer Signature</div>`;
 
             const element = document.getElementById('receipt-template');
             const parentContainer = document.getElementById('receipt-render-area').parentNode;
             parentContainer.style.display = 'block'; 
 
+            // BUG FIX 3: ব্রাউজারকে ছবি স্ক্রিনে রেন্ডার করার জন্য ৫০০ মিলিসেকেন্ড গ্যারান্টেড সময় দেওয়া
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Aggressive PDF Download Options
             const opt = {
-                margin:       0.1,
-                filename:     `${data.id.replace(/\//g, '-')}.pdf`,
+                margin:       [10, 0, 0, 0], 
+                filename:     `${data.id.replace(/\//g, '-')}_Receipt.pdf`,
                 image:        { type: 'jpeg', quality: 1 },
-                html2canvas:  { scale: 2, useCORS: true, windowWidth: 760 }, 
-                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+                html2canvas:  { scale: 2, useCORS: true, windowWidth: 800 }, 
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'p' } 
             };
 
-            await html2pdf().set(opt).from(element).save();
-            parentContainer.style.display = 'none';
-        }
+            try {
+                const pdfWorker = html2pdf().set(opt).from(element);
+                const pdfBlob = await pdfWorker.outputPdf('blob');
+                const blobUrl = URL.createObjectURL(pdfBlob);
+                
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = blobUrl;
+                a.download = opt.filename;
+                document.body.appendChild(a);
+                a.click();
+                
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(blobUrl);
+                }, 1500);
 
+            } catch (error) {
+                console.error("Download Error...", error);
+                await html2pdf().set(opt).from(element).save();
+            } finally {
+                parentContainer.style.display = 'none'; 
+            }
+        }
         // --- 11. DASHBOARD & REPORTS ---
         function updateDashboard() {
             const tInc = State.incomeData.reduce((sum, d) => sum + d.amount, 0);
@@ -1381,6 +1397,9 @@ function saveSignatory() {
     
     State.signatories.push({ id: Date.now(), name, desig, base64: tempSigBase64 });
     
+    // 🟢 এই জাদুকরী লাইনটি আপনার সিগনেচারকে পার্মানেন্টলি সেভ করে রাখবে
+    localStorage.setItem('msc_local_signs', JSON.stringify(State.signatories)); 
+    
     document.getElementById('sig-name').value = '';
     document.getElementById('sig-desig').value = '';
     document.getElementById('sig-file').value = '';
@@ -1388,14 +1407,18 @@ function saveSignatory() {
     tempSigBase64 = '';
     
     renderSettings();
-    syncSettingsToBackend(); // গুগল শিটে পাঠানো হচ্ছে
+    syncSettingsToBackend();
 }
 
 function deleteSignatory(index) {
     if(confirm("স্বাক্ষরটি মুছে ফেলতে চান?")) {
         State.signatories.splice(index, 1);
+        
+        // 🟢 ডিলিট করার পরও যেন লোকাল মেমোরি আপডেট হয়
+        localStorage.setItem('msc_local_signs', JSON.stringify(State.signatories)); 
+        
         renderSettings();
-        syncSettingsToBackend(); // গুগল শিটে আপডেট পাঠানো হচ্ছে
+        syncSettingsToBackend();
     }
 }
 
@@ -1644,14 +1667,19 @@ function deleteCategory(type, index) {
             const secArea = document.getElementById('pr-sec-sign-area');
             const treArea = document.getElementById('pr-tre-sign-area');
             
-            secArea.innerHTML = secSign && secSign.base64 ? `<img src="${secSign.base64}" class="sign-img">` : `<div style="height:90px; width: 240px; margin-bottom:0px;"></div>`;
-secArea.innerHTML += `<div style="border-top: 0px solid black; padding-top: 5px; text-align: center;">Secretary Signature</div>`;
+  // ১. ক্রস-অরিজিন পলিসি বাইপাস করার জন্য crossorigin="anonymous" যোগ করা হলো
+secArea.innerHTML = secSign && secSign.base64 ? `<img src="${secSign.base64}" class="sign-img" crossorigin="anonymous">` : `<div style="height:40px; margin-bottom:2px;"></div>`;
+secArea.innerHTML += `<div style="border-top: 1px solid black; padding-top: 5px;">Secretary Signature</div>`;
 
-treArea.innerHTML = treSign && treSign.base64 ? `<img src="${treSign.base64}" class="sign-img">` : `<div style="height:90px; width: 240px; margin-bottom:0px;"></div>`;
-treArea.innerHTML += `<div style="border-top: 0px solid black; padding-top: 5px; text-align: center;">Treasurer Signature</div>`;
+treArea.innerHTML = treSign && treSign.base64 ? `<img src="${treSign.base64}" class="sign-img" crossorigin="anonymous">` : `<div style="height:40px; margin-bottom:2px;"></div>`;
+treArea.innerHTML += `<div style="border-top: 1px solid black; padding-top: 5px;">Treasurer Signature</div>`;
 
-            const element = document.getElementById('receipt-template');
-            const parentContainer = document.getElementById('receipt-render-area').parentNode;
+// 🌟 ২. জাদুকরী লাইন (RACE CONDITION FIX): 
+// ব্রাউজারকে ছবিটি DOM-এ সম্পূর্ণ রেন্ডার করার জন্য ৮০০ মিলিসেকেন্ড সময় দেওয়া হলো
+await new Promise(resolve => setTimeout(resolve, 800));
+
+const element = document.getElementById('receipt-template');
+const parentContainer = document.getElementById('receipt-render-area').parentNode;
             parentContainer.style.display = 'block'; 
 
            // PDF Options Update: Forcing STRICT Portrait (A4)
@@ -1815,19 +1843,14 @@ treArea.innerHTML += `<div style="border-top: 0px solid black; padding-top: 5px;
 
 
 // ১. ফেক (Dummy) ডাটা আসা বন্ধ করা হলো এবং লোকাল মেমোরি থেকে ডাটা লোড করা হলো
-
 window.mockData = function() {
+    const savedIncome = localStorage.getItem('msc_local_income');
+    const savedExpense = localStorage.getItem('msc_local_expese');
+    const savedSigns = localStorage.getItem('msc_local_signs'); // 🟢 সিগনেচার লোড করার কমান্ড
 
-const savedIncome = localStorage.getItem('msc_local_income');
-
-const savedExpense = localStorage.getItem('msc_local_expense');
-
-// যদি আগে থেকে লোকাল স্টোরেজে ডাটা থাকে, তবে সেটাই দেখাবে। না থাকলে খালি থাকবে।
-
-if(savedIncome) State.incomeData = JSON.parse(savedIncome);
-
-if(savedExpense) State.expenseData = JSON.parse(savedExpense);
-
+    if(savedIncome) State.incomeData = JSON.parse(savedIncome);
+    if(savedExpense) State.expenseData = JSON.parse(savedExpense);
+    if(savedSigns) State.signatories = JSON.parse(savedSigns); // 🟢 সিগনেচার স্টেটে সেট করার কমান্ড
 };
 
 

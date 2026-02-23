@@ -471,7 +471,7 @@
         // ==========================================
         // 🌟 GOOGLE SHEET WEB APP URL (এখানে আপনার লিংক দিন)
         // ==========================================
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwIi8fw-tI0PQeT4scP2nMqUlNkXhH_VpNkG7VMLNBBJk9hcTdIznGXLKBZpSBvL8a6/exec"; 
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxZgbTdQjLWB_r5n1ucezemPX_NSD8KSkJZ50a_SOqTEDhdgou7B5xA_Wao6yGJAG0V/exec"; 
 
         // Initialize Icons
         lucide.createIcons();
@@ -698,97 +698,143 @@ if(WEB_APP_URL !== "আপনার_গুগল_শিটের_ওয়েব_�
         }
 
         // --- 6. EXPENSE LOGIC & IMAGE UPLOAD ---
-     function handleImageSelect(event) {
+// --- 6. EXPENSE LOGIC & IMAGE UPLOAD ---
+
+        // ১. ছবি সাইজ কমানোর ফাংশন (আপনি এটি কপি করতে ভুলে গিয়েছিলেন)
+        function compressImage(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 800; // সাইজ ছোট করা হচ্ছে
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        resolve(canvas.toDataURL('image/jpeg', 0.4)); // কোয়ালিটি ৪০% করে সাইজ কমানো হলো
+                    };
+                    img.onerror = (err) => reject(err);
+                };
+                reader.onerror = (err) => reject(err);
+            });
+        }
+
+       
+
+
+     // ২. আপডেট করা ছবি সিলেক্ট ফাংশন
+async function handleImageSelect(event) {
     const file = event.target.files[0];
     if (!file) return;
 
-    // ফাইলের সাইজ চেক (ঐচ্ছিক): খুব বেশি বড় ফাইল হলে ইউজারকে ওয়ার্নিং দিতে পারেন
-    const fileSizeMB = file.size / (1024 * 1024);
-    if(fileSizeMB > 5) {
-        alert("ফাইলের সাইজ ৫ এমবি এর চেয়ে বড়। আপলোড হতে একটু বেশি সময় লাগতে পারে।");
-    }
+    document.getElementById('img-status').textContent = 'Processing Image...';
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        // কোনো কমপ্রেশন (Canvas) ছাড়াই ডাইরেক্ট অরিজিনাল হাই-কোয়ালিটি Base64 নেওয়া হচ্ছে
-        const originalDataUrl = e.target.result;
+    try {
+        const compressedBase64 = await compressImage(file);
+        State.tempBase64Image = compressedBase64;
         
-        State.tempBase64Image = originalDataUrl;
-        
-        // Update UI
-        document.getElementById('exp-img-preview').src = originalDataUrl;
+        document.getElementById('exp-img-preview').src = compressedBase64;
         document.getElementById('img-preview-container').classList.remove('hidden');
-        document.getElementById('img-status').textContent = 'Attached (High Quality)';
+        document.getElementById('img-status').textContent = 'Attached (Compressed & Ready)';
         
-        // ক্যানভাসের আর দরকার নেই, তাই চাইলে success মেসেজ আপডেট করতে পারেন
         const msgElem = document.querySelector('#img-preview-container p.text-xs');
-        if(msgElem) msgElem.innerHTML = `<i data-lucide="check-circle-2" class="w-3 h-3 inline"></i> Original Quality Ready`;
-        lucide.createIcons();
+        if(msgElem) msgElem.innerHTML = `<i data-lucide="check-circle-2" class="w-3 h-3 inline"></i> Compressed Quality Ready`;
+        if(window.lucide) lucide.createIcons();
+
+    } catch (error) {
+        console.error(error);
+        alert("ছবি প্রসেস করতে সমস্যা হয়েছে!");
+        document.getElementById('img-status').textContent = 'কোনো ছবি নেই';
     }
-    // ফাইলটিকে ডাইরেক্ট DataURL এ কনভার্ট করা হচ্ছে
-    reader.readAsDataURL(file);
 }
-        function removeImage() {
-            State.tempBase64Image = null;
-            document.getElementById('exp-img-preview').src = '';
-            document.getElementById('img-preview-container').classList.add('hidden');
-            const camInput = document.getElementById('exp-image-cam');
-            if (camInput) camInput.value = '';
-            const fileInput = document.getElementById('exp-image-file');
-            if (fileInput) fileInput.value = '';
-            document.getElementById('img-status').textContent = 'কোনো ছবি নেই';
-        }
-
-        function saveExpense() {
-            const date = document.getElementById('exp-date').value;
-            const reason = document.getElementById('exp-reason').value;
-            const cat = document.getElementById('exp-category').value;
-            const amt = document.getElementById('exp-amount').value;
-            const remarks = document.getElementById('exp-remarks').value;
-
-            if(!reason || !amt) { alert("কারণ এবং পরিমাণ আবশ্যক!"); return; }
-
-            const newData = {
-                id: `EXP-${Date.now()}`, // Unique ID
-                date, reason, category: cat, amount: Number(amt), remarks,
-                imageBase64: State.tempBase64Image // Compressed image
-            };
-
-            State.expenseData.push(newData);
-
-            // Backend এ ডেটা পাঠানোর লজিক (Fetch API)
-if(WEB_APP_URL !== "আপনার_গুগল_শিটের_ওয়েব_অ্যাপ_লিংক_এখানে_দিন") {
-    fetch(WEB_APP_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-            action: "addExpense",
-            data: newData
-        })
-    })
-    .then(res => res.json())
-    .then(data => console.log("Expense Saved to Google Sheet:", data))
-    .catch(err => console.error("Error saving to sheet:", err));
+function removeImage() {
+    State.tempBase64Image = null;
+    document.getElementById('exp-img-preview').src = '';
+    document.getElementById('img-preview-container').classList.add('hidden');
+    const camInput = document.getElementById('exp-image-cam');
+    if (camInput) camInput.value = '';
+    const fileInput = document.getElementById('exp-image-file');
+    if (fileInput) fileInput.value = '';
+    document.getElementById('img-status').textContent = 'কোনো ছবি নেই';
 }
 
-            // Show Custom POPUP as requested
-            showCustomPopup(`
-                <h3 class="text-xl font-bold mb-4 border-b pb-2">খরচ সংরক্ষিত হয়েছে</h3>
-                <table class="w-full text-left">
-                    <tr><td class="py-1 text-gray-600">খরচের সিরিয়াল নং</td><td>: ${newData.id}</td></tr>
-                    <tr><td class="py-1 text-gray-600">তারিখ</td><td>: ${formatDate(date)}</td></tr>
-                    <tr><td class="py-1 text-gray-600">খরচের কারণ</td><td>: ${reason}</td></tr>
-                    <tr><td class="py-1 text-gray-600">কোন খাতে খরচ</td><td>: ${cat}</td></tr>
-                    <tr><td class="py-1 text-gray-600">পরিমাণ</td><td>: ₹ ${amt}</td></tr>
-                    ${remarks ? `<tr><td class="py-1 text-gray-600">Remarks</td><td>: ${remarks}</td></tr>` : ''}
-                </table>
-                <div class="mt-6 flex justify-end">
-                    <button onclick="closeModal()" class="bg-blue-600 text-white px-4 py-2 rounded">ঠিক আছে</button>
-                </div>
-            `, "Success");
+async function saveExpense() {
+    const date = document.getElementById('exp-date').value;
+    const reason = document.getElementById('exp-reason').value;
+    const cat = document.getElementById('exp-category').value;
+    const amt = document.getElementById('exp-amount').value;
+    const remarks = document.getElementById('exp-remarks').value;
 
-            clearForm('expense');
+    if(!reason || !amt) { alert("কারণ এবং পরিমাণ আবশ্যক!"); return; }
+
+    const saveBtn = document.querySelector('button[onclick="saveExpense()"]');
+    const originalBtnHTML = saveBtn.innerHTML;
+    saveBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> সেভ হচ্ছে...`;
+    saveBtn.disabled = true;
+
+    try {
+        const newData = {
+            id: `EXP-${Date.now()}`, 
+            date, reason, category: cat, amount: Number(amt), remarks,
+            imageBase64: State.tempBase64Image // আপনার ব্যাকএন্ড এই নামেই ডাটা রিসিভ করে
+        };
+
+        // Backend এ পাঠানো
+        if(WEB_APP_URL !== "আপনার_গুগল_শিটের_ওয়েব_অ্যাপ_লিংক_এখানে_দিন") {
+            const res = await fetch(WEB_APP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: "addExpense", data: newData })
+            });
+            const result = await res.json();
+            
+            // সার্ভার থেকে ফেরত আসা URL দিয়ে ডাটা আপডেট করা
+            if(result.status === 'success' && result.imageUrl) {
+                newData.imageUrl = result.imageUrl; 
+            }
         }
+
+        State.expenseData.push(newData);
+
+        showCustomPopup(`
+            <h3 class="text-xl font-bold mb-4 border-b pb-2">খরচ সংরক্ষিত হয়েছে</h3>
+            <table class="w-full text-left">
+                <tr><td class="py-1 text-gray-600">খরচের সিরিয়াল নং</td><td>: ${newData.id}</td></tr>
+                <tr><td class="py-1 text-gray-600">তারিখ</td><td>: ${formatDate(date)}</td></tr>
+                <tr><td class="py-1 text-gray-600">খরচের কারণ</td><td>: ${reason}</td></tr>
+                <tr><td class="py-1 text-gray-600">পরিমাণ</td><td>: ₹ ${amt}</td></tr>
+            </table>
+            <div class="mt-6 flex justify-end">
+                <button onclick="closeModal()" class="bg-blue-600 text-white px-4 py-2 rounded">ঠিক আছে</button>
+            </div>
+        `, "Success");
+
+        clearForm('expense');
+        renderExpenseTable();
+        updateDashboard();
+
+    } catch (error) {
+        console.error("Error saving expense:", error);
+        alert("ডাটা সেভ করতে সমস্যা হয়েছে। ইন্টারনেট চেক করুন।");
+    } finally {
+        saveBtn.innerHTML = originalBtnHTML;
+        saveBtn.disabled = false;
+        if(window.lucide) lucide.createIcons();
+    }
+}
 
         function clearForm(type) {
             if(type === 'income') {
@@ -945,60 +991,136 @@ if(WEB_APP_URL !== "আপনার_গুগল_শিটের_ওয়েব_�
             });
         }
 
-        function editExpense(id) {
-            const data = State.expenseData.find(d => d.id === id);
-            if(!data) return;
-
-            State.tempBase64Image = data.imageBase64; // load existing
-
-            const html = `
-                <div class="grid gap-4">
-                    <div>
-                        <label class="block text-sm">তারিখ</label>
-                        <input type="date" id="edit-exp-date" value="${data.date}" class="w-full border rounded p-2">
-                    </div>
-                    <div>
-                        <label class="block text-sm">খরচের কারণ</label>
-                        <input type="text" id="edit-exp-reason" value="${data.reason}" class="w-full border rounded p-2">
-                    </div>
-                    <div>
-                        <label class="block text-sm">খাত</label>
-                        <select id="edit-exp-cat" class="w-full border rounded p-2">
-                            ${State.expenseCat.map(c => `<option value="${c}" ${c===data.category?'selected':''}>${c}</option>`).join('')}
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm">পরিমাণ</label>
-                        <input type="number" id="edit-exp-amt" value="${data.amount}" class="w-full border rounded p-2">
-                    </div>
-                    <div class="border p-3 rounded bg-gray-50">
-                        <label class="block text-sm mb-2">বিল Attachment</label>
-                        ${State.tempBase64Image ? `
-                            <div class="relative inline-block" id="edit-img-wrap">
-                                <img src="${State.tempBase64Image}" class="h-20 border rounded">
-                                <button onclick="State.tempBase64Image=null; document.getElementById('edit-img-wrap').style.display='none'" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><i data-lucide="x" class="w-3 h-3"></i></button>
-                            </div>
-                        ` : ''}
-                        <input type="file" onchange="handleImageSelect(event)" class="mt-2 text-sm w-full">
-                        <p class="text-xs text-gray-500 mt-1">(নতুন ছবি দিলে পুরানোটি মুছে যাবে)</p>
-                    </div>
+        // ১. এডিট মডালের জন্য নতুন ছবি আপলোড ফাংশন
+async function handleEditImageSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    try {
+        const compressedBase64 = await compressImage(file);
+        State.tempBase64Image = compressedBase64;
+        
+        let previewImg = document.getElementById('edit-img-preview');
+        let wrap = document.getElementById('edit-img-wrap');
+        
+        if (previewImg) {
+            previewImg.src = compressedBase64;
+            wrap.style.display = 'inline-block';
+        } else {
+            document.getElementById('edit-img-container').innerHTML = `
+                <div class="relative inline-block mb-2" id="edit-img-wrap">
+                    <img id="edit-img-preview" src="${compressedBase64}" class="h-20 border rounded">
+                    <button onclick="State.tempBase64Image=null; document.getElementById('edit-img-wrap').style.display='none'" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><i data-lucide="x" class="w-3 h-3"></i></button>
                 </div>
             `;
-
-            showModal('Update Expense', html, () => {
-                data.date = document.getElementById('edit-exp-date').value;
-                data.reason = document.getElementById('edit-exp-reason').value;
-                data.category = document.getElementById('edit-exp-cat').value;
-                data.amount = Number(document.getElementById('edit-exp-amt').value);
-                data.imageBase64 = State.tempBase64Image;
-                // SYNC APP SCRIPT HERE
-                renderExpenseTable();
-                updateDashboard();
-                closeModal();
-                State.tempBase64Image = null; // reset
-            });
-            setTimeout(() => lucide.createIcons(), 10);
+            if(window.lucide) lucide.createIcons();
         }
+    } catch (error) {
+        alert("ছবি প্রসেস করতে সমস্যা হয়েছে!");
+    }
+}
+
+// ২. আপডেট করা এডিট এক্সপেন্স ফাংশন
+function editExpense(id) {
+    const data = State.expenseData.find(d => d.id === id);
+    if(!data) return;
+
+    // গুগল শিট থেকে পাওয়া URL বা লোকাল Base64 যেকোনো একটি লোড করা হচ্ছে
+    State.tempBase64Image = data.imageUrl || data.imageBase64 || null; 
+
+    const html = `
+        <div class="grid gap-4">
+            <div>
+                <label class="block text-sm">তারিখ</label>
+                <input type="date" id="edit-exp-date" value="${data.date}" class="w-full border rounded p-2">
+            </div>
+            <div>
+                <label class="block text-sm">খরচের কারণ</label>
+                <input type="text" id="edit-exp-reason" value="${data.reason}" class="w-full border rounded p-2">
+            </div>
+            <div>
+                <label class="block text-sm">খাত</label>
+                <select id="edit-exp-cat" class="w-full border rounded p-2">
+                    ${State.expenseCat.map(c => `<option value="${c}" ${c===data.category?'selected':''}>${c}</option>`).join('')}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm">পরিমাণ</label>
+                <input type="number" id="edit-exp-amt" value="${data.amount}" class="w-full border rounded p-2">
+            </div>
+            <div class="border p-3 rounded bg-gray-50">
+                <label class="block text-sm mb-2">বিল Attachment (নতুন ছবি দিলে পুরানোটি মুছে যাবে)</label>
+                <div id="edit-img-container">
+                    ${State.tempBase64Image ? `
+                        <div class="relative inline-block mb-2" id="edit-img-wrap">
+                            <img id="edit-img-preview" src="${State.tempBase64Image}" class="h-20 border rounded">
+                            <button onclick="State.tempBase64Image=null; document.getElementById('edit-img-wrap').style.display='none'" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><i data-lucide="x" class="w-3 h-3"></i></button>
+                        </div>
+                    ` : ''}
+                </div>
+                <input type="file" onchange="handleEditImageSelect(event)" accept="image/*" class="mt-2 text-sm w-full">
+            </div>
+        </div>
+    `;
+
+    showModal('Update Expense', html, async () => {
+        const saveBtn = document.getElementById('modal-save-btn');
+        const originalText = saveBtn.innerHTML;
+        saveBtn.innerHTML = "Updating...";
+        saveBtn.disabled = true;
+
+        data.date = document.getElementById('edit-exp-date').value;
+        data.reason = document.getElementById('edit-exp-reason').value;
+        data.category = document.getElementById('edit-exp-cat').value;
+        data.amount = Number(document.getElementById('edit-exp-amt').value);
+        
+        // নতুন ছবি দেওয়া হলে Base64 সেভ হবে, নাহলে পুরোনো URL থাকবে
+        if (State.tempBase64Image && State.tempBase64Image.startsWith('data:image')) {
+            data.imageBase64 = State.tempBase64Image;
+            data.imageUrl = null; 
+        } else if (!State.tempBase64Image) {
+            data.imageBase64 = null;
+            data.imageUrl = null;
+        }
+
+        // Backend Update Logic (Delete old & Add new)
+        if(WEB_APP_URL !== "আপনার_গুগল_শিটের_ওয়েব_অ্যাপ_লিংক_এখানে_দিন") {
+            try {
+                // ১. গুগল শিট থেকে পুরোনো রেকর্ডটি ডিলিট করা
+                await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: "deleteExpense", id: id })
+                });
+                
+                // ২. নতুন আপডেট করা রেকর্ডটি গুগল শিটে সেভ করা
+                const res = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: "addExpense", data: data })
+                });
+                const result = await res.json();
+                
+                // গুগল শিট থেকে নতুন লিংক পেলে সেটি সেভ করা
+                if(result.status === 'success' && result.imageUrl) {
+                    data.imageUrl = result.imageUrl;
+                    data.imageBase64 = null;
+                }
+            } catch(e) {
+                console.error("Failed to update backend:", e);
+                alert("সার্ভারে আপডেট করতে সমস্যা হয়েছে। ইন্টারনেট চেক করুন।");
+            }
+        }
+
+        renderExpenseTable();
+        updateDashboard();
+        closeModal();
+        State.tempBase64Image = null; 
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+    });
+    setTimeout(() => { if(window.lucide) lucide.createIcons(); }, 10);
+}
 
         // --- 9. MODAL UTILS ---
         function showModal(title, contentHtml, onSave) {

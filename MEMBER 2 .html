@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Itinda Road Dhaltitha Modern Sporting Club - Member Log</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- html2pdf for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        /* Custom scrollbar for modal */
+        .modal-scroll::-webkit-scrollbar { width: 8px; }
+        .modal-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .modal-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .modal-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .required-asterisk::after { content: " *"; color: red; }
+        .loader-spinner { border-top-color: #3498db; animation: spinner 1.5s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
+
+    <div class="max-w-[95%] mx-auto px-4 py-8">
+        
+        <!-- Header -->
+        <div class="mb-8 text-center">
+            <h1 class="text-2xl md:text-4xl font-extrabold text-blue-900 tracking-tight uppercase">ITINDA ROAD DHALTITHA MODERN SPORTING CLUB</h1>
+            <p class="text-gray-600 mt-2 font-medium">Itinda Road, Dhaltitha, Basirhat, North 24 Parganas, West Bengal 743412</p>
+        </div>
+
+        <!-- Navigation Tabs & Action Bar -->
+        <div class="bg-white rounded-t-lg shadow-sm border-b border-gray-200">
+            <div class="flex flex-col lg:flex-row justify-between items-center px-6 py-4">
+                <nav class="flex flex-wrap gap-2 mb-4 lg:mb-0" id="tabs">
+                    <button onclick="switchTab('GB')" id="tab-GB" class="px-4 py-2 text-sm font-medium rounded-md bg-blue-100 text-blue-700 transition-colors uppercase">Governing Body</button>
+                    <button onclick="switchTab('OM')" id="tab-OM" class="px-4 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors uppercase">Ordinary Member</button>
+                    <button onclick="switchTab('HM')" id="tab-HM" class="px-4 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors uppercase">Honorary Member</button>
+                </nav>
+                <div class="flex space-x-3 w-full lg:w-auto justify-end">
+                    <button onclick="downloadCategoryPDF()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-md shadow-sm text-sm font-semibold flex items-center transition-colors">
+                        <i class="fas fa-file-pdf mr-2"></i> Download <span id="downloadBtnText" class="ml-1 uppercase">GB Data</span>
+                    </button>
+                    <button onclick="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-md shadow-sm text-sm font-semibold flex items-center transition-colors">
+                        <i class="fas fa-user-plus mr-2"></i> Add Member
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="bg-white rounded-b-lg shadow-sm py-12 text-center">
+            <div class="w-12 h-12 border-4 border-gray-200 border-solid rounded-full loader-spinner mx-auto mb-4"></div>
+            <p class="text-gray-500 font-medium">Google Database থেকে ডেটা লোড হচ্ছে...</p>
+        </div>
+
+        <!-- Data Table -->
+        <div id="tableContainer" class="bg-white rounded-b-lg shadow-sm overflow-x-auto hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sl.</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address, Contact & Email</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Membership Info</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Signature</th>
+                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-right">Admin Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="memberTableBody" class="bg-white divide-y divide-gray-200">
+                    <!-- Rows injected by JS -->
+                </tbody>
+            </table>
+            <div id="emptyState" class="hidden text-center py-12">
+                <i class="fas fa-users text-4xl text-gray-300 mb-3"></i>
+                <p class="text-gray-500 text-sm">এই ক্যাটাগরিতে কোনো মেম্বার নেই।</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Member Modal -->
+    <div id="addMemberModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity"></div>
+        <div class="fixed inset-0 z-10 overflow-y-auto">
+            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl modal-scroll">
+                    
+                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="flex justify-between items-center mb-5 pb-3 border-b">
+                            <h3 class="text-xl font-semibold leading-6 text-gray-900" id="modal-title">Add New Member</h3>
+                            <button type="button" onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+
+                        <form id="addMemberForm" onsubmit="handleFormSubmit(event)">
+                            <!-- Section 1: Official Details -->
+                            <div class="mb-6 p-4 bg-blue-50 rounded-lg">
+                                <h4 class="text-sm font-semibold text-blue-800 mb-3 uppercase tracking-wide">Official Record</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 required-asterisk">Membership ID</label>
+                                        <div class="flex mt-1">
+                                            <span id="idPrefixDisplay" class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-100 text-gray-500 sm:text-sm font-bold">MSC/GB/</span>
+                                            <input type="text" id="idNumber" required placeholder="01" class="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 required-asterisk">Date of Joining</label>
+                                        <input type="date" id="joinDate" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Resolution No.</label>
+                                        <input type="text" id="resolutionNo" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Resolution Date</label>
+                                        <input type="date" id="resolutionDate" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    </div>
+                                    <div class="md:col-span-4">
+                                        <label class="block text-sm font-medium text-gray-700">Designation (If any)</label>
+                                        <input type="text" id="designation" placeholder="e.g. PRESIDENT, MEMBER" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm uppercase">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section 2: Personal Details -->
+                            <div class="mb-6">
+                                <h4 class="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wide border-b pb-2">Personal Details</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div class="md:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 required-asterisk">Full Name (Only Characters & Dots)</label>
+                                        <input type="text" id="fullName" required pattern="[A-Za-z\s.]+" title="Only letters, spaces, and dots allowed" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm uppercase">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 required-asterisk">Upload Image (Passport Size)</label>
+                                        <div id="profileImagePreviewContainer" class="hidden mt-2 flex items-center space-x-4 bg-gray-50 p-2 rounded border">
+                                            <img id="profileImagePreview" src="" class="h-12 w-12 object-cover rounded border">
+                                            <button type="button" onclick="removeProfileImage()" class="text-xs text-red-600 hover:text-red-800 font-semibold"><i class="fas fa-trash"></i> Remove</button>
+                                        </div>
+                                        <input type="file" id="profileImage" accept="image/*" required class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 required-asterisk">Gender</label>
+                                        <select id="gender" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                            <option value="">--Select--</option>
+                                            <option value="Male">Male</option>
+                                            <option value="Female">Female</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 required-asterisk">Date of Birth / Age</label>
+                                        <input type="text" id="dob" required placeholder="DD/MM/YYYY or Age (e.g. 45)" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 required-asterisk">Father's / Husband's Name</label>
+                                        <input type="text" id="guardianName" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Profession</label>
+                                        <input type="text" id="profession" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm uppercase">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section 3: Address & Contact -->
+                            <div class="mb-6">
+                                <h4 class="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wide border-b pb-2">Address & Contact Info</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 required-asterisk">Mobile Number</label>
+                                        <input type="tel" id="mobile" required pattern="[0-9]{10}" placeholder="10 digit number" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Email ID</label>
+                                        <input type="email" id="email" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    </div>
+                                    <div class="md:col-span-3 grid grid-cols-1 md:grid-cols-4 gap-4">
+                                        <div><label class="block text-sm font-medium text-gray-700 required-asterisk">Road / Street</label><input type="text" id="road" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div>
+                                        <div><label class="block text-sm font-medium text-gray-700 required-asterisk">Vill / Town</label><input type="text" id="vill" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div>
+                                        <div><label class="block text-sm font-medium text-gray-700 required-asterisk">P.O.</label><input type="text" id="po" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div>
+                                        <div><label class="block text-sm font-medium text-gray-700 required-asterisk">P.S.</label><input type="text" id="ps" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 required-asterisk">Locality Type</label>
+                                        <select id="localityType" required onchange="handleLocalityChange()" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                            <option value="">--Select--</option>
+                                            <option value="Municipality">Municipality</option>
+                                            <option value="Panchayet">Panchayet</option>
+                                        </select>
+                                    </div>
+                                    <div id="wardContainer" class="hidden"><label class="block text-sm font-medium text-gray-700 required-asterisk">Ward No.</label><input type="text" id="wardNo" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div>
+                                    <div id="panchayetContainer" class="hidden"><label class="block text-sm font-medium text-gray-700 required-asterisk">Panchayet Name</label><input type="text" id="panchayetName" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 required-asterisk">District</label>
+                                        <select id="district" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                            <option value="">--Select--</option>
+                                            <option value="Alipurduar">Alipurduar</option><option value="Bankura">Bankura</option><option value="Birbhum">Birbhum</option><option value="Cooch Behar">Cooch Behar</option><option value="Dakshin Dinajpur">Dakshin Dinajpur</option><option value="Darjeeling">Darjeeling</option><option value="Hooghly">Hooghly</option><option value="Howrah">Howrah</option><option value="Jalpaiguri">Jalpaiguri</option><option value="Jhargram">Jhargram</option><option value="Kalimpong">Kalimpong</option><option value="Kolkata">Kolkata</option><option value="Malda">Malda</option><option value="Murshidabad">Murshidabad</option><option value="Nadia">Nadia</option><option value="North 24 Parganas">North 24 Parganas</option><option value="Paschim Bardhaman">Paschim Bardhaman</option><option value="Paschim Medinipur">Paschim Medinipur</option><option value="Purba Bardhaman">Purba Bardhaman</option><option value="Purba Medinipur">Purba Medinipur</option><option value="Purulia">Purulia</option><option value="South 24 Parganas">South 24 Parganas</option><option value="Uttar Dinajpur">Uttar Dinajpur</option>
+                                        </select>
+                                    </div>
+                                    <div><label class="block text-sm font-medium text-gray-700 required-asterisk">Pincode</label><input type="text" id="pincode" required pattern="[0-9]{6}" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div>
+                                </div>
+                            </div>
+
+                            <!-- Section 4: Identity & Attachments -->
+                            <div class="mb-2">
+                                <h4 class="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wide border-b pb-2">Documents & Identity</h4>
+                                
+                                <div id="idProofsContainer" class="bg-gray-50 p-3 rounded border border-gray-200 mb-4">
+                                    <!-- Dynamic ID Proof Rows go here -->
+                                </div>
+                                <button type="button" onclick="addIdProofRow()" class="mb-4 text-sm text-blue-600 hover:text-blue-800 font-medium inline-flex items-center"><i class="fas fa-plus-circle mr-1"></i> Add Another ID Proof</button>
+
+                                <div class="border-t pt-4">
+                                    <label class="block text-sm font-medium text-gray-700">Upload Member's Signature</label>
+                                    <div id="signatureImagePreviewContainer" class="hidden mt-2 flex items-center space-x-4 bg-gray-50 p-2 rounded border w-fit">
+                                        <img id="signatureImagePreview" src="" class="h-10 object-contain bg-white px-2 border">
+                                        <button type="button" onclick="removeSignatureImage()" class="text-xs text-red-600 hover:text-red-800 font-semibold"><i class="fas fa-trash"></i> Remove</button>
+                                    </div>
+                                    <input type="file" id="signatureImage" accept="image/*" class="mt-1 block w-full md:w-1/3 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200">
+                                </div>
+                            </div>
+
+                        </form>
+                    </div>
+
+                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 border-t">
+                        <button type="submit" form="addMemberForm" id="saveBtn" class="inline-flex w-full justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 sm:ml-3 sm:w-auto">
+                            <i class="fas fa-save mr-2 mt-1"></i> Save Profile
+                        </button>
+                        <button type="button" onclick="closeModal()" class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">
+                            Cancel
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 transform translate-y-20 opacity-0 transition-all duration-300 bg-gray-800 text-white px-6 py-3 rounded shadow-lg z-50 flex items-center hidden">
+        <i id="toastIcon" class="fas fa-check-circle text-green-400 mr-3"></i>
+        <span id="toastMsg">Action successful</span>
+    </div>
+
+    <script>
+        // ✅ YOUR GOOGLE APPS SCRIPT URL HAS BEEN PASTED HERE
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwmLRiq5DIzKkzBpiE-js8AiZTxZRSacemJQmDcAHwJ7tIBaDbloSt2n4XDFv4wCfC6AQ/exec";
+
+        // State Management
+        let currentTab = 'GB'; 
+        let isEditMode = false;
+        let editingMemberId = null;
+        let existingProfilePic = null;
+        let existingSignature = null;
+
+        const idPrefixes = { 'GB': 'MSC/GB/', 'OM': 'MSC/OM/', 'HM': 'MSC/HM/' };
+        const tabNames = { 'GB': 'GOVERNING BODY', 'OM': 'ORDINARY MEMBER', 'HM': 'HONORARY MEMBER' };
+        
+        let membersData = []; 
+
+        // App Initialization: Fetch Data from Database on Load
+        document.addEventListener('DOMContentLoaded', () => { 
+            fetchDatabaseData();
+        });
+
+        // 🟢 Fetch logic: GET data from Apps Script
+        async function fetchDatabaseData() {
+            try {
+                const response = await fetch(SCRIPT_URL);
+                const result = await response.json();
+                
+                if(result.status === "success") {
+                    // Safety mapping to prevent crash from Apps Script stringified JSON objects
+                    membersData = result.data.map(m => {
+                        if (typeof m.addressObj === 'string') {
+                            try { m.addressObj = JSON.parse(m.addressObj); } catch(e) { m.addressObj = {}; }
+                        }
+                        if (typeof m.idProofs === 'string') {
+                            try { m.idProofs = JSON.parse(m.idProofs); } catch(e) { m.idProofs = []; }
+                        }
+                        return m;
+                    });
+                    document.getElementById('loadingState').classList.add('hidden');
+                    document.getElementById('tableContainer').classList.remove('hidden');
+                    renderTable();
+                } else {
+                    throw new Error("Failed to load data");
+                }
+            } catch (error) {
+                console.error("Database Connection Error:", error);
+                document.getElementById('loadingState').innerHTML = `<p class="text-red-500"><i class="fas fa-exclamation-triangle"></i> Failed to connect to database. Check your URL.</p>`;
+                showToast("Connection Error", true);
+            }
+        }
+
+        // 🟢 Fetch logic: POST data to Apps Script (Save, Update, Delete)
+        async function apiSyncAction(action, dataObj) {
+            const payload = { action: action, data: dataObj };
+            
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' }, 
+                    body: JSON.stringify(payload)
+                });
+                return await response.json();
+            } catch (err) {
+                console.error("API Sync Error:", err);
+                throw err;
+            }
+        }
+
+        // Tab Logic - ট্যাব লজিক
+        function switchTab(tab) {
+            currentTab = tab;
+            ['GB', 'OM', 'HM'].forEach(t => {
+                const el = document.getElementById(`tab-${t}`);
+                if (t === tab) {
+                    el.className = 'px-4 py-2 text-sm font-medium rounded-md bg-blue-100 text-blue-700 transition-colors uppercase';
+                } else {
+                    el.className = 'px-4 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors uppercase';
+                }
+            });
+
+            document.getElementById('idPrefixDisplay').innerText = idPrefixes[currentTab];
+            document.getElementById('downloadBtnText').innerText = `${tabNames[currentTab]} Data`;
+            renderTable();
+        }
+
+        // Render Data Table - টেবিল রেন্ডার করা
+        function renderTable() {
+            const tbody = document.getElementById('memberTableBody');
+            const emptyState = document.getElementById('emptyState');
+            tbody.innerHTML = '';
+            
+            const filteredMembers = membersData.filter(m => m.tabCategory === currentTab);
+
+            if (filteredMembers.length === 0) {
+                tbody.parentElement.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            tbody.parentElement.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+
+            filteredMembers.forEach((member, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 transition-colors";
+
+                const slCell = `<td class="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-500">${index + 1}</td>`;
+
+                const cell1 = `
+                    <td class="px-4 py-4 whitespace-nowrap">
+                        <div class="flex flex-col items-center">
+                            ${member.profilePicBase64 ? `<img class="h-14 w-14 rounded-full object-cover border border-gray-200 shadow-sm" src="${member.profilePicBase64}" alt="Photo" onerror="this.outerHTML='<div class=\\'h-14 w-14 rounded-full border border-gray-200 shadow-sm bg-gray-100 flex items-center justify-center text-gray-400 text-[10px]\\'>No Photo</div>'">` : `<div class="h-14 w-14 rounded-full border border-gray-200 shadow-sm bg-gray-100 flex items-center justify-center text-gray-400 text-[10px]">No Photo</div>`}
+                            <div class="mt-2 text-[10px] font-bold text-blue-800 bg-blue-50 px-2 py-1 rounded border border-blue-100">${member.fullId}</div>
+                        </div>
+                    </td>
+                `;
+
+                const cell2 = `
+                    <td class="px-4 py-4 whitespace-nowrap">
+                        <div class="text-sm font-bold text-gray-900 uppercase">${member.fullName}</div>
+                        <div class="text-xs text-gray-500 mt-1"><span class="font-semibold">C/o:</span> ${member.guardianName}</div>
+                        <div class="text-xs text-gray-500 mt-1"><span class="font-semibold">DOB/Age:</span> ${member.dob}</div>
+                        <div class="text-xs text-gray-500 mt-1"><span class="font-semibold">Gender:</span> ${member.gender}</div>
+                        <div class="text-xs text-indigo-600 mt-1 uppercase font-semibold"><i class="fas fa-briefcase mr-1"></i> ${member.profession ? member.profession : 'N/A'}</div>
+                    </td>
+                `;
+
+                const cell3 = `
+                    <td class="px-4 py-4">
+                        <div class="text-xs text-gray-900 whitespace-normal min-w-[180px]"><i class="fas fa-map-marker-alt text-gray-400 mr-1"></i> ${member.address}</div>
+                        <div class="text-xs font-medium text-gray-700 mt-2"><i class="fas fa-phone-alt text-gray-400 mr-1"></i> ${member.mobile}</div>
+                        ${member.email ? `<div class="text-xs text-gray-500 mt-1"><i class="fas fa-envelope text-gray-400 mr-1"></i> ${member.email}</div>` : ''}
+                    </td>
+                `;
+
+                const cell4 = `
+                    <td class="px-4 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-[10px] leading-5 font-semibold rounded-full bg-green-100 text-green-800 uppercase">${tabNames[member.tabCategory]}</span>
+                        <div class="text-xs font-bold text-gray-700 mt-2 uppercase">${member.designation || 'MEMBER'}</div>
+                        <div class="text-xs text-gray-500 mt-2"><span class="font-semibold">Joined:</span> ${formatDate(member.joinDate)}</div>
+                        ${member.resolutionNo ? `<div class="text-[10px] text-gray-500 mt-1"><strong>Res. No:</strong> ${member.resolutionNo} <br> ${member.resolutionDate ? '('+formatDate(member.resolutionDate)+')' : ''}</div>` : ''}
+                    </td>
+                `;
+
+                const sigCell = `
+                    <td class="px-4 py-4 whitespace-nowrap text-center">
+                        ${member.signatureBase64 ? `<img src="${member.signatureBase64}" class="h-10 mx-auto object-contain bg-white border border-gray-100 rounded px-1" alt="Sig" onerror="this.outerHTML='<span class=\\'text-[10px] text-red-400 italic\\'>Img Error</span>'"/>` : `<span class="text-xs text-gray-400 italic">No Sig.</span>`}
+                    </td>
+                `;
+
+                let idProofsHTML = '';
+                if(member.idProofs && member.idProofs.length > 0) {
+                    member.idProofs.forEach(proof => {
+                        idProofsHTML += `
+                            <div class="text-[10px] font-semibold text-gray-700 bg-gray-100 p-1.5 rounded mb-1 inline-block text-left w-full">
+                                ${proof.type}: <span class="font-mono text-gray-900">${proof.number}</span>
+                                ${proof.docBase64 ? `<a href="#" onclick="viewDoc('${proof.docBase64}'); return false;" class="text-blue-600 hover:text-blue-900 ml-2" title="View Document"><i class="fas fa-paperclip"></i> View</a>` : ''}
+                            </div>
+                        `;
+                    });
+                } else {
+                    idProofsHTML = `<span class="text-xs text-gray-400 italic">No ID Saved</span>`;
+                }
+
+                const cell5 = `
+                    <td class="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div class="flex flex-col items-start mb-2">${idProofsHTML}</div>
+                        <div class="flex flex-col items-end space-y-2 mt-1">
+                            <div class="flex space-x-1 mt-1">
+                                <button onclick="editMember('${member.id}')" class="text-indigo-600 hover:text-indigo-900 text-xs border border-indigo-200 px-2 py-1 rounded bg-indigo-50" title="Edit Profile"><i class="fas fa-edit"></i> Edit</button>
+                                <button onclick="deleteMember('${member.id}')" class="text-red-600 hover:text-red-900 text-xs border border-red-200 px-2 py-1 rounded bg-red-50" title="Delete Profile"><i class="fas fa-trash"></i></button>
+                                <button onclick="downloadProfilePDF('${member.id}')" class="text-gray-600 hover:text-gray-900 text-xs border border-gray-200 px-2 py-1 rounded bg-gray-50" title="Download Profile PDF"><i class="fas fa-file-pdf"></i></button>
+                            </div>
+                        </div>
+                    </td>
+                `;
+
+                tr.innerHTML = slCell + cell1 + cell2 + cell3 + cell4 + sigCell + cell5;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Dynamic ID Proof Row Handlers - ডায়নামিক আইডি প্রুফ
+        function addIdProofRow(type = '', num = '', existingBase64 = null) {
+            const container = document.getElementById('idProofsContainer');
+            const rowCount = container.children.length;
+            const row = document.createElement('div');
+            row.className = 'id-proof-row grid grid-cols-1 md:grid-cols-4 gap-4 mb-3 pb-3 border-b border-gray-200 last:border-0';
+            
+            let base64InputHtml = '';
+            let fileInputClass = 'idImage mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-gray-100 hover:file:bg-gray-200';
+            
+            if (existingBase64) {
+                fileInputClass += ' hidden'; 
+                base64InputHtml = `
+                    <div class="existing-doc-container mt-2 flex items-center justify-between bg-gray-50 p-2 rounded border w-full">
+                        <input type="hidden" class="existingBase64" value="${existingBase64}">
+                        <span class="text-[10px] text-green-600 block truncate w-3/4"><i class="fas fa-check"></i> Saved - <a href="#" onclick="viewDoc('${existingBase64}'); return false;" class="text-blue-600 underline hover:text-blue-800">View</a></span>
+                        <button type="button" onclick="removeIdProofDoc(this)" class="text-xs text-red-600 hover:text-red-800 font-semibold" title="Remove Attachment"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+            }
+
+            row.innerHTML = `
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 ${rowCount === 0 ? 'required-asterisk' : ''}">ID Proof Type</label>
+                    <select class="idType mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" ${rowCount === 0 ? 'required' : ''}>
+                        <option value="">--Select--</option>
+                        <option value="Aadhaar" ${type === 'Aadhaar' ? 'selected' : ''}>Aadhaar</option>
+                        <option value="Pan" ${type === 'Pan' ? 'selected' : ''}>PAN</option>
+                        <option value="Voter" ${type === 'Voter' ? 'selected' : ''}>Voter ID</option>
+                        <option value="Passport" ${type === 'Passport' ? 'selected' : ''}>Passport</option>
+                        <option value="Driving Licence" ${type === 'Driving Licence' ? 'selected' : ''}>Driving Licence</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 ${rowCount === 0 ? 'required-asterisk' : ''}">ID Number</label>
+                    <input type="text" class="idProofNumber mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" value="${num}" ${rowCount === 0 ? 'required' : ''}>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Upload ID (Optional)</label>
+                    <input type="file" class="${fileInputClass}" accept="image/*,application/pdf">
+                    ${base64InputHtml}
+                </div>
+                <div class="flex items-center">
+                    <button type="button" onclick="this.closest('.id-proof-row').remove()" class="mt-4 text-sm text-red-500 hover:text-red-700 font-medium ${rowCount === 0 ? 'hidden' : ''}"><i class="fas fa-trash"></i> Remove Row</button>
+                </div>
+            `;
+            container.appendChild(row);
+        }
+
+        function removeIdProofDoc(btn) {
+            const container = btn.closest('.existing-doc-container');
+            const parent = container.parentElement;
+            const fileInput = parent.querySelector('.idImage');
+            container.remove();
+            fileInput.classList.remove('hidden'); 
+        }
+
+        function clearIdProofRows() {
+            document.getElementById('idProofsContainer').innerHTML = '';
+        }
+
+        function handleLocalityChange() {
+            const locType = document.getElementById('localityType').value;
+            const wC = document.getElementById('wardContainer'), pC = document.getElementById('panchayetContainer');
+            const wN = document.getElementById('wardNo'), pN = document.getElementById('panchayetName');
+
+            if (locType === 'Municipality') {
+                wC.classList.remove('hidden'); pC.classList.add('hidden');
+                wN.setAttribute('required', 'true'); pN.removeAttribute('required');
+            } else if (locType === 'Panchayet') {
+                pC.classList.remove('hidden'); wC.classList.add('hidden');
+                pN.setAttribute('required', 'true'); wN.removeAttribute('required');
+            } else {
+                wC.classList.add('hidden'); pC.classList.add('hidden');
+                wN.removeAttribute('required'); pN.removeAttribute('required');
+            }
+        }
+
+        // Image Compression Utility - ইমেজ ছোট করা
+        function compressImage(file, callback, isSignature = false) {
+            if (!file) { callback(null); return; }
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = event => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    const MAX_WIDTH = isSignature ? 400 : 250;
+                    const MAX_HEIGHT = isSignature ? 150 : 250;
+                    let width = img.width, height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                    } else {
+                        if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                    }
+
+                    canvas.width = width; canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    callback(canvas.toDataURL('image/jpeg', isSignature ? 0.8 : 0.6)); 
+                }
+            }
+        }
+
+        function getFileBase64(file, callback) {
+            if (!file) { callback(null); return; }
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => callback(reader.result);
+        }
+
+        function openModal() {
+            isEditMode = false;
+            editingMemberId = null;
+            existingProfilePic = null;
+            existingSignature = null;
+            document.getElementById('modal-title').innerText = 'Add New Member';
+            document.getElementById('saveBtn').innerHTML = '<i class="fas fa-save mr-2 mt-1"></i> Save Profile';
+            
+            document.getElementById('addMemberForm').reset();
+            document.getElementById('idPrefixDisplay').innerText = idPrefixes[currentTab];
+            
+            document.getElementById('profileImagePreviewContainer').classList.add('hidden');
+            document.getElementById('profileImage').classList.remove('hidden');
+            document.getElementById('profileImage').setAttribute('required', 'true');
+
+            document.getElementById('signatureImagePreviewContainer').classList.add('hidden');
+            document.getElementById('signatureImage').classList.remove('hidden');
+            
+            clearIdProofRows();
+            addIdProofRow(); 
+            
+            handleLocalityChange();
+            document.getElementById('addMemberModal').classList.remove('hidden');
+        }
+
+        function removeProfileImage() {
+            existingProfilePic = null;
+            document.getElementById('profileImagePreviewContainer').classList.add('hidden');
+            const fileInput = document.getElementById('profileImage');
+            fileInput.value = ''; 
+            fileInput.classList.remove('hidden');
+            fileInput.setAttribute('required', 'true');
+        }
+
+        function removeSignatureImage() {
+            existingSignature = null;
+            document.getElementById('signatureImagePreviewContainer').classList.add('hidden');
+            const fileInput = document.getElementById('signatureImage');
+            fileInput.value = ''; 
+            fileInput.classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('addMemberModal').classList.add('hidden'); }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            const saveBtn = document.getElementById('saveBtn');
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving to Database...';
+            saveBtn.disabled = true;
+
+            try {
+                const prefix = document.getElementById('idPrefixDisplay').innerText;
+                const fullId = prefix + document.getElementById('idNumber').value;
+                const locType = document.getElementById('localityType').value;
+                
+                const addrObj = {
+                    road: document.getElementById('road').value,
+                    vill: document.getElementById('vill').value,
+                    po: document.getElementById('po').value,
+                    ps: document.getElementById('ps').value,
+                    district: document.getElementById('district').value,
+                    pincode: document.getElementById('pincode').value,
+                    localityType: locType,
+                    wardNo: locType === 'Municipality' ? document.getElementById('wardNo').value : '',
+                    panchayetName: locType === 'Panchayet' ? document.getElementById('panchayetName').value : ''
+                };
+
+                let localityStr = '';
+                if(locType === 'Municipality') localityStr = `(Muni: Ward ${addrObj.wardNo})`;
+                if(locType === 'Panchayet') localityStr = `(Panchayet: ${addrObj.panchayetName})`;
+                const fullAddress = `${addrObj.road}, ${addrObj.vill}, P.O. ${addrObj.po}, P.S. ${addrObj.ps}, ${addrObj.district}, ${addrObj.pincode} ${localityStr}`;
+
+                const profileImgFile = document.getElementById('profileImage').files[0];
+                const sigFile = document.getElementById('signatureImage').files[0];
+                let profileBase64 = profileImgFile ? await new Promise(resolve => compressImage(profileImgFile, resolve)) : existingProfilePic;
+                let sigBase64 = sigFile ? await new Promise(resolve => compressImage(sigFile, resolve, true)) : existingSignature;
+
+                const idProofRows = document.querySelectorAll('.id-proof-row');
+                const idProofsArray = [];
+                for (let row of idProofRows) {
+                    const type = row.querySelector('.idType').value;
+                    const num = row.querySelector('.idProofNumber').value;
+                    const fileInput = row.querySelector('.idImage');
+                    const existingInput = row.querySelector('.existingBase64');
+                    
+                    let docBase64 = null;
+                    if (fileInput.files && fileInput.files[0]) {
+                        docBase64 = await new Promise(resolve => getFileBase64(fileInput.files[0], resolve));
+                    } else if (existingInput) {
+                        docBase64 = existingInput.value;
+                    }
+
+                    if (type && num) {
+                        idProofsArray.push({ type: type, number: num, docBase64: docBase64 });
+                    }
+                }
+
+                let syncAction = isEditMode ? 'update' : 'create';
+                
+                const memberDataPayload = {
+                    id: isEditMode ? editingMemberId : Date.now().toString(),
+                    tabCategory: currentTab,
+                    fullId: fullId,
+                    resolutionNo: document.getElementById('resolutionNo').value,
+                    resolutionDate: document.getElementById('resolutionDate').value,
+                    joinDate: document.getElementById('joinDate').value,
+                    designation: document.getElementById('designation').value.toUpperCase(),
+                    fullName: document.getElementById('fullName').value.toUpperCase(),
+                    gender: document.getElementById('gender').value,
+                    dob: document.getElementById('dob').value,
+                    guardianName: document.getElementById('guardianName').value,
+                    profession: document.getElementById('profession').value.toUpperCase(),
+                    mobile: document.getElementById('mobile').value,
+                    email: document.getElementById('email').value,
+                    address: fullAddress,
+                    addressObj: addrObj,
+                    idProofs: idProofsArray,
+                    profilePicBase64: profileBase64,
+                    signatureBase64: sigBase64,
+                    resignDate: null,
+                    resignReason: ''
+                };
+
+                // REAL API SYNC
+                const result = await apiSyncAction(syncAction, memberDataPayload);
+                
+                if (result.status === "success") {
+                    if (isEditMode) {
+                        const idx = membersData.findIndex(m => m.id.toString() === editingMemberId.toString());
+                        if (idx > -1) membersData[idx] = memberDataPayload;
+                    } else {
+                        membersData.push(memberDataPayload);
+                    }
+                    showToast(`Profile ${isEditMode ? 'updated' : 'saved'} successfully to database!`);
+                    renderTable();
+                    closeModal();
+                } else {
+                    throw new Error(result.message);
+                }
+
+            } catch (err) {
+                console.error(err);
+                showToast('Database Error: Check connection.', true);
+            } finally {
+                saveBtn.innerHTML = isEditMode ? '<i class="fas fa-save mr-2 mt-1"></i> Update Profile' : '<i class="fas fa-save mr-2 mt-1"></i> Save Profile';
+                saveBtn.disabled = false;
+            }
+        }
+
+        // DB Delete Integration
+        async function deleteMember(id) {
+            if(!confirm("Are you sure you want to completely delete this member from the database?")) return;
+            
+            showToast("Deleting...", false);
+            try {
+                const result = await apiSyncAction('delete', { id: id });
+                if (result.status === "success") {
+                    membersData = membersData.filter(m => m.id.toString() !== id.toString());
+                    renderTable();
+                    showToast("Member securely deleted.");
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (err) {
+                console.error(err);
+                showToast("Failed to delete.", true);
+            }
+        }
+
+        // Edit function - মেম্বার এডিট করার ফাংশন
+        function editMember(id) {
+            const member = membersData.find(m => m.id.toString() === id.toString());
+            if(!member) return;
+            
+            isEditMode = true;
+            editingMemberId = id;
+            
+            document.getElementById('modal-title').innerText = 'Edit Member Profile';
+            document.getElementById('saveBtn').innerHTML = '<i class="fas fa-save mr-2 mt-1"></i> Update Profile';
+            
+            existingProfilePic = member.profilePicBase64 || null;
+            if (existingProfilePic) {
+                const profileImgEl = document.getElementById('profileImagePreview');
+                profileImgEl.src = existingProfilePic;
+                profileImgEl.onerror = function() { this.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22150%22%20height%3D%22150%22%3E%3Crect%20width%3D%22150%22%20height%3D%22150%22%20fill%3D%22%23e5e7eb%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%22.1em%22%20fill%3D%22%239ca3af%22%20font-size%3D%2220%22%20font-family%3D%22Arial%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%3EError%3C%2Ftext%3E%3C%2Fsvg%3E'; };
+                
+                document.getElementById('profileImagePreviewContainer').classList.remove('hidden');
+                document.getElementById('profileImage').classList.add('hidden');
+                document.getElementById('profileImage').removeAttribute('required');
+            } else {
+                document.getElementById('profileImagePreviewContainer').classList.add('hidden');
+                document.getElementById('profileImage').classList.remove('hidden');
+                document.getElementById('profileImage').setAttribute('required', 'true');
+            }
+
+            existingSignature = member.signatureBase64 || null;
+            if (existingSignature) {
+                const sigImgEl = document.getElementById('signatureImagePreview');
+                sigImgEl.src = existingSignature;
+                sigImgEl.onerror = function() { this.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22150%22%20height%3D%22150%22%3E%3Crect%20width%3D%22150%22%20height%3D%22150%22%20fill%3D%22%23e5e7eb%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%22.1em%22%20fill%3D%22%239ca3af%22%20font-size%3D%2220%22%20font-family%3D%22Arial%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%3EError%3C%2Ftext%3E%3C%2Fsvg%3E'; };
+                
+                document.getElementById('signatureImagePreviewContainer').classList.remove('hidden');
+                document.getElementById('signatureImage').classList.add('hidden');
+            } else {
+                document.getElementById('signatureImagePreviewContainer').classList.add('hidden');
+                document.getElementById('signatureImage').classList.remove('hidden');
+            }
+
+            const prefix = idPrefixes[member.tabCategory];
+            document.getElementById('idPrefixDisplay').innerText = prefix;
+            document.getElementById('idNumber').value = member.fullId.replace(prefix, '');
+            
+            document.getElementById('resolutionNo').value = member.resolutionNo || '';
+            document.getElementById('resolutionDate').value = member.resolutionDate || '';
+            document.getElementById('joinDate').value = member.joinDate || '';
+            document.getElementById('designation').value = member.designation || '';
+            
+            document.getElementById('fullName').value = member.fullName || '';
+            document.getElementById('gender').value = member.gender || '';
+            document.getElementById('dob').value = member.dob || '';
+            document.getElementById('guardianName').value = member.guardianName || '';
+            document.getElementById('profession').value = member.profession || '';
+            
+            document.getElementById('mobile').value = member.mobile || '';
+            document.getElementById('email').value = member.email || '';
+            
+            if (member.addressObj) {
+                document.getElementById('road').value = member.addressObj.road || '';
+                document.getElementById('vill').value = member.addressObj.vill || '';
+                document.getElementById('po').value = member.addressObj.po || '';
+                document.getElementById('ps').value = member.addressObj.ps || '';
+                document.getElementById('localityType').value = member.addressObj.localityType || '';
+                document.getElementById('district').value = member.addressObj.district || '';
+                document.getElementById('pincode').value = member.addressObj.pincode || '';
+                
+                handleLocalityChange();
+                
+                if(member.addressObj.localityType === 'Municipality') document.getElementById('wardNo').value = member.addressObj.wardNo || '';
+                if(member.addressObj.localityType === 'Panchayet') document.getElementById('panchayetName').value = member.addressObj.panchayetName || '';
+            }
+            
+            clearIdProofRows();
+            if (member.idProofs && member.idProofs.length > 0) {
+                member.idProofs.forEach(proof => {
+                    addIdProofRow(proof.type, proof.number, proof.docBase64);
+                });
+            } else {
+                addIdProofRow();
+            }
+
+            document.getElementById('addMemberModal').classList.remove('hidden');
+        }
+
+        function formatDate(dateStr) {
+            if(!dateStr) return '';
+            return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast'), msg = document.getElementById('toastMsg'), icon = document.getElementById('toastIcon');
+            toast.classList.remove('hidden');
+            setTimeout(() => { toast.classList.remove('translate-y-20', 'opacity-0'); }, 10);
+            msg.innerText = message;
+            icon.className = isError ? 'fas fa-exclamation-circle text-red-400 mr-3' : 'fas fa-check-circle text-green-400 mr-3';
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+                setTimeout(() => toast.classList.add('hidden'), 300);
+            }, 3000);
+        }
+
+        // View Doc - ভিউ ডকুমেন্টস
+        function viewDoc(urlOrBase64) {
+            if (!urlOrBase64) return;
+            if (urlOrBase64.startsWith('http')) {
+                window.open(urlOrBase64, '_blank');
+            } else {
+                const win = window.open();
+                win.document.write(`<iframe src="${urlOrBase64}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
+            }
+        }
+
+        // Download Category Data PDF - লিস্ট পিডিএফ জেনারেট করা
+        function downloadCategoryPDF() {
+            showToast('Generating Category Data PDF...');
+            const filteredMembers = membersData.filter(m => m.tabCategory === currentTab);
+            const categoryName = tabNames[currentTab];
+
+            let tableRows = '';
+            filteredMembers.forEach((member, index) => {
+                let idsString = member.idProofs && member.idProofs.length > 0 
+                                ? member.idProofs.map(p => `<strong>${p.type}:</strong> ${p.number}`).join('<br>') 
+                                : 'N/A';
+
+                tableRows += `
+                    <tr style="page-break-inside: avoid;">
+                        <td style="border: 1px solid #d1d5db; padding: 4px; text-align: center;">${index + 1}</td>
+                        <td style="border: 1px solid #d1d5db; padding: 4px; text-align: center;">
+                            ${member.profilePicBase64 ? `<img src="${member.profilePicBase64}" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border:1px solid #ccc;">` : ''}
+                        </td>
+                        <td style="border: 1px solid #d1d5db; padding: 4px; font-weight: bold; color: #1e3a8a; font-size: 10px; word-break: break-all;">${member.fullId}</td>
+                        <td style="border: 1px solid #d1d5db; padding: 4px;">
+                            <strong style="font-size: 11px;">${member.fullName}</strong><br>
+                            <span style="font-size: 9px; color:#4b5563;">C/o: ${member.guardianName} | Age: ${member.dob} | ${member.gender}</span>
+                        </td>
+                        <td style="border: 1px solid #d1d5db; padding: 4px; font-size: 9px; word-break: break-word;">
+                            ${member.address}<br>
+                            <strong>Ph:</strong> ${member.mobile}
+                            ${member.email ? `<br><strong>Email:</strong> ${member.email}` : ''}
+                        </td>
+                        <td style="border: 1px solid #d1d5db; padding: 4px; font-size: 9px;">
+                            <strong style="font-size: 10px;">${member.designation || 'MEMBER'}</strong><br>
+                            <span style="color:#4b5563;">Prof: ${member.profession || 'N/A'}</span><br>
+                            <span style="color:#4b5563;">Join: ${formatDate(member.joinDate)}</span><br>
+                            ${member.resolutionNo ? `<span style="color:#4b5563;">Res: ${member.resolutionNo} ${member.resolutionDate ? '('+formatDate(member.resolutionDate)+')' : ''}</span>` : ''}
+                        </td>
+                        <td style="border: 1px solid #d1d5db; padding: 4px; font-size: 9px; font-family: monospace; word-break: break-all;">
+                            ${idsString}
+                        </td>
+                        <td style="border: 1px solid #d1d5db; padding: 4px; text-align: center;">
+                            ${member.signatureBase64 ? `<img src="${member.signatureBase64}" style="max-width: 50px; max-height: 25px; object-fit: contain;">` : '<span style="color:#9ca3af; font-size:9px;">N/A</span>'}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            const element = document.createElement('div');
+            
+            // Appending element in a hidden absolute box visually in the layout fixes html2canvas cropping blanks
+            element.style.position = 'absolute';
+            element.style.left = '-9999px';
+            element.style.top = '0';
+            document.body.appendChild(element);
+
+            element.innerHTML = `
+                <div style="width: 1122px; padding: 20px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1f2937; background-color: #ffffff; box-sizing: border-box;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <h2 style="margin: 0; font-size: 22px; color: #1e3a8a; font-weight: bold; text-transform: uppercase;">ITINDA ROAD DHALTITHA MODERN SPORTING CLUB</h2>
+                        <p style="margin: 5px 0 0 0; font-size: 11px; color: #4b5563;">Itinda Road, Dhaltitha, Basirhat, North 24 Parganas, West Bengal 743412</p>
+                        <h3 style="margin: 15px 0 0 0; font-size: 16px; text-decoration: underline; text-transform: uppercase;">${categoryName} DATA SHEET</h3>
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 40px; background-color: #ffffff; table-layout: fixed;">
+                        <thead style="background-color: #f3f4f6; display: table-header-group;">
+                            <tr>
+                                <th style="border: 1px solid #d1d5db; padding: 8px; width: 4%;">Sl.</th>
+                                <th style="border: 1px solid #d1d5db; padding: 8px; width: 5%;">Photo</th>
+                                <th style="border: 1px solid #d1d5db; padding: 8px; width: 9%;">Member ID</th>
+                                <th style="border: 1px solid #d1d5db; padding: 8px; width: 18%;">Name & Personal Info</th>
+                                <th style="border: 1px solid #d1d5db; padding: 8px; width: 22%;">Address & Contact</th>
+                                <th style="border: 1px solid #d1d5db; padding: 8px; width: 18%;">Membership Details</th>
+                                <th style="border: 1px solid #d1d5db; padding: 8px; width: 14%;">Attached IDs</th>
+                                <th style="border: 1px solid #d1d5db; padding: 8px; width: 10%;">Signature</th>
+                            </tr>
+                        </thead>
+                        <tbody>${tableRows}</tbody>
+                    </table>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 30px; padding: 0 40px; page-break-inside: avoid;">
+                        <div style="text-align: center;">
+                            <div style="border-top: 1px solid #1f2937; width: 180px; padding-top: 8px; font-weight: bold; font-size: 12px;">Secretary Signature</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="border-top: 1px solid #1f2937; width: 180px; padding-top: 8px; font-weight: bold; font-size: 12px;">President Signature</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const opt = {
+                margin:       [0.3, 0.3, 0.3, 0.3],
+                filename:     `Club_Data_${currentTab}_List.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, windowWidth: 1122 },
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                document.body.removeChild(element);
+                showToast('List PDF Downloaded!');
+            }).catch(err => {
+                console.error(err);
+                document.body.removeChild(element);
+                showToast('Error generating PDF', true);
+            });
+        }
+
+        // Single Profile Download Function - প্রোফাইল পিডিএফ জেনারেট করা
+        function downloadProfilePDF(id) {
+            const member = membersData.find(m => m.id.toString() === id.toString());
+            if(!member) return;
+            showToast('Generating Profile PDF...');
+            
+            let idsString = member.idProofs && member.idProofs.length > 0 
+                ? member.idProofs.map(p => `<li><strong>${p.type}:</strong> ${p.number}</li>`).join('') 
+                : '<li>N/A</li>';
+
+            const element = document.createElement('div');
+            
+            // Appending element in a hidden absolute box visually in the layout fixes html2canvas cropping blanks
+            element.style.position = 'absolute';
+            element.style.left = '-9999px';
+            element.style.top = '0';
+            document.body.appendChild(element);
+
+            element.innerHTML = `
+                <div style="width: 793px; padding: 40px; font-family: Arial, sans-serif; color: #1f2937; background-color: #ffffff; box-sizing: border-box;">
+                    <div style="text-align: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 20px; margin-bottom: 30px;">
+                        <h1 style="color: #1e3a8a; margin: 0; font-size: 24px; font-weight: bold;">ITINDA ROAD DHALTITHA MODERN SPORTING CLUB</h1>
+                        <p style="margin: 5px 0 10px 0; font-size: 12px;">Itinda Road, Dhaltitha, Basirhat, North 24 Parganas, West Bengal 743412</p>
+                        <div style="display: inline-block; background-color: #eff6ff; padding: 5px 15px; border-radius: 20px; color: #1d4ed8; font-weight: bold;">Membership ID: ${member.fullId}</div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 30px; margin-bottom: 35px;">
+                        <div style="flex-shrink: 0;">
+                            ${member.profilePicBase64 ? `<img src="${member.profilePicBase64}" style="width: 150px; height: 150px; border-radius: 8px; object-fit: cover; border: 2px solid #e5e7eb;" />` : `<div style="width: 150px; height: 150px; border-radius: 8px; border: 2px solid #e5e7eb; background: #f3f4f6; display: flex; align-items: center; justify-content: center; color: #9ca3af;">No Photo</div>`}
+                        </div>
+                        <div style="flex-grow: 1;">
+                            <h2 style="margin: 0 0 12px 0; font-size: 26px; text-transform: uppercase;">${member.fullName}</h2>
+                            <p style="margin: 0 0 8px 0;"><strong>Designation:</strong> ${member.designation || 'MEMBER'}</p>
+                            <p style="margin: 0 0 8px 0;"><strong>Profession:</strong> ${member.profession || 'N/A'}</p>
+                            <p style="margin: 0 0 8px 0;"><strong>C/o:</strong> ${member.guardianName}</p>
+                            <p style="margin: 0;"><strong>DOB/Age:</strong> ${member.dob} &nbsp;|&nbsp; <strong>Gender:</strong> ${member.gender}</p>
+                        </div>
+                    </div>
+                    
+                    <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #f3f4f6;">
+                        <h3 style="margin: 0 0 15px 0; font-size: 18px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Contact Information</h3>
+                        <p style="margin: 0 0 10px 0;"><strong>Address:</strong><br/> ${member.address}</p>
+                        <p style="margin: 0;"><strong>Phone:</strong> ${member.mobile} &nbsp;|&nbsp; <strong>Email:</strong> ${member.email || 'N/A'}</p>
+                    </div>
+
+                    <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #f3f4f6;">
+                        <h3 style="margin: 0 0 15px 0; font-size: 18px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Membership & Official Records</h3>
+                        <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+                            <div style="width: 48%; margin-bottom: 10px;"><p style="margin: 0;"><strong>Date of Joining:</strong> ${formatDate(member.joinDate)}</p></div>
+                            <div style="width: 48%; margin-bottom: 10px;"><p style="margin: 0;"><strong>Resolution No:</strong> ${member.resolutionNo || 'N/A'}</p></div>
+                            <div style="width: 48%; margin-bottom: 10px;"><p style="margin: 0;"><strong>Resolution Date:</strong> ${member.resolutionDate ? formatDate(member.resolutionDate) : 'N/A'}</p></div>
+                            <div style="width: 48%; margin-bottom: 10px;">
+                                <p style="margin: 0 0 5px 0;"><strong>Attached ID Proofs:</strong></p>
+                                <ul style="margin:0; padding-left: 15px; font-family: monospace; font-size: 14px;">${idsString}</ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 50px; display: flex; justify-content: space-between; align-items: flex-end;">
+                        <div style="text-align: center;">
+                            ${member.signatureBase64 ? `<img src="${member.signatureBase64}" style="height: 50px; object-fit: contain; margin-bottom: 5px;">` : `<div style="height: 50px;"></div>`}
+                            <div style="border-top: 1px solid #9ca3af; width: 200px; padding-top: 5px; font-size: 14px;">Member's Signature</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="height: 50px;"></div>
+                            <div style="border-top: 1px solid #9ca3af; width: 200px; padding-top: 5px; font-size: 14px;">Authorized Signature</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const opt = {
+                margin:       [0.4, 0.4, 0.4, 0.4],
+                filename:     `${member.fullId.replace(/\//g, '_')}_Profile.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, windowWidth: 793 },
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                document.body.removeChild(element);
+                showToast('Profile PDF Downloaded!');
+            }).catch(err => {
+                console.error(err);
+                document.body.removeChild(element);
+                showToast('Error generating PDF', true);
+            });
+        }
+    </script>
+</body>
+</html>

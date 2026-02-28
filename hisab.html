@@ -34,10 +34,6 @@
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-        .nav-link { padding: 0.75rem 1rem; color: white; opacity: 0.8; transition: all 0.3s; border-bottom: 3px solid transparent; font-weight: 500; white-space: nowrap; }
-        .nav-link:hover { opacity: 1; background-color: rgba(255,255,255,0.1); }
-        .nav-link.active { opacity: 1; border-bottom-color: #F2A900; background-color: rgba(0,0,0,0.25); font-weight: 700; }
-
         .sub-tab-btn { border-bottom: 2px solid transparent; color: #6b7280; transition: all 0.2s; white-space: nowrap; }
         .sub-tab-btn.active { border-bottom-color: #D9381E; color: #D9381E; font-weight: 700; }
         .sub-tab-btn.income-active { border-bottom-color: #581c87; color: #581c87; }
@@ -48,7 +44,7 @@
         .cursor-pointer:hover td { background-color: #f0f9ff; }
         
         .suggestion-box { position: absolute; background: white; border: 1px solid #ddd; z-index: 50; width: 100%; max-height: 250px; overflow-y: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-radius: 0 0 8px 8px; }
-        .suggestion-box-top { position: absolute; bottom: 100%; left: 0; background: white; border: 1px solid #ddd; z-index: 50; width: 100%; max-height: 150px; overflow-y: auto; box-shadow: 0 -4px 10px rgba(0,0,0,0.1); border-radius: 8px 8px 0 0; margin-bottom: 2px; }
+        .suggestion-box-top { position: absolute bottom: 100%; left: 0; background: white; border: 1px solid #ddd; z-index: 50; width: 100%; max-height: 150px; overflow-y: auto; box-shadow: 0 -4px 10px rgba(0,0,0,0.1); border-radius: 8px 8px 0 0; margin-bottom: 2px; }
         .suggestion-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; }
         .suggestion-item:hover { background-color: #fef2f2; }
         .suggestion-past { background-color: #f0fdf4; border-left: 4px solid #16a34a; }
@@ -86,21 +82,22 @@
         <!-- HEADER -->
         <header id="main-header" class="bg-purple-800 text-white shadow-lg z-40 shrink-0 transition-colors duration-300">
             <div class="container mx-auto px-2 sm:px-4">
-                <div class="flex justify-between items-center py-2 border-b border-white/20">
+                <div class="flex justify-between items-center py-3">
                   <div class="flex items-center gap-1 sm:gap-2">
-                    <i data-lucide="flower-2" class="w-5 h-5 sm:w-6 sm:h-6 text-yellow-300"></i>
+                    <button onclick="toggleMobileMenu()" class="text-yellow-300 hover:text-white sm:mr-1 p-1 rounded transition-colors"><i data-lucide="menu" class="w-6 h-6"></i></button>
+                    <i data-lucide="flower-2" class="w-6 h-6 text-yellow-300"></i>
                     <h1 class="text-lg sm:text-xl font-bold truncate">মডার্ণ স্পোর্টিং ক্লাব</h1>
                     <button onclick="handleManualRefresh()" class="ml-1 sm:ml-2 bg-white/20 hover:bg-white/40 text-white p-1 sm:p-1.5 rounded-full transition-all shadow-sm border border-white/30" title="Refresh Data">
-                        <i data-lucide="refresh-cw" id="refreshSpinner" class="w-3 h-3 sm:w-4 sm:h-4"></i>
+                        <i data-lucide="refresh-cw" id="refreshSpinner" class="w-4 h-4"></i>
                     </button>
                   </div>
                   <div class="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm">
-                      <span id="user-display-name" class="font-bold">Admin</span>
-                      <button onclick="logout()" class="hover:text-yellow-200 border border-white/40 px-2 py-1 rounded">Logout</button>
+                      <span id="user-display-name" class="font-bold hidden sm:inline">Admin</span>
+                      <button onclick="logout()" class="hover:text-yellow-200 border border-white/40 px-3 py-1.5 rounded font-bold">Logout</button>
                   </div>
                 </div>
-                <!-- NAVIGATION -->
-                <nav class="flex gap-1 overflow-x-auto scrollbar-hide pt-2 pb-1 w-full snap-x">
+                <!-- NAVIGATION (HIDDEN to keep functions intact while removing from UI) -->
+                <nav class="hidden">
                     <button onclick="switchTab('income')" class="nav-link active snap-start flex items-center" id="nav-income"><i data-lucide="indian-rupee" class="w-4 h-4 mr-1"></i> আয়ের হিসাব</button>
                     <button onclick="switchTab('expense')" class="nav-link snap-start flex items-center" id="nav-expense"><i data-lucide="shopping-cart" class="w-4 h-4 mr-1"></i> ব্যয়ের হিসাব</button>
                     <button onclick="switchTab('report')" class="nav-link snap-start flex items-center" id="nav-report"><i data-lucide="file-text" class="w-4 h-4 mr-1"></i> রিপোর্ট</button>
@@ -111,24 +108,14 @@
         </header>
 
         <!-- SUB HEADER -->
-        <div class="bg-white border-b px-3 sm:px-6 py-2 flex justify-between items-center shadow-sm shrink-0 flex-wrap gap-2">
-            <div class="flex items-center gap-2 w-full sm:w-auto">
-                <label class="text-xs sm:text-sm font-semibold text-gray-500 whitespace-nowrap">বর্তমান পুজো:</label>
-                <select id="pujaSelect" onchange="refreshUI()" class="border rounded px-2 py-1 sm:py-2 text-sm bg-gray-50 font-bold text-puja-red flex-1 sm:flex-none w-full sm:w-auto">
-                    <option value="বাসন্তী পূজা ২০২৬">বাসন্তী পূজা ২০২৬</option>
-                    <option value="কালী পূজা ২০২৫">কালী পূজা ২০২৫</option>
-                    <option value="সরস্বতী পূজা ২০২৬">সরস্বতী পূজা ২০২৬</option>
-                    <option value="দুর্গাপূজা ২০২৬">দুর্গাপূজা ২০২৬</option>
-                </select>
-            </div>
-            <div class="text-right w-full sm:w-auto flex justify-between sm:block border-t sm:border-0 pt-1 sm:pt-0">
-                <span class="text-xs sm:text-sm font-bold text-gray-700" id="today-date">--/--/----</span>
-                <span class="text-xs text-gray-500 ml-2" id="today-day">বার</span>
-            </div>
+        <div class="bg-white border-b px-3 sm:px-6 py-2 flex justify-between items-center shadow-sm shrink-0 w-full">
+            <div class="text-xs sm:text-sm text-gray-500 font-bold w-1/4 text-left" id="today-day">বার</div>
+            <div class="text-sm sm:text-base font-bold text-puja-red text-center flex-1" id="current-puja-display">বর্তমান পুজো</div>
+            <div class="text-xs sm:text-sm font-bold text-gray-700 w-1/4 text-right" id="today-date">--/--/----</div>
         </div>
 
         <!-- CONTENT -->
-            <main class="flex-1 overflow-y-auto overscroll-none bg-gray-50 p-2 sm:p-4 md:p-6 relative min-h-0" style="-webkit-overflow-scrolling: touch;">
+        <main class="flex-1 overflow-y-auto overscroll-none bg-gray-50 p-2 sm:p-4 md:p-6 relative min-h-0" style="-webkit-overflow-scrolling: touch;">
             <!-- INCOME TAB -->
             <div id="tab-income" class="tab-content space-y-4"> 
                 <div class="flex overflow-x-auto scrollbar-hide border-b bg-white rounded-t-lg shadow-sm px-2 sm:px-4 w-full">
@@ -208,6 +195,7 @@
                                 <label class="block text-sm font-bold mb-1 text-blue-800">গাড়ীর নম্বর</label>
                                 <input type="text" id="carNumberInput" oninput="formatCarNumberDisplay(this)" class="w-full border-2 border-blue-200 focus:border-blue-500 p-3 sm:p-4 rounded text-xl sm:text-2xl uppercase font-mono" placeholder="WB11 G 1111">
                                 <div id="carNumberSuggestions" class="suggestion-box hidden"></div>
+                                <div id="carRefInfo" class="hidden mt-2 p-2 rounded text-xs border border-blue-200 bg-blue-50 leading-relaxed"></div>
                             </div>
                             <div class="bg-gray-50 p-3 sm:p-4 rounded border">
                                 <div class="flex gap-2 mb-3">
@@ -307,6 +295,14 @@
                             <div id="expSuggestions" class="suggestion-box hidden"></div>
                         </div>
                         <div><label class="block text-sm mb-1 font-bold text-gray-600">পরিমাণ (Amount)</label><input type="number" id="expAmount" class="w-full border p-2 sm:p-3 rounded text-lg sm:text-xl font-mono" placeholder="₹"></div>
+                        
+                        <!-- ADD IMAGE UPLOAD FEATURE FOR EXPENSE -->
+                        <div>
+                            <label class="block text-sm mb-1 font-bold text-gray-600">রসিদ / ছবি (Images)</label>
+                            <input type="file" id="expImagesInput" multiple accept="image/*" onchange="handleExpImagesChange(event)" class="w-full border p-2 sm:p-3 rounded bg-gray-50 text-sm focus:ring-2 focus:ring-red-300">
+                            <div id="expImagesPreviewContainer" class="flex gap-2 mt-2 overflow-x-auto pb-2"></div>
+                        </div>
+
                         <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2 sm:pt-4">
                             <button onclick="saveExpense()" class="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 rounded font-bold shadow text-base sm:text-lg">SAVE EXPENSE</button>
                             <button onclick="document.getElementById('expReason').value=''; document.getElementById('expAmount').value=''" class="sm:w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded font-bold">CANCEL</button>
@@ -538,6 +534,7 @@
         <div class="bg-white p-5 sm:p-6 rounded-lg shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <h3 class="text-lg sm:text-xl font-bold mb-4 text-blue-600">তথ্য পরিবর্তন করুন</h3>
             <input type="hidden" id="editFullId">
+            <div class="mb-3"><label class="text-xs font-bold">তারিখ</label><input type="date" id="editFullDate" class="w-full border p-2 rounded"></div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                 <div><label class="text-xs font-bold">English Name</label><input type="text" id="editFullEn" class="w-full border p-2 rounded"></div>
                 <div><label class="text-xs font-bold">Bangla Name</label><input type="text" id="editFullBn" class="w-full border p-2 rounded"></div>
@@ -621,9 +618,75 @@
             </div>
         </div>
     </div>
+    
+    <!-- NEW: MOBILE MENU DRAWER (UPDATED WITH ACCORDIONS AND PUJA FILTER) -->
+    <div id="mobileMenuDrawer" class="fixed inset-0 bg-black bg-opacity-70 hidden z-[9999] transition-opacity">
+        <div class="bg-white w-64 h-full shadow-2xl flex flex-col transform -translate-x-full transition-transform duration-300" id="mobileMenuPanel">
+            <div class="bg-purple-800 p-4 flex justify-between items-center text-white">
+                <h2 class="font-bold text-lg">মেনু (Menu)</h2>
+                <button onclick="toggleMobileMenu()" class="p-1"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            
+            <div class="p-4 bg-gray-50 border-b">
+                <label class="text-xs font-bold text-gray-500 mb-1 block">বর্তমান পুজো নির্বাচন:</label>
+                <select id="pujaSelect" onchange="refreshUI(); toggleMobileMenu();" class="w-full border rounded px-2 py-2 text-sm bg-white font-bold text-puja-red focus:ring-2 focus:ring-purple-500">
+                    <option value="বাসন্তী পূজা ২০২৬">বাসন্তী পূজা ২০২৬</option>
+                    <option value="কালী পূজা ২০২৫">কালী পূজা ২০২৫</option>
+                    <option value="সরস্বতী পূজা ২০২৬">সরস্বতী পূজা ২০২৬</option>
+                    <option value="দুর্গাপূজা ২০২৬">দুর্গাপূজা ২০২৬</option>
+                </select>
+            </div>
+
+            <div class="p-4 overflow-y-auto space-y-2 flex-1 font-bold text-gray-700">
+                <div class="border-b pb-2 mb-2">
+                    <div class="flex justify-between items-center p-2 hover:bg-gray-100 rounded cursor-pointer" onclick="toggleMenuAccordion('acc-income', 'icon-income')">
+                        <h3 class="font-bold flex items-center"><i data-lucide="indian-rupee" class="w-4 h-4 mr-2"></i> আয়ের হিসাব</h3>
+                        <i data-lucide="chevron-down" id="icon-income" class="w-4 h-4 transition-transform"></i>
+                    </div>
+                    <div id="acc-income" class="pl-6 mt-1 space-y-1 overflow-hidden transition-all duration-300 max-h-0">
+                        <button onclick="switchTab('income'); switchSubTab('bill'); toggleMobileMenu()" class="w-full text-left block p-2 hover:bg-purple-50 rounded text-sm text-gray-600 font-semibold">বিল প্রদান</button>
+                        <button onclick="switchTab('income'); switchSubTab('collection'); toggleMobileMenu()" class="w-full text-left block p-2 hover:bg-purple-50 rounded text-sm text-gray-600 font-semibold">চাঁদা সংগ্রহ</button>
+                        <button onclick="switchTab('income'); switchSubTab('car'); toggleMobileMenu()" class="w-full text-left block p-2 hover:bg-purple-50 rounded text-sm text-gray-600 font-semibold">গাড়ীর চাঁদা</button>
+                        <button onclick="switchTab('income'); switchSubTab('dashboard'); toggleMobileMenu()" class="w-full text-left block p-2 hover:bg-purple-50 rounded text-sm text-gray-600 font-semibold">ড্যাশবোর্ড</button>
+                    </div>
+                </div>
+
+                <div class="border-b pb-2 mb-2">
+                    <div class="flex justify-between items-center p-2 hover:bg-gray-100 rounded cursor-pointer" onclick="toggleMenuAccordion('acc-expense', 'icon-expense')">
+                        <h3 class="font-bold flex items-center"><i data-lucide="shopping-cart" class="w-4 h-4 mr-2"></i> ব্যয়ের হিসাব</h3>
+                        <i data-lucide="chevron-down" id="icon-expense" class="w-4 h-4 transition-transform"></i>
+                    </div>
+                    <div id="acc-expense" class="pl-6 mt-1 space-y-1 overflow-hidden transition-all duration-300 max-h-0">
+                        <button onclick="switchTab('expense'); switchExpSubTab('add'); toggleMobileMenu()" class="w-full text-left block p-2 hover:bg-red-50 rounded text-sm text-gray-600 font-semibold">নতুন খরচ</button>
+                        <button onclick="switchTab('expense'); switchExpSubTab('view'); toggleMobileMenu()" class="w-full text-left block p-2 hover:bg-red-50 rounded text-sm text-gray-600 font-semibold">খরচের তালিকা</button>
+                    </div>
+                </div>
+
+                <button onclick="switchTab('report'); toggleMobileMenu()" class="w-full text-left flex items-center p-2 hover:bg-blue-50 rounded"><i data-lucide="file-text" class="w-4 h-4 mr-2"></i> রিপোর্ট</button>
+                <button onclick="switchTab('settings'); toggleMobileMenu()" class="w-full text-left flex items-center p-2 hover:bg-gray-50 rounded" id="mobileNavSettings"><i data-lucide="settings" class="w-4 h-4 mr-2"></i> সেটিংস</button>
+                <button onclick="switchTab('history'); toggleMobileMenu()" class="w-full text-left flex items-center p-2 hover:bg-gray-50 rounded"><i data-lucide="archive" class="w-4 h-4 mr-2"></i> পুরোনো হিসাব</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: EXPENSE IMAGE GALLERY MODAL -->
+    <div id="expImageModal" class="fixed inset-0 bg-black bg-opacity-80 hidden z-[9999] flex flex-col items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white p-4 rounded-lg shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h3 class="font-bold text-lg text-gray-800">রসিদ / ছবি</h3>
+                <button onclick="closeModal('expImageModal')" class="bg-red-500 text-white p-1 rounded-full"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div id="expImageGallery" class="flex-1 overflow-y-auto space-y-4 mb-4 pr-2"></div>
+            <div class="mt-auto border-t pt-4">
+                <label class="block text-sm font-bold text-gray-600 mb-2">নতুন ছবি যোগ করুন</label>
+                <input type="hidden" id="expImageModalId">
+                <input type="file" multiple accept="image/*" onchange="addMoreExpImages(event)" class="w-full border p-2 rounded text-sm focus:ring-2 focus:ring-blue-300">
+            </div>
+        </div>
+    </div>
+
 <script>
     // Custom Pop-up Alert
- // Custom Pop-up Alert
     window.originalAlert = window.alert;
     window.alert = function(message) {
         
@@ -636,7 +699,7 @@
         if (!alertBox) {
             alertBox = document.createElement('div');
             alertBox.id = 'custom-popup-alert';
-            alertBox.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-xl shadow-2xl z-[9999] text-center border-t-4 border-green-500 min-w-[300px] transition-all duration-300 scale-95 opacity-0 flex flex-col items-center justify-center';
+            alertBox.className = 'hidden fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-xl shadow-2xl z-[9999] text-center border-t-4 border-green-500 min-w-[300px] transition-all duration-300 scale-95 opacity-0 flex flex-col items-center justify-center';
             alertBox.innerHTML = `
                 <div class="flex justify-center mb-3">
                     <div class="bg-green-100 p-3 rounded-full">
@@ -666,26 +729,30 @@
         box.classList.add('scale-100', 'opacity-100');
         bg.classList.remove('opacity-0');
         bg.classList.add('opacity-100');
+        // পপ-আপ ওপেন করার সময় সেটিকে visible করার জন্য এই লাইনটি update করতে হবে:
+        box.classList.remove('hidden'); // <--- এই লাইনটি যোগ করুন
+        bg.classList.remove('hidden');
+        void box.offsetWidth;
         
-        document.getElementById('custom-popup-btn').onclick = function() {
+        box.classList.remove('scale-95', 'opacity-0');
+        box.classList.add('scale-100', 'opacity-100');
+        bg.classList.remove('opacity-0');
+        bg.classList.add('opacity-100');
+                 document.getElementById('custom-popup-btn').onclick = function() {
             box.classList.remove('scale-100', 'opacity-100');
             box.classList.add('scale-95', 'opacity-0');
             bg.classList.remove('opacity-100');
             bg.classList.add('opacity-0');
             
-            // ফিক্স ২: অ্যানিমেশন চলাকালীন সময়ে যেন টাচ আটকে না যায় (Touch pass-through)
-            box.style.pointerEvents = 'none';
-            bg.style.pointerEvents = 'none';
-
+            // ফিক্স ২: অ্যানিমেশন চলাকালীন সময়ে স্ক্রল লক হওয়া থেকে বাঁচানো
             setTimeout(() => { 
                 bg.classList.add('hidden'); 
-                box.style.pointerEvents = 'auto';
-                bg.style.pointerEvents = 'auto';
+                box.classList.add('hidden'); // <--- এই লাইনটি যোগ করতে হবে, যাতে বক্সটি টাচ ব্লক না করে
             }, 300);
-        };
-    };
-
-    // ==========================================
+       };
+       };
+        
+    //==========================================
     // 1. CONFIGURATION & GLOBALS
     // ==========================================
     const SCRIPT_URL ="https://script.google.com/macros/s/AKfycbyrM6cb63IpNV0hIqClT83H_X1Hu6u4wuAkcYO7LQw2XPvFMpBTPvsXcP86uIicI0U/exec";
@@ -693,6 +760,7 @@
     
 let globalData = { income: [], expense: [], car: [], paras: [], signatures: [] };
     let currentRole = null;
+    let tempExpImages = []; // NEW: Array to hold images temporarily before saving
     // ==========================================
     // 2. CORE & DATA SYNC (UPDATED FOR CORS/REDIRECTS)
     // ==========================================
@@ -755,9 +823,11 @@ let globalData = { income: [], expense: [], car: [], paras: [], signatures: [] }
             window.originalAlert("সার্ভার থেকে ডাটা আনতে সমস্যা হয়েছে। দয়া করে ইন্টারনেট সংযোগ এবং Google Script পারমিশন চেক করুন।");
             
             // Show offline indicator
-            let msg = document.getElementById('today-day');
+            let msg = document.getElementById('top-dynamic-date-bar');
             if (msg && globalData.income.length === 0) {
-                msg.innerHTML += ' <span class="text-red-500 font-bold ml-2">(Offline)</span>';
+                if (!msg.innerHTML.includes('Offline')) {
+                    msg.innerHTML += ' <span class="text-red-500 font-bold ml-2">(Offline)</span>';
+                }
             }
         } finally { 
             document.body.style.cursor = 'default'; 
@@ -780,18 +850,33 @@ let globalData = { income: [], expense: [], car: [], paras: [], signatures: [] }
         }
     };
 
+    function updateTopDateBar() {
+        const today = new Date();
+        const dateStr = today.toLocaleDateString('en-GB');
+        const dayStr = today.toLocaleDateString('bn-BD', { weekday: 'long' });
+        const pujaSelect = document.getElementById('pujaSelect');
+        const pujaName = pujaSelect ? pujaSelect.value : '';
+        const bar = document.getElementById('top-dynamic-date-bar');
+        if(bar) bar.innerText = `${dateStr} বর্তমান (${pujaName}) ${dayStr}`;
+    }
+
     function refreshUI() {
         const pSel = document.getElementById('pujaSelect'); 
         const hSel = document.getElementById('histPuja');
-        if (hSel.options.length <= 1) hSel.innerHTML = pSel.innerHTML;
+        if (hSel && pSel && hSel.options.length <= 1) hSel.innerHTML = pSel.innerHTML;
         
         initDropdowns(); 
         renderCollectionTable(); 
         renderExpenseTable(); 
         renderCarTable(); 
         renderParaSettings(); 
-        renderSignatories(); // এই নতুন লাইনটি যুক্ত করুন
+        renderSignatories(); 
         updateDashboard();
+        updateTopDateBar();
+        
+        // NEW: Update top display
+        const display = document.getElementById('current-puja-display');
+        if(display && pSel) display.innerText = "বর্তমান (" + pSel.value + ")";
     }
 
 
@@ -840,6 +925,10 @@ function parseParaData(p) {
         setLocalTodayDate('carEntryDate'); 
         setLocalTodayDate('collectionDate');
         
+        const today = new Date();
+        document.getElementById('today-date').innerText = today.toLocaleDateString('en-GB');
+        document.getElementById('today-day').innerText = today.toLocaleDateString('bn-BD', { weekday: 'long' });
+
         const cached = localStorage.getItem('pujaDataCache'); 
         if (cached) { 
             try { 
@@ -848,6 +937,7 @@ function parseParaData(p) {
             } catch(e) {} 
         }
         fetchAllData();
+        updateTopDateBar();
     }
 
     // ==========================================
@@ -867,13 +957,11 @@ function parseParaData(p) {
             
             if (type !== 'admin') {
                 document.getElementById('nav-settings').classList.add('hidden');
+                document.getElementById('mobileNavSettings').classList.add('hidden');
             } else {
                 document.getElementById('nav-settings').classList.remove('hidden');
+                document.getElementById('mobileNavSettings').classList.remove('hidden');
             }
-            
-            const today = new Date();
-            document.getElementById('today-date').innerText = today.toLocaleDateString('en-GB');
-            document.getElementById('today-day').innerText = today.toLocaleDateString('bn-BD', { weekday: 'long' });
             
             init();
             switchTab('income');
@@ -1274,14 +1362,41 @@ function parseParaData(p) {
         }
     }
 
+    // NEW: Mobile Hamburger Menu Toggle Function
+    function toggleMobileMenu() {
+        const drawer = document.getElementById('mobileMenuDrawer');
+        const panel = document.getElementById('mobileMenuPanel');
+        if(drawer.classList.contains('hidden')) {
+            drawer.classList.remove('hidden');
+            setTimeout(() => panel.classList.remove('-translate-x-full'), 10);
+            if(currentRole !== 'admin') document.getElementById('mobileNavSettings').classList.add('hidden');
+        } else {
+            panel.classList.add('-translate-x-full');
+            setTimeout(() => drawer.classList.add('hidden'), 300);
+        }
+    }
+
+    // NEW: Toggle Accordion in Mobile Menu
+    function toggleMenuAccordion(accId, iconId) {
+        const acc = document.getElementById(accId);
+        const icon = document.getElementById(iconId);
+        if(acc.classList.contains('max-h-0')) {
+            acc.classList.remove('max-h-0');
+            acc.classList.add('max-h-[500px]');
+            icon.classList.add('rotate-180');
+        } else {
+            acc.classList.remove('max-h-[500px]');
+            acc.classList.add('max-h-0');
+            icon.classList.remove('rotate-180');
+        }
+    }
+
     // ==========================================
     // 6. UI TAB SWITCHING & DROPDOWNS
     // ==========================================
     function switchTab(tabId) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
         document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-        document.querySelectorAll('.nav-link').forEach(btn => btn.classList.remove('active'));
-        document.getElementById(`nav-${tabId}`).classList.add('active');
         
         const header = document.getElementById('main-header');
         header.classList.remove('bg-purple-800', 'bg-red-700', 'bg-blue-900', 'bg-puja-red');
@@ -1596,6 +1711,7 @@ function parseParaData(p) {
         const item = store.getIncome().find(i => String(i.id) === String(id)); 
         if(!item) return; 
         document.getElementById('editFullId').value = id; 
+        document.getElementById('editFullDate').value = item.date; 
         document.getElementById('editFullEn').value = item.english_name; 
         document.getElementById('editFullBn').value = item.bengali_name; 
         document.getElementById('editFullPara').value = item.para; 
@@ -1609,6 +1725,7 @@ function parseParaData(p) {
         let data = store.getIncome(); 
         const idx = data.findIndex(i => String(i.id) === String(id)); 
         if(idx !== -1) { 
+            data[idx].date = document.getElementById('editFullDate').value;
             data[idx].english_name = document.getElementById('editFullEn').value; 
             data[idx].bengali_name = document.getElementById('editFullBn').value; 
             data[idx].para = document.getElementById('editFullPara').value; 
@@ -1624,7 +1741,7 @@ function parseParaData(p) {
     }
 
     // ==========================================
-    // 8. EXPENSE MODULE
+    // 8. EXPENSE MODULE & IMAGE ATTACHMENT
     // ==========================================
     async function handleExpInput(input) {
         const rawVal = safeTrim(input.value);
@@ -1678,6 +1795,49 @@ function parseParaData(p) {
         }
     }
 
+    // NEW: Function to compress and handle image arrays
+    async function handleExpImagesChange(event) {
+        const files = event.target.files;
+        for(let i=0; i<files.length; i++) {
+            const base64 = await compressImage(files[i]);
+            tempExpImages.push(base64);
+        }
+        renderExpImagePreviews();
+    }
+
+    function renderExpImagePreviews() {
+        const container = document.getElementById('expImagesPreviewContainer');
+        if(!container) return;
+        container.innerHTML = '';
+        tempExpImages.forEach((src, idx) => {
+            container.innerHTML += `<div class="relative w-16 h-16 sm:w-20 sm:h-20 shrink-0 border border-gray-300 rounded shadow-sm"><img src="${src}" class="w-full h-full object-cover rounded"><button onclick="tempExpImages.splice(${idx},1); renderExpImagePreviews();" class="absolute top-0 right-0 bg-red-600 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center -mt-2 -mr-2 shadow-md hover:bg-red-800 transition">&times;</button></div>`;
+        });
+    }
+
+    function compressImage(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (e) => {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800; // Resizing for optimal <300kb
+                    const MAX_HEIGHT = 800;
+                    let width = img.width;
+                    let height = img.height;
+                    if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } }
+                    else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.6));
+                };
+            };
+        });
+    }
+
     function saveExpense() { 
         const date = document.getElementById('expDate').value; 
         const rawReason = document.getElementById('expReason').value; 
@@ -1697,7 +1857,8 @@ function parseParaData(p) {
             puja: activePuja, 
             date: date, 
             reason: cleanReason, 
-            amount: amount 
+            amount: amount,
+            images: [...tempExpImages] // NEW FEATURE: Attaching images
         }; 
         
         globalData.expense.push(item); 
@@ -1706,6 +1867,12 @@ function parseParaData(p) {
         document.getElementById('expReason').value = ''; 
         document.getElementById('expAmount').value = ''; 
         document.getElementById('expDate').valueAsDate = new Date(); 
+        
+        // NEW FEATURE CLEANUP
+        tempExpImages = [];
+        renderExpImagePreviews();
+        if (document.getElementById('expImagesInput')) document.getElementById('expImagesInput').value = '';
+
         alert("সফলভাবে খরচ সেভ হয়েছে!"); 
     }
 
@@ -1735,12 +1902,75 @@ function parseParaData(p) {
             if(reason !== 'all' && row.reason !== reason) return; 
             if(search && !row.reason.toLowerCase().includes(search)) return; 
             
+            // --- NEW CODE START (IMAGE ATTACH ICON) ---
+            let attachHtml = '';
+            if(row.images && row.images.length > 0) {
+                attachHtml = `<button onclick="openExpImageModal('${row.id}')" class="bg-gray-100 text-gray-600 p-2 rounded hover:bg-gray-600 hover:text-white transition" title="View Images"><i data-lucide="paperclip" class="w-4 h-4"></i></button>`;
+            } else {
+                attachHtml = `<button onclick="openExpImageModal('${row.id}')" class="bg-gray-50 text-gray-300 p-2 rounded hover:bg-gray-200 transition" title="Add Images"><i data-lucide="image-plus" class="w-4 h-4"></i></button>`;
+            }
+            // --- NEW CODE END ---
+
             const tr = document.createElement('tr'); 
             tr.className = "hover:bg-red-50 border-b"; 
-            tr.innerHTML = `<td class="p-3">${new Date(row.date).toLocaleDateString('en-GB')}</td><td class="p-3 font-bold text-gray-700">${row.reason}</td><td class="p-3 text-right font-mono">₹${row.amount}</td><td class="p-3 text-center"><div class="flex justify-center gap-2"><button onclick="openExpenseEdit('${row.id}')" class="bg-blue-100 text-blue-600 p-2 rounded hover:bg-blue-600 transition"><i data-lucide="pencil" class="w-4 h-4"></i></button><button onclick="deleteExpense('${row.id}')" class="bg-red-100 text-red-600 p-2 rounded hover:bg-red-600 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></td>`; 
+            tr.innerHTML = `<td class="p-3">${new Date(row.date).toLocaleDateString('en-GB')}</td><td class="p-3 font-bold text-gray-700">${row.reason}</td><td class="p-3 text-right font-mono">₹${row.amount}</td><td class="p-3 text-center"><div class="flex justify-center gap-2">${attachHtml}<button onclick="openExpenseEdit('${row.id}')" class="bg-blue-100 text-blue-600 p-2 rounded hover:bg-blue-600 transition"><i data-lucide="pencil" class="w-4 h-4"></i></button><button onclick="deleteExpense('${row.id}')" class="bg-red-100 text-red-600 p-2 rounded hover:bg-red-600 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></td>`; 
             tbody.appendChild(tr); 
         }); 
         lucide.createIcons(); 
+    }
+
+    // NEW FUNCTION: Handle showing Modal for Expense Images
+    function openExpImageModal(id) {
+        document.getElementById('expImageModalId').value = id;
+        refreshExpImageGallery(id);
+        document.getElementById('expImageModal').classList.remove('hidden');
+    }
+
+    function refreshExpImageGallery(id) {
+        const item = store.getExpense().find(e => String(e.id) === String(id));
+        const gallery = document.getElementById('expImageGallery');
+        gallery.innerHTML = '';
+        if(!item || !item.images || item.images.length === 0) {
+            gallery.innerHTML = '<p class="text-center text-gray-500 mt-4 font-bold">কোনো ছবি সংযুক্ত নেই।</p>';
+            return;
+        }
+        item.images.forEach((src, idx) => {
+            gallery.innerHTML += `
+                <div class="relative border rounded p-1 bg-gray-50 shadow-sm flex justify-center">
+                    <img src="${src}" class="max-w-full h-auto rounded">
+                    <button onclick="deleteExpImage('${id}', ${idx})" class="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full shadow-lg hover:bg-red-800 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+            `;
+        });
+        lucide.createIcons();
+    }
+
+    async function addMoreExpImages(event) {
+        const id = document.getElementById('expImageModalId').value;
+        let item = store.getExpense().find(e => String(e.id) === String(id));
+        if(!item) return;
+        if(!item.images) item.images = [];
+
+        const files = event.target.files;
+        for(let i=0; i<files.length; i++) {
+            const base64 = await compressImage(files[i]);
+            item.images.push(base64);
+        }
+        syncData('update', 'expense', item);
+        refreshExpImageGallery(id);
+        renderExpenseTable();
+        event.target.value = '';
+    }
+
+    function deleteExpImage(id, imgIndex) {
+        if(!confirm("ছবিটি মুছে ফেলতে চান?")) return;
+        let item = store.getExpense().find(e => String(e.id) === String(id));
+        if(item && item.images) {
+            item.images.splice(imgIndex, 1);
+            syncData('update', 'expense', item);
+            refreshExpImageGallery(id);
+            renderExpenseTable();
+        }
     }
 
     function openExpenseEdit(id) { 
@@ -1793,6 +2023,7 @@ function parseParaData(p) {
         
         const box = document.getElementById('carNumberSuggestions'); 
         box.innerHTML = '';
+        const refBox = document.getElementById('carRefInfo');
         
         if(val.length >= 4) { 
             const last4 = val.slice(-4); 
@@ -1800,6 +2031,15 @@ function parseParaData(p) {
             const matches = allCars.filter(c => c.carNumber.replace(/\s/g, '').endsWith(last4)); 
             
             if(matches.length > 0) { 
+                
+                // NEW FEATURE: Show Car Reference Details strictly with required colors
+                const best = matches[0];
+                let htmlInfo = `<span class="text-gray-600">Due:</span> <span class="font-bold text-sm text-blue-600">₹${best.due}</span> &nbsp;|&nbsp; <span class="text-gray-600">Paid:</span> <span class="font-bold text-sm ${best.paid === 0 ? 'text-red-600' : 'text-green-600'}">₹${best.paid}</span>`;
+                if (best.remarks) {
+                    htmlInfo += ` <br><span class="text-gray-600">Remarks:</span> <span class="text-red-600 font-bold">${best.remarks}</span>`;
+                }
+                if(refBox) { refBox.innerHTML = htmlInfo; refBox.classList.remove('hidden'); }
+
                 box.classList.remove('hidden'); 
                 matches.slice(0,5).forEach(c => { 
                     const div = document.createElement('div'); 
@@ -1821,8 +2061,14 @@ function parseParaData(p) {
 
                     box.appendChild(div); 
                 }); 
-            } else { box.classList.add('hidden'); } 
-        } else { box.classList.add('hidden'); }
+            } else { 
+                box.classList.add('hidden'); 
+                if(refBox) refBox.classList.add('hidden');
+            } 
+        } else { 
+            box.classList.add('hidden'); 
+            if(refBox) refBox.classList.add('hidden');
+        }
     }
 
     function calcCarDue() { 
@@ -1853,6 +2099,10 @@ function parseParaData(p) {
         document.getElementById('carDue').value = ''; 
         document.getElementById('carRemarks').value = ''; 
         document.getElementById('carEntryDate').valueAsDate = new Date(); 
+        
+        const refBox = document.getElementById('carRefInfo');
+        if(refBox) refBox.classList.add('hidden');
+
         alert("সফলভাবে গাড়ির এন্ট্রি সেভ হয়েছে!"); 
     }
 

@@ -124,6 +124,8 @@
                     <button onclick="switchSubTab('car')" class="px-4 sm:px-6 py-3 sub-tab-btn text-sm sm:text-base" data-target="sub-car">গাড়ীর চাঁদা</button>
                     <button onclick="switchSubTab('dashboard')" class="px-4 sm:px-6 py-3 sub-tab-btn text-sm sm:text-base" data-target="sub-dashboard">ড্যাশবোর্ড</button>
                 </div>
+                
+                
 
                 <!-- 1. BILL GENERATION -->
                 <div id="sub-bill" class="sub-tab-content bg-white p-4 sm:p-6 rounded-b-lg shadow animate-fade-in border-t-4 border-purple-600">
@@ -224,16 +226,22 @@
 
                 <!-- 4. NEW DASHBOARD -->
                 <div id="sub-dashboard" class="sub-tab-content hidden space-y-4">
-                    <!-- Top Cards -->
+                    
+                    <div class="bg-white p-3 sm:p-4 rounded-lg shadow border-l-4 border-purple-500 flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
+                        <label class="font-bold text-gray-700 text-sm">ড্যাশবোর্ডের তারিখ নির্বাচন:</label>
+                        <div class="flex gap-2 w-full sm:w-auto">
+                            <input type="date" id="dashFilterDate" onchange="updateDashboard()" class="w-full sm:w-auto border p-2 rounded focus:ring-2 focus:ring-purple-300 font-bold text-purple-800 bg-purple-50">
+                            <button onclick="document.getElementById('dashFilterDate').value = ''; updateDashboard();" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm font-bold shadow transition">আজ</button>
+                        </div>
+                    </div>
+
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                         <div class="bg-white p-4 sm:p-5 rounded-lg shadow border-l-4 border-green-500"><div><h3 class="text-gray-500 font-bold uppercase text-xs sm:text-sm">সর্বমোট আয়</h3><p class="text-2xl sm:text-3xl font-bold mt-1 text-green-700" id="dashTotalInc">₹0</p></div></div>
                         <div class="bg-white p-4 sm:p-5 rounded-lg shadow border-l-4 border-red-500"><div><h3 class="text-gray-500 font-bold uppercase text-xs sm:text-sm">সর্বমোট ব্যয়</h3><p class="text-2xl sm:text-3xl font-bold mt-1 text-red-700" id="dashTotalExp">₹0</p></div></div>
                         <div class="bg-white p-4 sm:p-5 rounded-lg shadow border-l-4 border-blue-500"><div><h3 class="text-gray-500 font-bold uppercase text-xs sm:text-sm">বর্তমান স্থিতি (Balance)</h3><p class="text-2xl sm:text-3xl font-bold mt-1 text-blue-800" id="dashBalance">₹0</p></div></div>
                     </div>
 
-                    <!-- Layout Tables -->
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                        <!-- Income Breakdown -->
                         <div class="bg-white rounded-lg shadow border border-gray-100">
                             <div class="bg-green-50 p-3 border-b border-green-100 rounded-t-lg flex items-center gap-2">
                                 <i data-lucide="trending-up" class="w-5 h-5 text-green-600"></i>
@@ -242,16 +250,14 @@
                             <div class="p-4 overflow-x-auto">
                                 <table class="w-full dash-table min-w-[350px]">
                                     <thead>
-                                        <tr><th>উৎস</th><th class="text-right">আজ চাঁদা উঠেছে</th><th class="text-right">এপর্যন্ত চাঁদা উঠেছে</th></tr>
+                                        <tr><th>উৎস</th><th class="text-right">ওই দিনে চাঁদা</th><th class="text-right">এপর্যন্ত মোট চাঁদা</th></tr>
                                     </thead>
                                     <tbody id="dashIncomeTableBody">
-                                        <!-- Dynamically generated -->
-                                    </tbody>
+                                        </tbody>
                                 </table>
                             </div>
                         </div>
 
-                        <!-- Expense Breakdown -->
                         <div class="bg-white rounded-lg shadow border border-gray-100">
                             <div class="bg-red-50 p-3 border-b border-red-100 rounded-t-lg flex items-center gap-2">
                                 <i data-lucide="trending-down" class="w-5 h-5 text-red-600"></i>
@@ -260,7 +266,7 @@
                             <div class="p-4">
                                 <div class="grid grid-cols-2 gap-4 mb-4">
                                     <div class="bg-gray-50 p-3 rounded border text-center">
-                                        <p class="text-xs text-gray-500 font-bold">আজকের খরচ</p>
+                                        <p class="text-xs text-gray-500 font-bold">ওই দিনের খরচ</p>
                                         <p class="text-lg font-bold text-red-600" id="dashTodayExpAmt">₹0</p>
                                     </div>
                                     <div class="bg-gray-50 p-3 rounded border text-center">
@@ -270,14 +276,12 @@
                                 </div>
                                 <h4 class="text-xs font-bold text-gray-500 mb-2 border-b pb-1">সাম্প্রতিক খরচের তালিকা</h4>
                                 <ul id="dashRecentExpList" class="space-y-2">
-                                    <!-- Dynamically generated -->
-                                </ul>
+                                    </ul>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-
+</div>
             <!-- EXPENSE TAB -->
             <div id="tab-expense" class="tab-content hidden space-y-4 sm:space-y-6">
                  <div class="flex overflow-x-auto scrollbar-hide border-b bg-white rounded-t-lg shadow-sm px-2 sm:px-4">
@@ -789,10 +793,25 @@ let globalData = { income: [], expense: [], car: [], paras: [], signatures: [] }
         refreshUI();
     }
 
+
+// ===== DATE FIX HELPER =====
+    function fixDateOffset(dateStr) {
+        if (!dateStr) return '';
+        // যদি আগে থেকেই YYYY-MM-DD ফরম্যাটে থাকে, তবে সেটাই রিটার্ন করবে
+        if (dateStr.length === 10 && dateStr.includes('-')) return dateStr;
+        
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr.split('T')[0];
+        
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
     async function fetchAllData() {
         document.body.style.cursor = 'wait'; 
         try {
-            // Added redirect: "follow" for proper Google Apps Script handling
             const response = await fetch(SCRIPT_URL, {
                 method: "GET",
                 redirect: "follow"
@@ -802,16 +821,20 @@ let globalData = { income: [], expense: [], car: [], paras: [], signatures: [] }
                 throw new Error("HTTP error! Status: " + response.status);
             }
             
-            // Read as text first to safely catch HTML responses if App Script permission fails
             const textData = await response.text();
             
             try {
                 const data = JSON.parse(textData);
-                globalData.income = data.income || []; 
-                globalData.expense = data.expense || []; 
-                globalData.car = data.car || [];
+                
+                // ডেটা লোড করার সময় সব তারিখ সঠিক টাইমজোনে ঠিক করে নেওয়া হচ্ছে
+                globalData.income = (data.income || []).map(i => ({...i, date: fixDateOffset(i.date)})); 
+                globalData.expense = (data.expense || []).map(e => ({...e, date: fixDateOffset(e.date)})); 
+                globalData.car = (data.car || []).map(c => ({...c, date: fixDateOffset(c.date)}));
+                
                 globalData.paras = (data.paras && data.paras.length > 0) ? data.paras : ["North Para", "South Para"];
-               globalData.signatures = (data.signatures && data.signatures.length > 0) ? data.signatures.map(s => ({name: s.name, desig: s.desig, isActive: s.isActive === "Yes"})) : []; localStorage.setItem('pujaDataCache', JSON.stringify(globalData)); 
+                globalData.signatures = (data.signatures && data.signatures.length > 0) ? data.signatures.map(s => ({name: s.name, desig: s.desig, isActive: s.isActive === "Yes"})) : []; 
+                
+                localStorage.setItem('pujaDataCache', JSON.stringify(globalData)); 
                 refreshUI();
             } catch (jsonError) {
                 console.error("JSON Parse Error. Server returned:", textData.substring(0, 150));
@@ -822,7 +845,6 @@ let globalData = { income: [], expense: [], car: [], paras: [], signatures: [] }
             console.error("Fetch failed", error); 
             window.originalAlert("সার্ভার থেকে ডাটা আনতে সমস্যা হয়েছে। দয়া করে ইন্টারনেট সংযোগ এবং Google Script পারমিশন চেক করুন।");
             
-            // Show offline indicator
             let msg = document.getElementById('top-dynamic-date-bar');
             if (msg && globalData.income.length === 0) {
                 if (!msg.innerHTML.includes('Offline')) {
@@ -833,7 +855,8 @@ let globalData = { income: [], expense: [], car: [], paras: [], signatures: [] }
             document.body.style.cursor = 'default'; 
         }
     }
-    // ===== NEW FEATURE END =====
+
+        // ===== NEW FEATURE END =====
 
     function getPuja(item) {
         return item.puja || "কালী পূজা ২০২৫";
@@ -2218,59 +2241,123 @@ function parseParaData(p) {
         } 
     }
 
-    // ==========================================
+// ==========================================
     // 10. DASHBOARD MODULE
     // ==========================================
-    function updateDashboard() {
-        const activePuja = document.getElementById('pujaSelect').value; 
-        const today = new Date().toISOString().split('T')[0];
-        
-        const inc = store.getIncome().filter(d => getPuja(d) === activePuja); 
-        const car = store.getCar().filter(d => getPuja(d) === activePuja); 
-        const exp = store.getExpense().filter(d => getPuja(d) === activePuja);
-        
-        const totalInc = inc.reduce((s,x) => s + x.paid, 0) + car.reduce((s,x) => s + x.paid, 0);
-        const totalExp = exp.reduce((s,x) => s + x.amount, 0);
-        document.getElementById('dashTotalInc').innerText = '₹' + totalInc; 
-        document.getElementById('dashTotalExp').innerText = '₹' + totalExp; 
-        document.getElementById('dashBalance').innerText = '₹' + (totalInc - totalExp);
+   
+function updateDashboard() {
 
-        let incomeSources = {};
-        let seq = 1;
-        inc.forEach(item => {
-            if(!incomeSources[item.para]) incomeSources[item.para] = {today:0, total:0};
-            incomeSources[item.para].total += item.paid;
-            if(item.date === today) incomeSources[item.para].today += item.paid;
-        });
-        car.forEach(item => {
-            let label = "গাড়ির চাঁদা (" + item.type + ")";
-            if(!incomeSources[label]) incomeSources[label] = {today:0, total:0};
-            incomeSources[label].total += item.paid;
-            if(item.date === today) incomeSources[label].today += item.paid;
-        });
+const activePuja = document.getElementById('pujaSelect').value; 
 
-        const dashIncTbody = document.getElementById('dashIncomeTableBody');
-        dashIncTbody.innerHTML = '';
-        for(let key in incomeSources) {
-            dashIncTbody.innerHTML += `<tr><td class="font-bold text-gray-700">${seq++}। ${key}</td><td class="text-right text-green-600 font-bold">₹${incomeSources[key].today}</td><td class="text-right text-blue-800 font-bold">₹${incomeSources[key].total}</td></tr>`;
-        }
+let dashDateInput = document.getElementById('dashFilterDate');
 
-        const todayExp = exp.filter(e => e.date === today).reduce((s, x) => s + x.amount, 0);
-        document.getElementById('dashTodayExpAmt').innerText = '₹' + todayExp;
-        document.getElementById('dashTotalExpAmt').innerText = '₹' + totalExp;
+if (dashDateInput && !dashDateInput.value) {
 
-        const dashExpList = document.getElementById('dashRecentExpList');
-        dashExpList.innerHTML = '';
-        const recentExp = [...exp].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
-        if(recentExp.length === 0) {
-            dashExpList.innerHTML = '<li class="text-xs text-gray-400">কোনো খরচ নেই।</li>';
-        } else {
-            recentExp.forEach(r => {
-                dashExpList.innerHTML += `<li class="flex justify-between items-center bg-white border p-2 rounded"><span class="text-xs truncate font-bold w-2/3">${r.reason}</span> <span class="text-sm font-bold text-red-600">₹${r.amount}</span></li>`;
-            });
-        }
-    }
+const now = new Date();
 
+const year = now.getFullYear();
+
+const month = String(now.getMonth() + 1).padStart(2, '0');
+
+const day = String(now.getDate()).padStart(2, '0');
+
+dashDateInput.value = `${year}-${month}-${day}`;
+
+}
+
+const targetDate = dashDateInput ? dashDateInput.value : '';
+
+// ফিক্স: সার্ভার থেকে আসা Timestamp রিমুভ করে শুধু ডেট নেওয়া
+
+// যেহেতু fetchAllData তে তারিখ ঠিক করা হয়েছে, তাই সরাসরি তারিখ রিটার্ন করবে
+const cleanDate = (dStr) => dStr || '';
+
+const inc = store.getIncome().filter(d => getPuja(d) === activePuja); 
+
+const car = store.getCar().filter(d => getPuja(d) === activePuja); 
+
+const exp = store.getExpense().filter(d => getPuja(d) === activePuja);
+
+const totalInc = inc.reduce((s,x) => s + x.paid, 0) + car.reduce((s,x) => s + x.paid, 0);
+
+const totalExp = exp.reduce((s,x) => s + x.amount, 0);
+
+document.getElementById('dashTotalInc').innerText = '₹' + totalInc; 
+
+document.getElementById('dashTotalExp').innerText = '₹' + totalExp; 
+
+document.getElementById('dashBalance').innerText = '₹' + (totalInc - totalExp);
+
+
+let incomeSources = {};
+
+let seq = 1;
+
+inc.forEach(item => {
+
+if(!incomeSources[item.para]) incomeSources[item.para] = {today:0, total:0};
+
+incomeSources[item.para].total += item.paid;
+
+if(cleanDate(item.date) === targetDate) incomeSources[item.para].today += item.paid;
+
+});
+
+car.forEach(item => {
+
+let label = "গাড়ির চাঁদা (" + item.type + ")";
+
+if(!incomeSources[label]) incomeSources[label] = {today:0, total:0};
+
+incomeSources[label].total += item.paid;
+
+if(cleanDate(item.date) === targetDate) incomeSources[label].today += item.paid;
+
+});
+
+
+const dashIncTbody = document.getElementById('dashIncomeTableBody');
+
+dashIncTbody.innerHTML = '';
+
+for(let key in incomeSources) {
+
+dashIncTbody.innerHTML += `<tr><td class="font-bold text-gray-700">${seq++}। ${key}</td><td class="text-right text-green-600 font-bold">₹${incomeSources[key].today}</td><td class="text-right text-blue-800 font-bold">₹${incomeSources[key].total}</td></tr>`;
+
+}
+
+
+const todayExp = exp.filter(e => cleanDate(e.date) === targetDate).reduce((s, x) => s + x.amount, 0);
+
+document.getElementById('dashTodayExpAmt').innerText = '₹' + todayExp;
+
+document.getElementById('dashTotalExpAmt').innerText = '₹' + totalExp;
+
+
+const dashExpList = document.getElementById('dashRecentExpList');
+
+dashExpList.innerHTML = '';
+
+const recentExp = [...exp].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+
+if(recentExp.length === 0) {
+
+dashExpList.innerHTML = '<li class="text-xs text-gray-400">কোনো খরচ নেই।</li>';
+
+} else {
+
+recentExp.forEach(r => {
+
+dashExpList.innerHTML += `<li class="flex justify-between items-center bg-white border p-2 rounded"><span class="text-xs truncate font-bold w-2/3">${r.reason}</span> <span class="text-sm font-bold text-red-600">₹${r.amount}</span></li>`;
+
+});
+
+}
+
+}
+
+
+    
     // ==========================================
     // 11. REPORTS MODULE
     // ==========================================

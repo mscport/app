@@ -167,6 +167,50 @@
     </div>
 </div>
 
+<!-- ======================================================== -->
+<!-- FEATURE 3: NEW DRAWING CERTIFICATE TEMPLATE (Hidden A4)  -->
+<!-- ======================================================== -->
+<div id="artCertNewTemplate" style="display:none; width: 210mm; height: 297mm; background: #ffffff; padding: 20mm; position: absolute; left: -9999px; top: -9999px; box-sizing: border-box; font-family: 'Times New Roman', Times, serif;">
+    <div style="border: 8px double #166534; padding: 15mm; height: 100%; position: relative; border-radius: 10px;">
+        <!-- Headers -->
+        <div style="position: absolute; top: 15mm; left: 15mm; font-size: 14px; font-weight: bold;">
+            Certificate No: <span id="feat3CertNo" style="color: #b91c1c;"></span>
+        </div>
+        <div style="position: absolute; top: 15mm; right: 15mm; font-size: 14px; font-weight: bold;">
+            Date of Issue: <span id="feat3IssueDate"></span>
+        </div>
+
+        <!-- Title -->
+        <div style="text-align: center; margin-top: 40mm;">
+            <h1 style="font-size: 42px; color: #15803d; margin-bottom: 10mm; text-transform: uppercase; letter-spacing: 2px;">
+                CERTIFICATE OF ACHIEVEMENT
+            </h1>
+        </div>
+
+        <!-- Body -->
+        <div style="text-align: center; font-size: 24px; line-height: 1.8; margin-top: 25mm;">
+            <p>This is to proudly certify that</p>
+            <h2 id="feat3Name" style="font-size: 36px; color: #1e3a8a; border-bottom: 2px solid #000; display: inline-block; padding: 0 30px; margin: 15px 0; font-style: italic;"></h2>
+            <p>of Class <span id="feat3Class" style="font-weight: bold;"></span></p>
+            <p style="margin-top: 20px;">
+                has secured the <span id="feat3Pos" style="font-weight: bold; font-size: 28px; color: #c2410c;"></span> Position in the Drawing Competition
+            </p>
+            <p>
+                held on <span id="feat3EventDate" style="font-weight: bold;"></span> by <span id="feat3Org" style="font-weight: bold;"></span>.
+            </p>
+        </div>
+
+        <!-- Footer Signatures -->
+        <div style="position: absolute; bottom: 25mm; left: 25mm; width: 60mm; text-align: center; border-top: 2px solid #000; padding-top: 10px; font-weight: bold; font-size: 18px;">
+            Judges Signature
+        </div>
+        <div style="position: absolute; bottom: 25mm; right: 25mm; width: 60mm; text-align: center; border-top: 2px solid #000; padding-top: 10px; font-weight: bold; font-size: 18px;">
+            Authority Signature
+        </div>
+    </div>
+</div>
+<!-- ======================================================== -->
+
 <div id="timerModal">
     <button style="position:absolute; top:20px; right:20px; background:none; border:none; color:white; font-size:30px;" onclick="closeTimer()">✕</button>
     <h2 id="timerPlayerName" style="color:#ddd; margin-bottom:5px;">Player</h2>
@@ -341,7 +385,7 @@
             <button class="btn-submit" style="background: #c62828;" onclick="doLogout()">🚪 লগআউট</button>
         </div>
         <h3 style="border-top:2px solid #ccc; padding-top:10px; margin-top:20px;">🎨 অঙ্কন কনফিগারেশন</h3>
-        <p style="font-size:12px; color:gray;">প্রতিটি বিভাগের জন্য ক্লাস রেঞ্জ এবং বিষয় ঠিক করুন।</p>
+        <p style="font-size:12px; color:gray;">প্রতিটি বিভাগের জন্য ক্লাস রেঞ্জ এবং বিষয় ঠিক করুন.</p>
         <div id="artSettingsContainer"></div>
         <button class="btn-submit" style="background:#795548; margin-bottom:20px;" onclick="saveArtConfig()">অঙ্কন সেটিং সেভ করুন</button>
         <h3>খেলার কনফিগারেশন</h3>
@@ -469,19 +513,56 @@
     };
     if(SafeStorage.getItem('artConfig_v1')) artConfig = JSON.parse(SafeStorage.getItem('artConfig_v1'));
 
+    // ========================================================
+    // FEATURE 2: ADVANCED GAME CONFIGURATION UPGRADE
+    // Extended properties strictly preserved format
+    // ========================================================
     let gameConfig = {
-        'hari_bhanga': { label: 'হাড়িভাঙ্গা', type: 'manual', unit: 'সেমি', sort: 'low', status: 'active' },
-        'shankha': { label: 'শঙ্খবাজানো', type: 'open', unit: 'মিলি সেকেন্ড', sort: 'high', status: 'active' },
-        'glass_circle': { label: 'গেলাস সার্কেল', type: 'open', unit: 'মিলি সেকেন্ড', sort: 'low', status: 'active' },
-        'phuchka': { label: 'ফুচকা খাওয়া', type: 'fixed', duration: 60, unit: 'টি', sort: 'high', status: 'active' },
-        'candle': { label: 'মোমবাতি জ্বালানো', type: 'manual', unit: 'টি', sort: 'high', status: 'active' },
-        'sajo': { label: 'যেমন খুশি সাঁজো', type: 'manual', unit: 'পয়েন্ট', sort: 'manual', status: 'active' },
-        'musical_chair': { label: 'মিউজিক্যাল চেয়ার', type: 'manual', unit: '', sort: 'manual', status: 'active' },
-        'art_comp': { label: 'অঙ্কন প্রতিযোগীতা', type: 'manual', unit: 'পজিশন', sort: 'manual', status: 'active' }
+        'hari_bhanga': { label: 'হাড়িভাঙ্গা', type: 'manual', unit: 'সেমি', sort: 'low', status: 'active', operationMode: 'manual', parameterType: 'scale' },
+        'shankha': { label: 'শঙ্খবাজানো', type: 'open', unit: 'মিলি সেকেন্ড', sort: 'high', status: 'active', operationMode: 'stopwatch', parameterType: 'numeric' },
+        'glass_circle': { label: 'গেলাস সার্কেল', type: 'open', unit: 'মিলি সেকেন্ড', sort: 'low', status: 'active', operationMode: 'stopwatch', parameterType: 'numeric' },
+        'phuchka': { label: 'ফুচকা খাওয়া', type: 'fixed', duration: 60, unit: 'টি', sort: 'high', status: 'active', operationMode: 'timer', parameterType: 'numeric' },
+        'candle': { label: 'মোমবাতি জ্বালানো', type: 'manual', unit: 'টি', sort: 'high', status: 'active', operationMode: 'manual', parameterType: 'numeric' },
+        'sajo': { label: 'যেমন খুশি সাঁজো', type: 'manual', unit: 'পয়েন্ট', sort: 'manual', status: 'active', operationMode: 'manual', parameterType: 'judgeBased' },
+        'musical_chair': { label: 'মিউজিক্যাল চেয়ার', type: 'manual', unit: '', sort: 'manual', status: 'active', operationMode: 'manual', parameterType: 'roundBased' },
+        'art_comp': { label: 'অঙ্কন প্রতিযোগীতা', type: 'manual', unit: 'পজিশন', sort: 'manual', status: 'active', operationMode: 'manual', parameterType: 'judgeBased' }
     };
     if(SafeStorage.getItem('gameConfig_v10')) {
         const saved = JSON.parse(SafeStorage.getItem('gameConfig_v10'));
         for(let k in saved) if(gameConfig[k]) Object.assign(gameConfig[k], saved[k]);
+    }
+
+    // ========================================================
+    // FEATURE 1: HELPER FUNCTION FOR SYNCING CHECKBOXES
+    // ========================================================
+    function syncRegistrationGamesStatus() {
+        document.querySelectorAll('.game-checkbox').forEach(label => {
+            const checkbox = label.querySelector('input');
+            if(!checkbox) return;
+            const gameCode = checkbox.value;
+            
+            let badge = label.querySelector('.status-badge');
+            if(!badge) {
+                badge = document.createElement('small');
+                badge.className = 'status-badge';
+                badge.style.marginLeft = '5px';
+                label.appendChild(badge);
+            }
+
+            if(gameConfig[gameCode] && gameConfig[gameCode].status === 'inactive') {
+                label.style.opacity = '0.5'; 
+                label.style.pointerEvents = 'none'; 
+                checkbox.disabled = true;
+                checkbox.checked = false;
+                badge.innerText = '(বন্ধ)';
+                badge.style.color = 'red';
+            } else {
+                label.style.opacity = '1'; 
+                label.style.pointerEvents = 'auto'; 
+                checkbox.disabled = false;
+                badge.innerText = '';
+            }
+        });
     }
 
     function switchTab(tabId) {
@@ -489,48 +570,23 @@
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(tabId).classList.add('active');
         
-        if(tabId === 'registration') document.getElementById('tab-reg').classList.add('active');
+        if(tabId === 'registration') {
+            document.getElementById('tab-reg').classList.add('active');
+            syncRegistrationGamesStatus();
+            populateClassDropdown();
+        }
         if(tabId === 'management') { document.getElementById('tab-mgmt').classList.add('active'); renderMgmt(); }
         if(tabId === 'results') { document.getElementById('tab-res').classList.add('active'); renderResults(); }
         if(tabId === 'settings') { 
             document.getElementById('tab-set').classList.add('active'); 
             renderSettingsUI(); renderArtSettings(); 
         }
-        renderPlayerList();
-        
-        // switchTab ফাংশনের ভেতরে
-        if(tabId === 'registration') {
-            document.querySelectorAll('.game-checkbox').forEach(label => {
-                const checkbox = label.querySelector('input');
-                const gameCode = checkbox.value;
-                
-                // নিরাপদভাবে (বন্ধ) লেখা যুক্ত করার জন্য নতুন span তৈরি
-                let badge = label.querySelector('.status-badge');
-                if(!badge) {
-                    badge = document.createElement('small');
-                    badge.className = 'status-badge';
-                    badge.style.color = 'red';
-                    badge.style.marginLeft = '5px';
-                    label.appendChild(badge);
-                }
-
-                if(gameConfig[gameCode] && gameConfig[gameCode].status === 'inactive') {
-                    label.style.opacity = '0.5'; 
-                    label.style.pointerEvents = 'none'; 
-                    checkbox.disabled = true;
-                    checkbox.checked = false; // বন্ধ থাকলে চেকমার্ক উঠিয়ে দেওয়া
-                    badge.innerText = '(বন্ধ)';
-                } else {
-                    label.style.opacity = '1'; 
-                    label.style.pointerEvents = 'auto'; 
-                    checkbox.disabled = false;
-                    badge.innerText = '';
-                }
-            });
+        if(tabId === 'participants') { 
+            document.getElementById('tab-part').classList.add('active'); 
+            renderParticipants(); 
         }
         
-                 
-        if(tabId === 'registration') populateClassDropdown();
+        renderPlayerList();
     }
 
     function checkLogin() {
@@ -541,23 +597,21 @@
     }
 
     function initApp() {
-    document.getElementById('loginModal').style.display = 'none';
-    const role = SafeSession.getItem('role');
-    if(role === 'staff') {
-        document.getElementById('tab-mgmt').style.display = 'none';
-        document.getElementById('tab-set').style.display = 'none';
-    }
-    document.getElementById('regDate').valueAsDate = new Date();
-    
-    // fetchData শেষ হওয়ার পর UI আপডেট করার নির্দেশ
-    fetchData().then(() => {
-        if(document.getElementById('registration').classList.contains('active')) {
-            switchTab('registration');
+        document.getElementById('loginModal').style.display = 'none';
+        const role = SafeSession.getItem('role');
+        if(role === 'staff') {
+            document.getElementById('tab-mgmt').style.display = 'none';
+            document.getElementById('tab-set').style.display = 'none';
         }
-    });
-}
+        document.getElementById('regDate').valueAsDate = new Date();
+        
+        fetchData().then(() => {
+            if(document.getElementById('registration').classList.contains('active')) {
+                switchTab('registration');
+            }
+        });
+    }
 
-    // --- Updated Fetch Data (Config Support) ---
 async function fetchData() {
         if(!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("URL")) return;
         try {
@@ -583,12 +637,13 @@ async function fetchData() {
             participants = JSON.parse(SafeStorage.getItem('db_v8')) || []; 
         }
 
-        // --- এই নতুন অংশটুকু যোগ করুন ---
+        syncRegistrationGamesStatus(); // Ensure initial state is synced
+        
         if(document.getElementById('registration').classList.contains('active')) {
             switchTab('registration');
         }
-        // -----------------------------
     }
+
     // --- Robust pushData Function with Retry Logic ---
     async function pushData(action, payload, retryCount = 0) {
         // 1. Save to Local Storage first (Backup)
@@ -799,7 +854,7 @@ async function fetchData() {
         if(label) {
             label.style.background = "#ffa000"; // হলুদ রঙ (বোঝাবে কাজ চলছে)
             label.style.opacity = "0.7";
-            label.style.pointerEvents = "none"; // আপলোড চলাকালীন আবার ক্লিক করা যাবে না
+            label.style.pointerEvents = "none"; // আপলোড চলাকালীন আবার ক্লিক করা যাবে মাতৃ
         }
 
         try {
@@ -1143,6 +1198,17 @@ async function fetchData() {
     }
 
     function generateCertificate(id, rank) {
+        // ========================================================
+        // FEATURE 3: DRAWING CERTIFICATE SYSTEM (DYNAMIC PDF)
+        // Intercepting for art_comp to output A4 PDF 
+        // ========================================================
+        const p_feat3 = participants.find(x => x.id == id);
+        if(p_feat3 && p_feat3.games && p_feat3.games.includes('art_comp')) {
+            generateDrawingCertificate(p_feat3, rank);
+            return; 
+        }
+        // ========================================================
+
         const p = participants.find(x => x.id == id);
         if(!p) return;
 
@@ -1198,7 +1264,19 @@ async function fetchData() {
         alert("অঙ্কন কনফিগারেশন সেভ হয়েছে (Local + Server)!"); 
     }
     
-    function updateConfig(g, k, v) { if(k==='duration')v=parseInt(v); gameConfig[g][k]=v; SafeStorage.setItem('gameConfig_v10', JSON.stringify(gameConfig)); if(k==='type')renderSettingsUI(); }
+    // ========================================================
+    // FEATURE 1: Game Active/Inactive Proper Sync Included Below
+    // ========================================================
+    function updateConfig(g, k, v) { 
+        if(k==='duration')v=parseInt(v); 
+        gameConfig[g][k]=v; 
+        SafeStorage.setItem('gameConfig_v10', JSON.stringify(gameConfig)); 
+        if(k==='type')renderSettingsUI(); 
+        
+        if(k === 'status') {
+            syncRegistrationGamesStatus();
+        }
+    }
     
     // --- UPDATED SAVE GAME CONFIG (Now sends to server) ---
     async function saveConfig() { 
@@ -1498,27 +1576,6 @@ async function fetchData() {
         }
     }
       
-  function switchTab(tabId) {
-    document.querySelectorAll('.tab-content').forEach(d => d.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(tabId).classList.add('active');
-    
-    if(tabId === 'registration') document.getElementById('tab-reg').classList.add('active');
-    if(tabId === 'management') { document.getElementById('tab-mgmt').classList.add('active'); renderMgmt(); }
-    if(tabId === 'results') { document.getElementById('tab-res').classList.add('active'); renderResults(); }
-    if(tabId === 'settings') { document.getElementById('tab-set').classList.add('active'); renderSettingsUI(); renderArtSettings(); }
-    
-    // নতুন লজিক
-    if(tabId === 'participants') { 
-        document.getElementById('tab-part').classList.add('active'); 
-        renderParticipants(); 
-    }
-    
-    renderPlayerList();
-    if(tabId === 'registration') populateClassDropdown();
-}  
-    
-    // যোগদাতা লিস্ট রেন্ডার করা
 // যোগদাতা লিস্ট রেন্ডার করা
 function renderParticipants() {
     const gameFilter = document.getElementById('partGameSelector').value;
@@ -1610,8 +1667,67 @@ function downloadGenSlipPDF() {
         btn.disabled = false;
     });
 }
+
+// ========================================================
+// FEATURE 3: DRAWING CERTIFICATE SYSTEM (DYNAMIC PDF LOGIC)
+// ========================================================
+let drawingCertCounter = parseInt(localStorage.getItem('drawingCertCounter')) || 1000;
+
+async function generateDrawingCertificate(p, rank) {
+    const template = document.getElementById('artCertNewTemplate');
+    
+    // Auto-increment Cert Number
+    drawingCertCounter++;
+    localStorage.setItem('drawingCertCounter', drawingCertCounter.toString());
+    const newCertNo = `ART-${new Date().getFullYear()}-${drawingCertCounter}`;
+
+    // Name format
+    const nameParts = p.name.split('|');
+    const certName = nameParts.length > 1 ? nameParts[1].trim() : nameParts[0].trim();
+
+    // Format position string securely
+    let posString = rank;
+
+    // Default dates & fallbacks
+    const eventDate = document.getElementById('regDate') ? document.getElementById('regDate').value || new Date().toLocaleDateString() : new Date().toLocaleDateString();
+
+    // Populate dynamic text replacement
+    document.getElementById('feat3CertNo').innerText = newCertNo;
+    document.getElementById('feat3IssueDate').innerText = new Date().toLocaleDateString();
+    document.getElementById('feat3Name').innerText = certName;
+    document.getElementById('feat3Class').innerText = p.class || '';
+    document.getElementById('feat3Pos').innerText = posString;
+    document.getElementById('feat3EventDate').innerText = p.date ? new Date(p.date).toLocaleDateString() : eventDate;
+    document.getElementById('feat3Org').innerText = "ক্রীড়া প্রতিযোগিতা কমিটি";
+
+    // Show for capture
+    template.style.display = 'block';
+
+    try {
+        const canvas = await html2canvas(template, { 
+            scale: 2, 
+            useCORS: true,
+            logging: false 
+        });
+        
+        const imgData = canvas.toDataURL('image/jpeg', 1.0);
+        const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4'); 
+        
+        const pdfWidth = pdf.internal.pageSize.getWidth(); 
+        const pdfHeight = pdf.internal.pageSize.getHeight(); 
+        
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`Drawing_Certificate_${certName.replace(/\s+/g, '_')}.pdf`);
+        
+    } catch (error) {
+        console.error("Failed to generate Drawing PDF:", error);
+        alert("An error occurred while generating the certificate.");
+    } finally {
+        template.style.display = 'none';
+    }
+}
+// ========================================================
     
 </script>
 </body>
 </html>
-

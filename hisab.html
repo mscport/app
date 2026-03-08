@@ -2303,7 +2303,7 @@ function parseParaData(p) {
 
 
    
-       function openCarPaymentModal(id) { 
+   function openCarPaymentModal(id) { 
         const item = store.getCar().find(c => String(c.id) === String(id)); 
         if(!item) return; 
         const total = item.paid + item.due; 
@@ -2313,10 +2313,41 @@ function parseParaData(p) {
         document.getElementById('cpPaid').innerText = `₹${item.paid}`; 
         document.getElementById('cpDue').innerText = `₹${item.due}`; 
 
-        // জমার ইতিহাস দেখানোর অংশ
+        // জমার ইতিহাস এবং পূর্বের মন্তব্য দেখানোর অংশ
         const historyBox = document.getElementById('cpHistoryBox');
-        historyBox.innerHTML = '<div class="font-bold text-blue-800 mb-1 flex items-center gap-1"><i data-lucide="history" class="w-4 h-4"></i> জমার ইতিহাস:</div>';
+        historyBox.innerHTML = '<div class="font-bold text-blue-800 mb-2 flex items-center gap-1"><i data-lucide="history" class="w-4 h-4"></i> জমার ইতিহাস ও মন্তব্য:</div>';
         historyBox.classList.remove('hidden');
+
+        // পূর্বের মন্তব্য (Remarks) এবং তারিখ আলাদা করা
+        let customRemarksHtml = '';
+        if (item.remarks) {
+            if (item.remarks.includes('[')) {
+                // নতুন ফরম্যাট (যেখানে [Initial...] বা [Paid...] ট্যাগ আছে, সেখান থেকে তারিখ এবং মন্তব্য বের করা)
+                const parts = item.remarks.split(/(?=\[)/); // ব্র্যাকেট দিয়ে স্প্লিট করা হচ্ছে
+                parts.forEach(part => {
+                    let dateMatch = part.match(/on (\d{2}\/\d{2}\/\d{4})\]/);
+                    let textMatch = part.replace(/\[.*?\]/, '').trim(); // ব্র্যাকেটের অংশ বাদ দিয়ে শুধু লেখা
+                    textMatch = textMatch.replace(/^- /, '').trim(); // সামনের ড্যাশ সড়িয়ে দেওয়া
+                    
+                    if (textMatch && textMatch !== '-') {
+                        let dateStr = dateMatch ? dateMatch[1] : new Date(item.date).toLocaleDateString('en-GB');
+                        customRemarksHtml += `<div class="mb-1 text-xs p-2 bg-yellow-50 border border-yellow-200 rounded shadow-sm"><span class="font-bold text-red-600">মন্তব্য (${dateStr}):</span> <span class="text-gray-800 font-semibold">${textMatch}</span></div>`;
+                    }
+                });
+            } else {
+                // পুরোনো ডাটার ফরম্যাট (যেগুলোতে কোনো সিস্টেম ট্যাগ নেই)
+                let textMatch = item.remarks.trim();
+                if (textMatch && textMatch !== '-') {
+                    let dateStr = new Date(item.date).toLocaleDateString('en-GB');
+                    customRemarksHtml += `<div class="mb-1 text-xs p-2 bg-yellow-50 border border-yellow-200 rounded shadow-sm"><span class="font-bold text-red-600">মন্তব্য (${dateStr}):</span> <span class="text-gray-800 font-semibold">${textMatch}</span></div>`;
+                }
+            }
+        }
+
+        // মন্তব্য থাকলে সেটা হিস্ট্রির উপরে বসানো
+        if (customRemarksHtml !== '') {
+            historyBox.innerHTML += customRemarksHtml;
+        }
 
         const baseDate = new Date(item.date).toLocaleDateString('en-GB'); // প্রথম এন্ট্রির তারিখ
         let historyHTML = '';
@@ -2337,19 +2368,19 @@ function parseParaData(p) {
                                       .replace(/\[Paid: ₹/g, 'পরবর্তী জমা: ₹')
                                       .replace(/ on /g, ' (তারিখ: ')
                                       .replace(/\]/g, ')');
-                    historyHTML += `<div class="flex items-center gap-1 bg-white p-1.5 rounded border"><i data-lucide="check-circle-2" class="w-4 h-4 text-green-600"></i> <span class="font-bold text-gray-800">${cleanLog}</span></div>`;
+                    historyHTML += `<div class="flex items-center gap-1 bg-white p-1.5 rounded border mt-1"><i data-lucide="check-circle-2" class="w-4 h-4 text-green-600"></i> <span class="font-bold text-gray-800">${cleanLog}</span></div>`;
                 });
             }
         }
 
-        // পুরোনো এন্ট্রিগুলোর জন্য স্মার্ট ক্যালকুলেশন (যাদের [Initial: ...] ট্যাগ নেই)
+        // পুরোনো এন্ট্রিগুলোর জন্য স্মার্ট ক্যালকুলেশন
         if (!hasInitialLog) {
             let assumedInitial = item.paid - subsequentPaid;
             let firstLogText = assumedInitial > 0 
                 ? `১ম জমা: ₹${assumedInitial} (তারিখ: ${baseDate})` 
                 : `এন্ট্রির তারিখ: ${baseDate} (জমা: ₹0)`;
             
-            historyHTML = `<div class="flex items-center gap-1 bg-white p-1.5 rounded border"><i data-lucide="check-circle-2" class="w-4 h-4 text-blue-600"></i> <span class="font-bold text-gray-800">${firstLogText}</span></div>` + historyHTML;
+            historyHTML = `<div class="flex items-center gap-1 bg-white p-1.5 rounded border mt-1"><i data-lucide="check-circle-2" class="w-4 h-4 text-blue-600"></i> <span class="font-bold text-gray-800">${firstLogText}</span></div>` + historyHTML;
         }
 
         historyBox.innerHTML += historyHTML;

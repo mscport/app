@@ -195,13 +195,14 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
                             <div class="relative">
                                 <label class="block text-sm font-bold mb-1 text-blue-800">গাড়ীর নম্বর</label>
-                                <input type="text" id="carNumberInput" oninput="formatCarNumberDisplay(this)" class="w-full border-2 border-blue-200 focus:border-blue-500 p-3 sm:p-4 rounded text-xl sm:text-2xl uppercase font-mono" placeholder="WB11 G 1111">
+                                <input type="text" id="carNumberInput" oninput="formatCarNumberDisplay(this)" autocapitalize="characters" class="w-full border-2 border-blue-200 focus:border-blue-500 p-3 sm:p-4 rounded text-xl sm:text-2xl uppercase font-mono" placeholder="WB11 G 1111">
+
                                 <div id="carNumberSuggestions" class="suggestion-box hidden"></div>
                                 <div id="carRefInfo" class="hidden mt-2 p-2 rounded text-xs border border-blue-200 bg-blue-50 leading-relaxed"></div>
                             </div>
                             <div class="bg-gray-50 p-3 sm:p-4 rounded border">
                                 <div class="flex gap-2 mb-3">
-                                    <div class="flex-1"><label class="block text-xs mb-1 font-bold">ধার্য</label><input type="number" id="carAmount" value="200" class="w-full border p-2 rounded text-center"></div>
+                                    <div class="flex-1"><label class="block text-xs mb-1 font-bold">ধার্য</label><input type="number" id="carAmount" value="200" oninput="calcCarDue()" class="w-full border p-2 rounded text-center"></div>
                                     <div class="flex-1"><label class="block text-xs mb-1 font-bold">প্রদেয়</label><input type="number" id="carPaid" oninput="calcCarDue()" class="w-full border p-2 rounded text-center font-bold text-green-700"></div>
                                     <div class="flex-1"><label class="block text-xs mb-1 font-bold">বাকী</label><input type="number" id="carDue" class="w-full border p-2 rounded bg-gray-200 font-bold text-red-600 text-center" readonly></div>
                                 </div>
@@ -523,16 +524,18 @@
         </div>
     </div>
     <!-- COLLECTION PAYMENT -->
-    <div id="collectionModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+       <div id="collectionModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white p-5 sm:p-6 rounded-lg shadow-2xl w-full max-w-md">
             <h3 class="text-lg sm:text-xl font-bold mb-1 text-puja-red">চাঁদা জমা নিন</h3>
             <p id="colModalName" class="text-xs sm:text-sm text-gray-500 font-bold border-b pb-3 mb-3"></p>
             <input type="hidden" id="colModalId">
+            <div class="mb-3"><label class="block text-sm font-bold mb-1">জমার তারিখ</label><input type="date" id="colModalDate" class="w-full border p-2 rounded text-green-800 font-bold"></div>
             <div class="mb-3"><label class="block text-sm font-bold mb-1">নতুন জমা</label><input type="number" id="colModalPay" class="w-full border-2 border-green-100 p-2 rounded focus:border-green-500 text-lg"></div>
             <div class="mb-5"><label class="block text-sm font-bold mb-1">মন্তব্য</label><input type="text" id="colModalRemarks" class="w-full border p-2 rounded"></div>
             <div class="flex justify-end gap-2 sm:gap-3"><button onclick="closeModal('collectionModal')" class="px-4 py-2 border rounded">Cancel</button><button onclick="saveCollectionPayment()" class="px-5 sm:px-6 py-2 bg-green-600 text-white rounded font-bold">Deposit</button></div>
         </div>
     </div>
+  </d
     <!-- FULL EDIT MODAL -->
     <div id="fullEditModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white p-5 sm:p-6 rounded-lg shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -568,16 +571,21 @@
             <h3 class="text-lg sm:text-xl font-bold mb-1 text-blue-800">গাড়ির চাঁদা আপডেট</h3>
             <p id="carPayTitle" class="text-xs sm:text-sm font-mono font-bold text-gray-600 border-b pb-3 mb-3"></p>
             <input type="hidden" id="carPayId">
-            <div class="bg-blue-50 p-2 sm:p-3 rounded mb-3 text-xs sm:text-sm">
-                <div class="flex justify-between"><span>মোট ধার্য:</span> <span class="font-bold" id="cpTotal">0</span></div>
-                <div class="flex justify-between"><span>ইতিমধ্যে জমা:</span> <span class="font-bold text-green-600" id="cpPaid">0</span></div>
-                <div class="flex justify-between border-t border-blue-200 mt-1 pt-1"><span>বর্তমান বাকী:</span> <span class="font-bold text-red-600" id="cpDue">0</span></div>
+            <div class="bg-blue-50 p-3 rounded mb-3 text-xs sm:text-sm shadow-inner">
+                <div class="flex justify-between mb-1"><span>মোট ধার্য:</span> <span class="font-bold" id="cpTotal">0</span></div>
+                <div class="flex justify-between mb-1"><span>সর্বমোট জমা:</span> <span class="font-bold text-green-600" id="cpPaid">0</span></div>
+                <div class="flex justify-between border-t border-blue-200 mt-1 pt-1 mb-2"><span>বর্তমান বাকী:</span> <span class="font-bold text-red-600" id="cpDue">0</span></div>
+                
+                <div id="cpHistoryBox" class="border-t border-blue-200 pt-2 mt-2 text-xs text-gray-700 hidden space-y-1"></div>
             </div>
-            <div class="mb-3"><label class="block text-sm font-bold mb-1">নতুন জমা</label><input type="number" id="carNewPay" class="w-full border-2 border-green-100 p-2 rounded focus:border-green-500 text-lg"></div>
-            <div class="mb-5"><label class="block text-sm font-bold mb-1">নতুন মন্তব্য</label><input type="text" id="carNewRem" class="w-full border p-2 rounded"></div>
-            <div class="flex justify-end gap-2"><button onclick="closeModal('carPaymentModal')" class="px-4 py-2 border rounded">Cancel</button><button onclick="saveCarPayment()" class="px-5 py-2 bg-green-600 text-white rounded font-bold">Deposit Update</button></div>
+            
+            <div class="mb-3"><label class="block text-sm font-bold mb-1">নতুন জমার তারিখ</label><input type="date" id="carPayDate" class="w-full border p-2 rounded text-blue-800 font-bold bg-gray-50"></div>
+            <div class="mb-3"><label class="block text-sm font-bold mb-1">নতুন জমা</label><input type="number" id="carNewPay" class="w-full border-2 border-green-200 p-2 rounded focus:border-green-500 text-lg font-mono"></div>
+            <div class="mb-5"><label class="block text-sm font-bold mb-1">নতুন মন্তব্য</label><input type="text" id="carNewRem" class="w-full border p-2 rounded" placeholder="প্রয়োজন হলে লিখুন..."></div>
+            <div class="flex justify-end gap-2"><button onclick="closeModal('carPaymentModal')" class="px-4 py-2 border rounded font-bold text-gray-600 hover:bg-gray-100">Cancel</button><button onclick="saveCarPayment()" class="px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-bold shadow-md">Deposit Update</button></div>
         </div>
     </div>
+
     <!-- CAR EDIT -->
     <div id="carEditModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white p-5 sm:p-6 rounded-lg shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
@@ -1636,7 +1644,7 @@ function parseParaData(p) {
         syncData('add', 'income', item);
         
         clearBillForm(); 
-        document.getElementById('billDate').valueAsDate = new Date(); 
+         
         alert("সফলভাবে বিল সেভ হয়েছে!");
     }
 
@@ -1650,7 +1658,12 @@ function parseParaData(p) {
         const filterPara = document.getElementById('colParaSelect').value; 
         const search = document.getElementById('colSearch').value.toLowerCase();
         let serial = 1; 
-        const sortedData = [...data].sort((a, b) => new Date(b.date) - new Date(a.date));
+        const sortedData = [...data].sort((a, b) => {
+    const dateDiff = new Date(b.date) - new Date(a.date);
+    // যদি তারিখ একই হয়, তবে যার আইডি (timestamp) বড় অর্থাৎ যেটা শেষে সেভ হয়েছে, সেটা আগে আসবে
+    return dateDiff === 0 ? Number(b.id) - Number(a.id) : dateDiff;
+});
+
 
         sortedData.forEach(row => {
             if (filterPara !== 'all' && row.para !== filterPara) return;
@@ -1715,7 +1728,7 @@ function parseParaData(p) {
             syncData('update', 'income', data[idx]); 
             
             closeModal('collectionModal'); 
-            document.getElementById('collectionDate').valueAsDate = new Date(); 
+             
             alert("সফলভাবে টাকা জমা হয়েছে!"); 
         } 
     }
@@ -1889,7 +1902,7 @@ function parseParaData(p) {
         
         document.getElementById('expReason').value = ''; 
         document.getElementById('expAmount').value = ''; 
-        document.getElementById('expDate').valueAsDate = new Date(); 
+        //document.getElementById('expDate').valueAsDate = new Date(); 
         
         // NEW FEATURE CLEANUP
         tempExpImages = [];
@@ -2035,7 +2048,7 @@ function parseParaData(p) {
     // ==========================================
     // 9. CAR MODULE
     // ==========================================
- function formatCarNumberDisplay(input) {
+     function formatCarNumberDisplay(input) {
         let val = input.value.toUpperCase().replace(/\s/g, ''); 
         if (val.length >= 8) { 
             const matchLong = val.match(/^([A-Z]{2})(\d{2})([A-Z]{1,2})(\d{4})$/); 
@@ -2065,9 +2078,23 @@ function parseParaData(p) {
 
                 box.classList.remove('hidden'); 
                 matches.slice(0,5).forEach(c => { 
+                    
+                    // --- কালার লজিক (সাজেশন লিস্টের জন্য) ---
+                    let textColorClass = "";
+                    let hasCustomRemark = (c.remarks && !c.remarks.startsWith('[Initial:')); // যদি অন্য কোনো স্পেশাল রিমার্কস থাকে
+                    
+                    if (c.paid === 0 || hasCustomRemark) {
+                        textColorClass = "text-red-600"; // কোনো টাকা না দিলে অথবা কাস্টম রিমার্কস থাকলে লাল
+                    } else if (c.due === 0 && c.paid > 0) {
+                        textColorClass = "text-green-700"; // ফুল পেমেন্ট হলে ডিপ সবুজ
+                    } else {
+                        textColorClass = "text-black"; // বাকী থাকলে কালো
+                    }
+                    // ----------------------------------------
+
                     const div = document.createElement('div'); 
                     div.className = 'suggestion-item hover:bg-green-50 border-b p-2 cursor-pointer flex justify-between items-center text-sm sm:text-base'; 
-                    div.innerHTML = `<div><span class="font-mono font-bold text-blue-700">${c.carNumber}</span><br><span class="text-xs text-gray-500">${c.type}</span></div><span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-bold">জমা নিন</span>`; 
+                    div.innerHTML = `<div><span class="font-mono font-bold ${textColorClass}">${c.carNumber}</span><br><span class="text-xs text-gray-500">${c.type}</span></div><span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-bold">জমা নিন</span>`; 
                     
                     // ফিক্স: মোবাইলের টাচ গ্লিচ এবং কীবোর্ড ইস্যু সমাধান
                     const triggerAction = function(e) { 
@@ -2094,75 +2121,189 @@ function parseParaData(p) {
         }
     }
 
+
     function calcCarDue() { 
         document.getElementById('carDue').value = Number(document.getElementById('carAmount').value) - Number(document.getElementById('carPaid').value); 
     }
 
-    function saveCarEntry() { 
-        const num = document.getElementById('carNumberInput').value; 
-        if(num.length < 4) { window.originalAlert("Invalid Car Number"); return; } 
-        
-        const activePuja = document.getElementById('pujaSelect').value; 
-        const item = { 
-            id: Date.now().toString(), 
-            puja: activePuja, 
-            carNumber: num, 
-            type: document.querySelector('input[name="carType"]:checked').value, 
-            date: document.getElementById('carEntryDate').value, 
-            paid: Number(document.getElementById('carPaid').value), 
-            due: Number(document.getElementById('carDue').value), 
-            remarks: document.getElementById('carRemarks').value 
-        }; 
-        
-        globalData.car.push(item); 
-        syncData('add', 'car', item); 
-        
-        document.getElementById('carNumberInput').value = ''; 
-        document.getElementById('carPaid').value = ''; 
-        document.getElementById('carDue').value = ''; 
-        document.getElementById('carRemarks').value = ''; 
-        document.getElementById('carEntryDate').valueAsDate = new Date(); 
-        
-        const refBox = document.getElementById('carRefInfo');
-        if(refBox) refBox.classList.add('hidden');
+  function saveCarEntry() { 
+    const num = document.getElementById('carNumberInput').value; 
+    if(num.length < 4) { window.originalAlert("Invalid Car Number"); return; } 
+    
+    const activePuja = document.getElementById('pujaSelect').value; 
+    const entryDate = document.getElementById('carEntryDate').value;
+    const paidAmt = Number(document.getElementById('carPaid').value);
+    let initialRemarks = document.getElementById('carRemarks').value;
 
-        alert("সফলভাবে গাড়ির এন্ট্রি সেভ হয়েছে!"); 
+    // প্রথম দিন টাকা দিলে সেটা Remarks-এ স্বয়ংক্রিয়ভাবে লিখে রাখবে
+    if (paidAmt > 0) {
+        const displayDate = new Date(entryDate).toLocaleDateString('en-GB');
+        initialRemarks = `[Initial: ₹${paidAmt} on ${displayDate}]` + (initialRemarks ? ` - ${initialRemarks}` : '');
     }
 
-    function renderCarTable() { 
+    const item = { 
+        id: Date.now().toString(), 
+        puja: activePuja, 
+        carNumber: num, 
+        type: document.querySelector('input[name="carType"]:checked').value, 
+        date: entryDate, 
+        paid: paidAmt, 
+        due: Number(document.getElementById('carDue').value), 
+        remarks: initialRemarks 
+    }; 
+    
+    globalData.car.push(item); 
+    syncData('add', 'car', item); 
+    
+    document.getElementById('carNumberInput').value = ''; 
+    document.getElementById('carPaid').value = ''; 
+    document.getElementById('carDue').value = ''; 
+    document.getElementById('carRemarks').value = ''; 
+    
+    const refBox = document.getElementById('carRefInfo');
+    if(refBox) refBox.classList.add('hidden');
+
+    alert("সফলভাবে গাড়ির এন্ট্রি সেভ হয়েছে!"); 
+}
+
+
+     function renderCarTable() { 
         const activePuja = document.getElementById('pujaSelect').value; 
         const data = store.getCar().filter(d => getPuja(d) === activePuja); 
         const tbody = document.getElementById('carTableBody'); 
         tbody.innerHTML = ''; 
         const searchRaw = safeTrim(document.getElementById('carSearchInput').value).toLowerCase(); 
         const searchDateVariant = searchRaw.replace(/-/g, '/'); 
-        const sortedData = [...data].sort((a, b) => new Date(b.date) - new Date(a.date)); 
+
+        let displayRows = [];
+
+        // ডাটা থেকে তারিখ অনুযায়ী আলাদা আলাদা রো (Row) তৈরি করার লজিক
+        data.forEach(c => {
+            let hasLogs = false;
+            let baseDateStr = new Date(c.date).toLocaleDateString('en-GB');
+            
+            const toYMD = (dStr) => {
+                let parts = dStr.split('/');
+                if(parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+                return dStr;
+            };
+
+            // ব্র্যাকেটের ভেতরের হিস্ট্রি ট্যাগ মুছে শুধু আসল মন্তব্যটি বের করা
+            let cleanRemarks = c.remarks ? c.remarks.replace(/\[.*?\]/g, '').replace(/-/g, '').trim() : '-';
+            if(!cleanRemarks) cleanRemarks = '-';
+
+            if (c.remarks && c.remarks.includes('[')) {
+                const logs = c.remarks.match(/\[.*?\]/g);
+                if (logs && logs.length > 0) {
+                    hasLogs = true;
+                    logs.forEach((log) => {
+                        let dateMatch = log.match(/on (\d{2}\/\d{2}\/\d{4})/);
+                        let amtMatch = log.match(/₹(\d+)/);
+                        let isInitial = log.includes('[Initial:');
+                        
+                        if (dateMatch && amtMatch) {
+                            displayRows.push({
+                                id: c.id,
+                                carNumber: c.carNumber,
+                                type: c.type,
+                                totalPaid: c.paid,
+                                totalDue: c.due,
+                                stepPaid: parseInt(amtMatch[1]),
+                                displayDate: dateMatch[1],
+                                sortDate: toYMD(dateMatch[1]),
+                                isHistory: !isInitial, // প্রথম এন্ট্রি না হলে History
+                                remarks: cleanRemarks
+                            });
+                        }
+                    });
+                }
+            }
+            
+            if (!hasLogs) {
+                displayRows.push({
+                    id: c.id,
+                    carNumber: c.carNumber,
+                    type: c.type,
+                    totalPaid: c.paid,
+                    totalDue: c.due,
+                    stepPaid: c.paid,
+                    displayDate: baseDateStr,
+                    sortDate: c.date,
+                    isHistory: false,
+                    remarks: cleanRemarks
+                });
+            }
+        });
+
+        // তারিখ এবং আইডি অনুযায়ী সাজানো
+        displayRows.sort((a, b) => {
+            const dateDiff = new Date(b.sortDate) - new Date(a.sortDate);
+            return dateDiff === 0 ? Number(b.id) - Number(a.id) : dateDiff;
+        });
         
-        sortedData.forEach(c => { 
-            const dateStr = new Date(c.date).toLocaleDateString('en-GB'); 
+        // টেবিলে ডাটা রেন্ডার করা
+        displayRows.forEach(c => { 
             if (searchRaw) { 
-                const matchDate = dateStr.includes(searchRaw) || dateStr.includes(searchDateVariant); 
+                const matchDate = c.displayDate.includes(searchRaw) || c.displayDate.includes(searchDateVariant); 
                 const matchNo = c.carNumber.toLowerCase().includes(searchRaw); 
                 const matchType = c.type.toLowerCase().includes(searchRaw); 
-                const matchRem = (c.remarks || '').toLowerCase().includes(searchRaw); 
+                const matchRem = c.remarks.toLowerCase().includes(searchRaw); 
                 if (!matchDate && !matchNo && !matchType && !matchRem) return; 
             } 
             
             let dueHtml = ''; 
-            if ((c.paid + c.due) === 0) { dueHtml = `<span class="text-gray-400 font-bold">-</span>`; } 
-            else if (c.due > 0) { dueHtml = `<span class="text-red-600 font-bold">₹${c.due}</span>`; } 
+            if ((c.totalPaid + c.totalDue) === 0) { dueHtml = `<span class="text-gray-400 font-bold">-</span>`; } 
+            else if (c.totalDue > 0) { dueHtml = `<span class="text-red-600 font-bold">₹${c.totalDue}</span>`; } 
             else { dueHtml = `<span class="text-green-600 font-bold">₹0</span>`; } 
+
+            // --- কালার লজিক (আপনার দেওয়া শর্ত অনুযায়ী) ---
+            let textColorClass = "";
+            if (c.isHistory) {
+                textColorClass = "text-gray-400"; // হিস্ট্রি রো-এর জন্য ধূসর
+            } else {
+                let hasCustomRemark = (c.remarks && c.remarks !== '-');
+                if (c.totalPaid === 0 || hasCustomRemark) {
+                    textColorClass = "text-red-600 font-bold"; // কোনো টাকা না দিলে অথবা কাস্টম রিমার্কস থাকলে লাল বোল্ড
+                } else if (c.totalDue === 0 && c.totalPaid > 0) {
+                    textColorClass = "text-green-700 font-bold"; // ফুল পেমেন্ট হলে ডিপ সবুজ বোল্ড
+                } else {
+                    textColorClass = "text-black font-bold"; // বাকী থাকলে কালো বোল্ড
+                }
+            }
+            // ----------------------------------------------
             
+            const rowBgClass = c.isHistory ? "bg-gray-50 hover:bg-gray-100 border-l-4 border-gray-300" : "bg-white hover:bg-blue-50";
+            const iconHtml = c.isHistory ? `<i data-lucide="corner-down-right" class="w-3 h-3 inline mr-1 text-gray-400"></i>` : '';
+
             const tr = document.createElement('tr'); 
-            tr.className = "hover:bg-blue-50 transition border-b"; 
+            tr.className = `${rowBgClass} transition border-b`; 
             const clickAction = `onclick="openCarPaymentModal('${c.id}')" style="cursor: pointer;"`; 
-            tr.innerHTML = `<td ${clickAction}>${dateStr}</td><td ${clickAction} class="font-mono font-bold text-blue-800">${c.carNumber}</td><td ${clickAction}>${c.type}</td><td ${clickAction} class="text-right font-bold text-green-600">₹${c.paid}</td><td ${clickAction} class="text-right font-bold">${dueHtml}</td><td ${clickAction} class="text-xs text-gray-500">${c.remarks || '-'}</td><td class="text-center"><div class="flex justify-center gap-2"><button onclick="openCarEditModal('${c.id}')" class="bg-blue-100 text-blue-600 p-2 rounded hover:bg-blue-600 transition"><i data-lucide="pencil" class="w-4 h-4"></i></button><button onclick="deleteCar('${c.id}')" class="bg-red-100 text-red-600 p-2 rounded hover:bg-red-600 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></td>`; 
+            
+            tr.innerHTML = `
+                <td ${clickAction} class="${textColorClass}">${c.displayDate}</td>
+                <td ${clickAction} class="font-mono ${textColorClass}">${iconHtml}${c.carNumber}</td>
+                <td ${clickAction} class="${textColorClass}">${c.type}</td>
+                <td ${clickAction} class="text-right">
+                    <span class="font-bold text-green-600">₹${c.stepPaid}</span>
+                    <br><span class="text-[10px] text-gray-500 font-bold">সর্বমোট: ₹${c.totalPaid}</span>
+                </td>
+                <td ${clickAction} class="text-right font-bold">${dueHtml}</td>
+                <td ${clickAction} class="text-xs ${textColorClass}">${c.remarks}</td>
+                <td class="text-center">
+                    <div class="flex justify-center gap-2">
+                        <button onclick="openCarEditModal('${c.id}')" class="bg-blue-100 text-blue-600 p-2 rounded hover:bg-blue-600 hover:text-white transition"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                        <button onclick="deleteCar('${c.id}')" class="bg-red-100 text-red-600 p-2 rounded hover:bg-red-600 hover:text-white transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                </td>
+            `; 
             tbody.appendChild(tr); 
         }); 
         lucide.createIcons(); 
     }
 
-    function openCarPaymentModal(id) { 
+
+   
+       function openCarPaymentModal(id) { 
         const item = store.getCar().find(c => String(c.id) === String(id)); 
         if(!item) return; 
         const total = item.paid + item.due; 
@@ -2171,32 +2312,82 @@ function parseParaData(p) {
         document.getElementById('cpTotal').innerText = `₹${total}`; 
         document.getElementById('cpPaid').innerText = `₹${item.paid}`; 
         document.getElementById('cpDue').innerText = `₹${item.due}`; 
+
+        // জমার ইতিহাস দেখানোর অংশ
+        const historyBox = document.getElementById('cpHistoryBox');
+        historyBox.innerHTML = '<div class="font-bold text-blue-800 mb-1 flex items-center gap-1"><i data-lucide="history" class="w-4 h-4"></i> জমার ইতিহাস:</div>';
+        historyBox.classList.remove('hidden');
+
+        const baseDate = new Date(item.date).toLocaleDateString('en-GB'); // প্রথম এন্ট্রির তারিখ
+        let historyHTML = '';
+        let hasInitialLog = false;
+        let subsequentPaid = 0;
+
+        if (item.remarks && item.remarks.includes('[')) {
+            const logs = item.remarks.match(/\[.*?\]/g);
+            if (logs) {
+                logs.forEach(log => {
+                    if (log.includes('[Initial:')) hasInitialLog = true;
+                    if (log.includes('[Paid:')) {
+                        const amtMatch = log.match(/\[Paid: ₹(\d+)/);
+                        if (amtMatch) subsequentPaid += parseInt(amtMatch[1]);
+                    }
+
+                    let cleanLog = log.replace(/\[Initial: ₹/g, '১ম জমা: ₹')
+                                      .replace(/\[Paid: ₹/g, 'পরবর্তী জমা: ₹')
+                                      .replace(/ on /g, ' (তারিখ: ')
+                                      .replace(/\]/g, ')');
+                    historyHTML += `<div class="flex items-center gap-1 bg-white p-1.5 rounded border"><i data-lucide="check-circle-2" class="w-4 h-4 text-green-600"></i> <span class="font-bold text-gray-800">${cleanLog}</span></div>`;
+                });
+            }
+        }
+
+        // পুরোনো এন্ট্রিগুলোর জন্য স্মার্ট ক্যালকুলেশন (যাদের [Initial: ...] ট্যাগ নেই)
+        if (!hasInitialLog) {
+            let assumedInitial = item.paid - subsequentPaid;
+            let firstLogText = assumedInitial > 0 
+                ? `১ম জমা: ₹${assumedInitial} (তারিখ: ${baseDate})` 
+                : `এন্ট্রির তারিখ: ${baseDate} (জমা: ₹0)`;
+            
+            historyHTML = `<div class="flex items-center gap-1 bg-white p-1.5 rounded border"><i data-lucide="check-circle-2" class="w-4 h-4 text-blue-600"></i> <span class="font-bold text-gray-800">${firstLogText}</span></div>` + historyHTML;
+        }
+
+        historyBox.innerHTML += historyHTML;
+
         document.getElementById('carNewPay').value = ''; 
         document.getElementById('carNewRem').value = ''; 
+        setLocalTodayDate('carPayDate');
         document.getElementById('carPaymentModal').classList.remove('hidden'); 
+        lucide.createIcons();
     }
 
-    function saveCarPayment() { 
-        const id = document.getElementById('carPayId').value; 
-        const newPay = Number(document.getElementById('carNewPay').value); 
-        const newRem = document.getElementById('carNewRem').value; 
-        const idx = globalData.car.findIndex(c => String(c.id) === String(id)); 
+   
+
+function saveCarPayment() { 
+    const id = document.getElementById('carPayId').value; 
+    const newPay = Number(document.getElementById('carNewPay').value); 
+    const newRem = document.getElementById('carNewRem').value; 
+    const payDate = document.getElementById('carPayDate').value; 
+    const idx = globalData.car.findIndex(c => String(c.id) === String(id)); 
+    
+    if(idx !== -1) { 
+        const oldPaid = globalData.car[idx].paid; 
+        const total = oldPaid + globalData.car[idx].due; 
+        globalData.car[idx].paid = oldPaid + newPay; 
+        globalData.car[idx].due = total - globalData.car[idx].paid; 
+        globalData.car[idx].date = payDate; // আপডেট করার তারিখটি মূল তারিখে সেভ হবে
         
-        if(idx !== -1) { 
-            const oldPaid = globalData.car[idx].paid; 
-            const total = oldPaid + globalData.car[idx].due; 
-            globalData.car[idx].paid = oldPaid + newPay; 
-            globalData.car[idx].due = total - globalData.car[idx].paid; 
-            const today = new Date().toLocaleDateString('en-GB'); 
-            const historyLog = ` [Paid: ₹${newPay} on ${today}]`; 
-            globalData.car[idx].remarks = (globalData.car[idx].remarks || '') + historyLog + (newRem ? ` - ${newRem}` : ''); 
-            
-            syncData('update', 'car', globalData.car[idx]); 
-            
-            closeModal('carPaymentModal'); 
-            alert("সফলভাবে টাকা জমা আপডেট হয়েছে!"); 
-        } 
-    }
+        const displayDate = new Date(payDate).toLocaleDateString('en-GB'); 
+        const historyLog = ` [Paid: ₹${newPay} on ${displayDate}]`; 
+        globalData.car[idx].remarks = (globalData.car[idx].remarks || '') + historyLog + (newRem ? ` - ${newRem}` : ''); 
+        
+        syncData('update', 'car', globalData.car[idx]); 
+        
+        closeModal('carPaymentModal'); 
+        alert("সফলভাবে টাকা জমা আপডেট হয়েছে!"); 
+    } 
+}
+
 
     function deleteCar(id) { 
         if(!confirm("আপনি কি নিশ্চিত?")) return; 
@@ -2501,7 +2692,7 @@ dashExpList.innerHTML += `<li class="flex justify-between items-center bg-white 
         win.document.close();
     }
 
-    function downloadReportPDF() {
+function downloadReportPDF() {
         const reportTitle = document.getElementById('repResultTitle').innerText.replace(/\s+/g, '_');
         const fileName = `${reportTitle}_${new Date().toISOString().split('T')[0]}.pdf`;
         const activePujaName = document.getElementById('pujaSelect').value;
@@ -2511,16 +2702,28 @@ dashExpList.innerHTML += `<li class="flex justify-between items-center bg-white 
         const endDate = document.getElementById('repEnd').value;
         const dateRangeStr = (startDate && endDate) ? `সময়কাল: ${new Date(startDate).toLocaleDateString('en-GB')} থেকে ${new Date(endDate).toLocaleDateString('en-GB')}` : `তারিখ: ${new Date().toLocaleDateString('en-GB')}`;
 
-        const content = `<div style="font-family: 'Hind Siliguri', sans-serif; padding: 20px; color: #1f2937;"><div style="text-align: center; border-bottom: 2px solid #dc2626; padding-bottom: 10px; margin-bottom: 20px;"><h1 style="font-size: 24px; font-weight: bold; color: #b91c1c; margin: 0;">মডার্ণ স্পোর্টিং ক্লাব</h1><p style="font-size: 12px; color: #4b5563; margin: 5px 0;">ঠিকানা: ধলতিথা, বসিরহাট, উত্তর ২৪ পরগনা, ৭৪৩৪১২</p><h3 style="font-size: 16px; font-weight: bold; background: #f3f4f6; display: inline-block; padding: 4px 10px; border: 1px solid #d1d5db; border-radius: 4px; margin: 5px 0;">${activePujaName}</h3><div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 15px;"><div style="text-align: left;"><h2 style="font-size: 14px; font-weight: bold; margin: 0;">${document.getElementById('repResultTitle').innerText}</h2><p style="font-size: 10px; font-weight: bold; color: #6b7280; margin: 2px 0;">${dateRangeStr}</p></div></div></div>${tableContent}<div style="display: flex; justify-content: flex-end; margin-top: 20px;"><div style="background-color: #f3f4f6; border: 1px solid #d1d5db; padding: 10px; border-radius: 4px; width: 200px;"><div style="display: flex; justify-content: space-between; font-weight: bold;"><span>সর্বমোট:</span><span style="color: #1d4ed8;">${totalAmount}</span></div></div></div><div style="margin-top: 60px; display: flex; justify-content: space-between;"><div style="border-top: 1px solid black; width: 150px; text-align: center; font-size: 10px; padding-top: 5px;">হিসাবরক্ষক</div><div style="border-top: 1px solid black; width: 150px; text-align: center; font-size: 10px; padding-top: 5px;">সম্পাদক / সভাপতি</div></div></div>`;
+        // ডিজাইন আগের মতোই আছে, শুধু সিগনেচার অংশটুকু যাতে না কাটে তাই page-break-inside: avoid; দেওয়া আছে
+        const content = `<div style="font-family: 'Hind Siliguri', sans-serif; padding: 20px; color: #1f2937;"><div style="text-align: center; border-bottom: 2px solid #dc2626; padding-bottom: 10px; margin-bottom: 20px;"><h1 style="font-size: 24px; font-weight: bold; color: #b91c1c; margin: 0;">মডার্ণ স্পোর্টিং ক্লাব</h1><p style="font-size: 12px; color: #4b5563; margin: 5px 0;">ঠিকানা: ধলতিথা, বসিরহাট, উত্তর ২৪ পরগনা, ৭৪৩৪১২</p><h3 style="font-size: 16px; font-weight: bold; background: #f3f4f6; display: inline-block; padding: 4px 10px; border: 1px solid #d1d5db; border-radius: 4px; margin: 5px 0;">${activePujaName}</h3><div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 15px;"><div style="text-align: left;"><h2 style="font-size: 14px; font-weight: bold; margin: 0;">${document.getElementById('repResultTitle').innerText}</h2><p style="font-size: 10px; font-weight: bold; color: #6b7280; margin: 2px 0;">${dateRangeStr}</p></div></div></div>${tableContent}<div style="display: flex; justify-content: flex-end; margin-top: 20px;"><div style="background-color: #f3f4f6; border: 1px solid #d1d5db; padding: 10px; border-radius: 4px; width: 200px;"><div style="display: flex; justify-content: space-between; font-weight: bold;"><span>সর্বমোট:</span><span style="color: #1d4ed8;">${totalAmount}</span></div></div></div><div style="margin-top: 60px; display: flex; justify-content: space-between; page-break-inside: avoid;"><div style="border-top: 1px solid black; width: 150px; text-align: center; font-size: 10px; padding-top: 5px;">হিসাবরক্ষক</div><div style="border-top: 1px solid black; width: 150px; text-align: center; font-size: 10px; padding-top: 5px;">সম্পাদক / সভাপতি</div></div></div>`;
+        
         const element = document.createElement('div'); element.innerHTML = content;
+        
         const tables = element.getElementsByTagName('table'); for(let t of tables) { t.style.width = '100%'; t.style.borderCollapse = 'collapse'; t.style.fontSize = '10px'; }
         const ths = element.getElementsByTagName('th'); for(let t of ths) { t.style.background = '#e5e7eb'; t.style.border = '1px solid #9ca3af'; t.style.padding = '4px'; }
         const tds = element.getElementsByTagName('td'); for(let t of tds) { t.style.border = '1px solid #d1d5db'; t.style.padding = '4px'; }
-        const opt = { margin: 0.4, filename: fileName, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
+        
+        // সমাধান: avoid: 'tr' দেওয়ার কারণে টেবিলের কোনো Row (যেমন গাড়ির নম্বর) আর অর্ধেক কাটবে না
+        const opt = { 
+            margin: 0.4, 
+            filename: fileName, 
+            image: { type: 'jpeg', quality: 0.98 }, 
+            html2canvas: { scale: 2, useCORS: true }, 
+            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+            pagebreak: { avoid: 'tr' } 
+        };
+        
         const btn = document.getElementById('pdfBtn'); const oldText = btn.innerHTML; btn.innerHTML = 'Downloading...';
         html2pdf().set(opt).from(element).save().then(() => { btn.innerHTML = oldText; });
     }
-
     // ==========================================
     // 12. SETTINGS & HISTORY MODULE
     // ==========================================

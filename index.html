@@ -77,6 +77,130 @@
             font-weight: 500;
         }
 
+        /* ========================================= */
+        /* স্মার্ট সার্চ বক্স স্টাইল */
+        /* ========================================= */
+        .search-container {
+            width: 95%;
+            max-width: 500px;
+            margin: -10px auto 20px auto; 
+            position: relative;
+        }
+
+        .search-container input {
+            width: 100%;
+            padding: 16px 50px 16px 50px; 
+            border: 2px solid #e0e0e0;
+            border-radius: 30px; 
+            font-size: 1.15rem; 
+            outline: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+            color: var(--text-color);
+        }
+
+        .search-container input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 5px 12px rgba(46, 125, 50, 0.25);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
+            font-size: 1.3rem;
+        }
+
+        .clear-icon {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #d32f2f;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: none;
+            transition: color 0.2s;
+        }
+
+        .clear-icon:hover {
+            color: #b71c1c;
+        }
+
+        /* গাড়ির রেজাল্ট কার্ডের স্টাইল এবং স্ক্রলবার */
+        #carSearchResult {
+            display: none;
+            background: var(--white);
+            margin-top: 5px;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            border-left: 4px solid var(--primary-color);
+            text-align: left;
+            max-height: 320px;
+            overflow-y: auto;
+            position: absolute; 
+            width: 100%;
+            z-index: 1000;
+            top: 100%; 
+            left: 0;
+        }
+
+        #carSearchResult::-webkit-scrollbar {
+            width: 6px; 
+        }
+        
+        #carSearchResult::-webkit-scrollbar-track {
+            background: #f0f2f5; 
+            border-radius: 10px;
+        }
+        
+        #carSearchResult::-webkit-scrollbar-thumb {
+            background: var(--primary-color); 
+            border-radius: 10px;
+        }
+        
+        #carSearchResult::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-color); 
+        }
+
+        .car-card {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 12px;
+            margin-bottom: 12px;
+        }
+
+        .car-card:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .car-tag {
+            background: #e8f5e9;
+            color: var(--primary-color);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .text-red { color: #d32f2f; }
+        .text-green { color: var(--primary-color); }
+        
+        .history-log {
+            background: #f9f9f9;
+            padding: 6px 8px;
+            border-radius: 6px;
+            margin-top: 6px;
+            font-size: 0.8rem;
+            color: #444;
+            border-left: 2px solid #ccc;
+        }
+        /* ========================================= */
+
         /* মেইন বাটন সেকশন */
         .button-container {
             display: flex;
@@ -169,8 +293,8 @@
 
         /* কপিরাইট স্টাইল */
         .copyright-text {
-            font-size: 0.75rem; /* ছোট আকার */
-            color: #888; /* ধূসর কালার */
+            font-size: 0.75rem; 
+            color: #888; 
             margin-top: 5px;
             border-top: 1px solid #d1d1d1;
             padding-top: 10px;
@@ -280,8 +404,24 @@
         </div>
     </header>
 
+    <!-- স্মার্ট সার্চ বক্স (Live Google Sheet Fetch) -->
+    <div class="search-container">
+        <!-- সাধারণ সার্চ আইকন -->
+        <i class="fas fa-search search-icon" id="searchIcon"></i>
+        <!-- লাইভ ডাটা লোডিং স্পিনার (শুরুতে লুকানো থাকবে) -->
+        <i class="fas fa-spinner fa-spin search-icon" id="loadingIcon" style="display: none; color: var(--primary-color);"></i>
+        
+        <input type="text" id="menuSearch" onkeyup="smartSearch()" placeholder="মেনু খুঁজুন বা গাড়ীর শেষ ৪ সংখ্যা লিখুন..." autocomplete="off">
+        
+        <!-- X (ক্লিয়ার) বাটন -->
+        <i class="fas fa-times clear-icon" id="clearSearchBtn" onclick="clearIndexSearch()" title="মুছে ফেলুন"></i>
+        
+        <!-- গাড়ির রেজাল্ট দেখানোর জায়গা -->
+        <div id="carSearchResult"></div>
+    </div>
+
     <!-- বাটনসমূহ -->
- <div class="button-container" id="mainMenu">
+    <div class="button-container" id="mainMenu">
         <a href="hisab.html" class="main-btn" id="btn-hisab">হিসাব কিতাব</a>
         <a href="game.html" class="main-btn" id="btn-game">খেলা পরিচালনা</a>
         <a href="yearly.html" class="main-btn" id="btn-yearly">বছরব্যাপী হিসাব</a>
@@ -370,10 +510,8 @@
     </div>
 
     <script>
-        // লিঙ্ক লোড করা (প্রথমবার ওপেন করার সময়)
-        document.addEventListener('DOMContentLoaded', () => {
-            loadLinks();
-        });
+        // আপনার গুগল শিটের লাইভ API লিঙ্ক
+        const SCRIPT_URL ="https://script.google.com/macros/s/AKfycbyrM6cb63IpNV0hIqClT83H_X1Hu6u4wuAkcYO7LQw2XPvFMpBTPvsXcP86uIicI0U/exec";
 
         const linkIds = {
             'hisab': 'btn-hisab',
@@ -386,6 +524,159 @@
             'email': 'link-email'
         };
 
+        // পেজ লোড হলেই ব্যাকগ্রাউন্ডে গুগল শিট থেকে লাইভ ডাটা নিয়ে আসবে
+        document.addEventListener('DOMContentLoaded', () => {
+            loadLinks();
+            fetchLiveSheetData(); // গুগল শিট থেকে ডাটা আনার কমান্ড
+        });
+
+        // ==========================================
+        // Live Fetch Function
+        // ==========================================
+        async function fetchLiveSheetData() {
+            const searchIcon = document.getElementById('searchIcon');
+            const loadingIcon = document.getElementById('loadingIcon');
+            const searchInput = document.getElementById('menuSearch');
+            
+            try {
+                // স্পিনার দেখানো শুরু এবং লেখা পরিবর্তন
+                searchIcon.style.display = 'none';
+                loadingIcon.style.display = 'block';
+                searchInput.placeholder = "সার্ভারে সংযোগ হচ্ছে ধৈর্য ধরুন...";
+
+                const response = await fetch(SCRIPT_URL, {
+                    method: "GET",
+                    redirect: "follow"
+                }); 
+                
+                if (response.ok) {
+                    const textData = await response.text();
+                    const data = JSON.parse(textData);
+                    
+                    // নতুন লাইভ ডাটা ব্রাউজারে সেভ করে দেওয়া
+                    localStorage.setItem('pujaDataCache', JSON.stringify(data));
+                    
+                    // যদি ইউজার ততক্ষণে কিছু টাইপ করে থাকে, তবে সাথে সাথে রেজাল্ট আপডেট করবে
+                    if(searchInput.value.trim().length >= 3) {
+                        smartSearch();
+                    }
+                }
+            } catch (error) {
+                console.error("Live fetch failed", error);
+            } finally {
+                // ডাটা আসা শেষ হলে স্পিনার বন্ধ করে স্বাভাবিক অবস্থায় ফেরা
+                loadingIcon.style.display = 'none';
+                searchIcon.style.display = 'block';
+                searchInput.placeholder = "মেনু খুঁজুন বা গাড়ীর শেষ ৪ সংখ্যা লিখুন...";
+            }
+        }
+
+        // ==========================================
+        // Smart Search & Clear Function
+        // ==========================================
+        function clearIndexSearch() {
+            document.getElementById('menuSearch').value = '';
+            document.getElementById('clearSearchBtn').style.display = 'none';
+            document.getElementById('menuSearch').focus(); 
+            smartSearch(); 
+        }
+
+        function smartSearch() {
+            let input = document.getElementById('menuSearch').value.toLowerCase().trim();
+            let buttons = document.querySelectorAll('.button-container .main-btn');
+            let carResultDiv = document.getElementById('carSearchResult');
+            let clearBtn = document.getElementById('clearSearchBtn');
+
+            // ইনপুটে কিছু লিখলেই X বাটনটি ভেসে উঠবে
+            if (input.length > 0) {
+                clearBtn.style.display = 'block';
+            } else {
+                clearBtn.style.display = 'none';
+            }
+
+            // ১. মেনু বাটন ফিল্টার করা
+            buttons.forEach(btn => {
+                let text = btn.innerText.toLowerCase();
+                if (text.includes(input) && input.length > 0) {
+                    btn.style.display = "block";
+                } else if (input.length === 0) {
+                    btn.style.display = "block"; 
+                } else {
+                    btn.style.display = "none";
+                }
+            });
+
+            // ২. গাড়ির হিসাব খোঁজা (লোকাল স্টোরেজ থেকে)
+            carResultDiv.innerHTML = ''; 
+            carResultDiv.style.display = 'none';
+
+            if (input.length >= 3) {
+                let cachedData = localStorage.getItem('pujaDataCache');
+                if (cachedData) {
+                    try {
+                        let parsedData = JSON.parse(cachedData);
+                        let carData = parsedData.car || [];
+                        
+                        let matchedCars = carData.filter(c => {
+                            let carNo = c.carNumber.toLowerCase().replace(/\s/g, '');
+                            return carNo.endsWith(input) || carNo.includes(input);
+                        });
+
+                        if (matchedCars.length > 0) {
+                            carResultDiv.style.display = 'block';
+                            matchedCars.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                            matchedCars.forEach(car => {
+                                let cleanRemarks = car.remarks ? car.remarks.replace(/\[.*?\]/g, '').replace(/^-/, '').trim() : '-';
+                                if(!cleanRemarks) cleanRemarks = '-';
+
+                                let historyHtml = '';
+                                if (car.remarks && car.remarks.includes('[')) {
+                                    let logs = car.remarks.match(/\[.*?\]/g);
+                                    if (logs) {
+                                        logs.forEach(log => {
+                                            let cleanLog = log.replace(/\[Initial: ₹/g, '১ম জমা: ₹')
+                                                              .replace(/\[Paid: ₹/g, 'পরবর্তী জমা: ₹')
+                                                              .replace(/ on /g, ' (তারিখ: ')
+                                                              .replace(/\]/g, ')');
+                                            historyHtml += `<div class="history-log"><i class="fas fa-check-circle text-green" style="font-size:0.7rem;"></i> ${cleanLog}</div>`;
+                                        });
+                                    }
+                                } else {
+                                    let dateStr = new Date(car.date).toLocaleDateString('en-GB');
+                                    historyHtml = `<div class="history-log"><i class="fas fa-info-circle text-green" style="font-size:0.7rem;"></i> এন্ট্রির তারিখ: ${dateStr}</div>`;
+                                }
+
+                                let dueHtml = car.due > 0 ? `<span class="text-red font-bold">₹${car.due}</span>` : `<span class="text-green font-bold">₹0</span>`;
+                                
+                                carResultDiv.innerHTML += `
+                                    <div class="car-card">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                            <strong style="font-size: 1.1rem; letter-spacing: 1px;">${car.carNumber.toUpperCase()}</strong>
+                                            <span class="car-tag">${car.type}</span>
+                                        </div>
+                                        <div style="font-size: 0.9rem; margin-bottom: 6px;">
+                                            <span>সর্বমোট জমা: <strong class="text-green">₹${car.paid}</strong></span> &nbsp;|&nbsp; 
+                                            <span>বর্তমান বাকী: ${dueHtml}</span>
+                                        </div>
+                                        <div style="font-size: 0.85rem; margin-bottom: 6px;">
+                                            <strong>মন্তব্য:</strong> <span class="text-red">${cleanRemarks}</span>
+                                        </div>
+                                        ${historyHtml}
+                                    </div>
+                                `;
+                            });
+                        }
+                    } catch(e) {
+                        console.error("ডাটা পড়তে সমস্যা হয়েছে", e);
+                    }
+                }
+            }
+        }
+
+        // ==========================================
+        // Developer Modal & Links Logic
+        // ==========================================
         function openDevModal() {
             document.getElementById('devModal').style.display = 'flex';
             // রিসেট ফর্ম

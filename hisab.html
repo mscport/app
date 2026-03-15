@@ -56,6 +56,28 @@
         /* Dashboard Tables */
         .dash-table th { background-color: #f3f4f6; padding: 8px; border-bottom: 2px solid #e5e7eb; text-align: left; font-size: 13px; font-weight: bold; }
         .dash-table td { padding: 8px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+       @media print {
+  /* টেবিলের রো যেন মাঝখান থেকে ভেঙে না যায় */
+  tr {
+    page-break-inside: avoid !important;
+    page-break-after: auto !important;
+  }
+  
+  /* বড় টেবিলের হেডার যেন প্রতি পেজেই দেখা যায় */
+  thead {
+    display: table-header-group !important;
+  }
+  
+  /* টেবিল বডি ঠিক রাখা */
+  tbody {
+    display: table-row-group !important;
+  }
+  
+  /* অপ্রয়োজনীয় জিনিস (যেমন বাটন) প্রিন্ট থেকে বাদ দেওয়া */
+  .no-print, button {
+    display: none !important;
+  }
+}
     </style>
 </head>
 <body class="text-gray-800 h-[100dvh] flex flex-col font-siliguri overflow-hidden w-full">
@@ -3261,6 +3283,124 @@ dashExpList.innerHTML += `<li class="flex justify-between items-center bg-white 
         renderSignatories();
     }
     
+    // ==========================================
+    // 14. EXPORT & DOWNLOAD MODULE (Fixed PDF Break & Excel)
+    // ==========================================
+
+    // ১. Normal Excel Download (Perfect Data Export)
+    function exportReportExcel() {
+        const table = document.getElementById('exportableTable');
+        if (!table || table.getElementsByTagName('tr').length <= 1) {
+            window.originalAlert("ডাউনলোড করার মতো কোনো ডাটা নেই!");
+            return;
+        }
+
+        const btn = document.getElementById('excelBtn');
+        const oldHtml = btn.innerHTML;
+        btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin inline mr-1"></i> Wait...';
+
+        try {
+            // টেবিল থেকে এক্সেল ওয়ার্কবুক তৈরি
+            const wb = XLSX.utils.table_to_book(table, {sheet: "Report"});
+            const title = document.getElementById('repResultTitle').innerText.replace(/\s+/g, '_');
+            const dateStr = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+            
+            // ফাইল ডাউনলোড
+            XLSX.writeFile(wb, `MSC_${title}_${dateStr}.xlsx`);
+        } catch (error) {
+            console.error("Excel Error:", error);
+            window.originalAlert("Excel ডাউনলোড করতে সমস্যা হচ্ছে।");
+        } finally {
+            btn.innerHTML = oldHtml;
+            if (window.lucide) window.lucide.createIcons();
+        }
+    }
+
+    // ২. Direct PDF Download (Row Break Issue Fixed)
+    function downloadReportPDF() {
+        const element = document.getElementById('reportResultArea'); 
+        const table = document.getElementById('exportableTable');
+        if (!table || table.getElementsByTagName('tr').length <= 1) {
+            window.originalAlert("ডাউনলোড করার মতো কোনো ডাটা নেই!");
+            return;
+        }
+
+        const btn = document.getElementById('pdfBtn');
+        const oldHtml = btn.innerHTML;
+        btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin inline mr-1"></i> PDF...';
+
+        const title = document.getElementById('repResultTitle').innerText.replace(/\s+/g, '_');
+        const dateStr = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+
+        const opt = {
+            margin:       [0.4, 0.4, 0.4, 0.4], 
+            filename:     `${title}_${dateStr}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' },
+            // এই লাইনটিই আপনার Row কেটে যাওয়ার সমস্যা সমাধান করবে:
+            pagebreak:    { mode: ['css', 'legacy'], avoid: 'tr' } 
+        };
+
+        html2pdf().set(opt).from(element).save().then(() => {
+            btn.innerHTML = oldHtml;
+            if (window.lucide) window.lucide.createIcons();
+        }).catch(err => {
+            window.originalAlert("PDF বানাতে সমস্যা হয়েছে।");
+            btn.innerHTML = oldHtml;
+        });
+    }
+
+    // ৩. OCR / Selectable Text PDF (Using Browser Print Engine)
+    // এটি আপনাকে সবচেয়ে ভালো কোয়ালিটির, জুম করলে না ফাটা Text PDF দেবে
+    function printReportResult() {
+        const table = document.getElementById('exportableTable');
+        if (!table || table.getElementsByTagName('tr').length <= 1) {
+            window.originalAlert("প্রিন্ট করার মতো কোনো ডাটা নেই!");
+            return;
+        }
+
+        const tableContent = table.outerHTML;
+        const title = document.getElementById('repResultTitle').innerText;
+        const totalDisplay = document.getElementById('repTotalDisplay').innerText;
+        
+        const printWindow = window.open('', '', 'width=900,height=650');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Report - Modern Sporting Club</title>
+                    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+                    <style>
+                        body { font-family: 'Hind Siliguri', sans-serif; padding: 20px; color: #333; }
+                        h2 { text-align: center; color: #D9381E; margin-bottom: 5px; font-weight: 700; }
+                        h3 { text-align: center; color: #555; margin-top: 0; }
+                        .total-box { text-align: right; font-weight: bold; margin-bottom: 10px; font-size: 16px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px; }
+                        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+                        th { background-color: #f3f4f6; font-weight: 600; }
+                        /* প্রিন্ট করার সময়ও যেন কোনো Row না কাটে তার জন্য */
+                        tr { page-break-inside: avoid; } 
+                        button { display: none !important; } 
+                        a { text-decoration: none; color: black; }
+                    </style>
+                </head>
+                <body>
+                    <h2>মডার্ণ স্পোর্টিং ক্লাব</h2>
+                    <h3>${title}</h3>
+                    <div class="total-box">Total: ${totalDisplay}</div>
+                    ${tableContent}
+                </body>
+            </html>
+        `);
+        
+        printWindow.document.close();
+        printWindow.focus();
+        
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 800);
+    }
 </script>
 </body>
 </html>

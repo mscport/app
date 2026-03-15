@@ -1852,7 +1852,129 @@ function parseParaData(p) {
             } catch(e){} 
         }
     }
+// ==========================================
+    // CROPPER & MULTIPLE IMAGE HANDLING (QUEUE SYSTEM FOR APK)
+    // ==========================================
+    let cropperInstance = null;
+    let currentCropTarget = null; 
+    let imageCropQueue = []; // একাধিক ছবির সিরিয়াল মেইনটেইন করার জন্য
 
+    // ছবি সিলেক্ট করার পর এই ফাংশনটি কল হবে
+    function addMoreExpImages(event) {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+
+        const expImageModal = document.getElementById('expImageModal');
+        const isEditMode = !expImageModal.classList.contains('hidden');
+        currentCropTarget = isEditMode ? document.getElementById('expImageModalId').value : 'new';
+
+        // সিলেক্ট করা সবগুলো ছবি Queue (কিউ)-তে যুক্ত করা হলো
+        for(let i = 0; i < files.length; i++) {
+            imageCropQueue.push(files[i]);
+        }
+
+        // ইনপুট ক্লিয়ার করা যাতে পরবর্তীতে একই ছবি আবার সিলেক্ট করা যায়
+        event.target.value = '';
+
+        // ক্রপিং প্রসেস শুরু করা
+        processNextCropImage();
+    }
+
+    // সিরিয়াল অনুযায়ী একটার পর একটা ছবি ক্রপ করার ফাংশন
+    function processNextCropImage() {
+        // যদি কিউ-তে আর কোনো ছবি না থাকে, তবে মোডাল বন্ধ করে দাও
+        if (imageCropQueue.length === 0) {
+            closeCropModal();
+            return;
+        }
+
+        // কিউ থেকে প্রথম ছবিটি নেওয়া
+        const file = imageCropQueue[0];
+        const imgUrl = URL.createObjectURL(file);
+        const imageToCrop = document.getElementById('imageToCrop');
+        
+        imageToCrop.src = imgUrl;
+        document.getElementById('cropModal').classList.remove('hidden');
+        
+        // আগের কোনো Cropper থাকলে মুছে ফেলা (Memory Leak বন্ধ করতে)
+        if (cropperInstance) { 
+            cropperInstance.destroy(); 
+            cropperInstance = null;
+        }
+        
+        // ছবি লোড হওয়ার পর ক্রপার চালু করা
+        imageToCrop.onload = function() {
+            cropperInstance = new Cropper(imageToCrop, {
+                viewMode: 1, 
+                dragMode: 'move', 
+                autoCropArea: 0.9,
+                restore: false,
+                guides: true,
+                center: true,
+                highlight: false,
+                cropBoxMovable: true,
+                cropBoxResizable: true,
+                toggleDragModeOnDblclick: false,
+            });
+            URL.revokeObjectURL(imgUrl); // ব্লব মেমোরি রিলিজ করা
+        };
+    }
+
+    // ক্রপ মোডাল বন্ধ করার ফাংশন
+    function closeCropModal() {
+        document.getElementById('cropModal').classList.add('hidden');
+        if (cropperInstance) {
+            cropperInstance.destroy();
+            cropperInstance = null;
+        }
+        document.getElementById('imageToCrop').src = '';
+        imageCropQueue = []; // মোডাল কাটলে কিউ ক্লিয়ার হয়ে যাবে
+    }
+
+    // ক্রপ করা ছবি সেভ করে পরবর্তী ছবি সামনে আনার ফাংশন
+    function saveCroppedImage() {
+        if (!cropperInstance) return;
+        
+        // APK ক্রাশ রোধ করতে ক্যানভাসের সর্বোচ্চ সাইজ ২০০০ পিক্সেল সেট করা
+        const canvas = cropperInstance.getCroppedCanvas({
+            maxWidth: 2000,
+            maxHeight: 2000,
+            fillColor: '#fff'
+        });
+
+        // জেপিইজি ফরম্যাটে ৮০% কোয়ালিটিতে সেভ করা
+        const base64Data = canvas.toDataURL('image/jpeg', 0.8);
+
+        // সেভ করার লজিক
+        if (currentCropTarget === 'new') {
+            tempExpImages.push(base64Data);
+            renderExpImagePreviews();
+        } else {
+            let item = store.getExpense().find(e => String(e.id) === String(currentCropTarget));
+            if (item) {
+                if (!item.images) item.images = [];
+                item.images.push(base64Data);
+                syncData('update', 'expense', item);
+                refreshExpImageGallery(currentCropTarget);
+                renderExpenseTable();
+            }
+        }
+
+        // মেমোরি ক্লিয়ার করা
+        canvas.width = 0;
+        canvas.height = 0;
+
+        // যে ছবিটি সেভ হলো, সেটি Queue থেকে বাদ দেওয়া
+        imageCropQueue.shift();
+
+        // পরবর্তী ছবি ক্রপ করার জন্য পাঠানো (যদি থাকে)
+        if (imageCropQueue.length > 0) {
+            if (cropperInstance) cropperInstance.destroy();
+            processNextCropImage();
+        } else {
+            closeCropModal(); // সব ছবি শেষ হলে মোডাল বন্ধ
+        }
+    }
     // NEW: Function to compress and handle image arrays
     async function handleExpImagesChange(event) {
         const files = event.target.files;
@@ -1872,7 +1994,7 @@ function parseParaData(p) {
         });
     }
 
-    // সুপার অপটিমাইজড ইমেজ কম্প্রেশন (Low RAM ডিভাইসের জন্য)
+    // সুপার অপটিমাইজড ইমেজ কম্প্রেশন (High Quality)
     function compressImage(file) {
         return new Promise((resolve, reject) => {
             // FileReader এর বদলে ObjectURL ব্যবহার (যা মেমোরি সাশ্রয়ী)
@@ -1880,8 +2002,9 @@ function parseParaData(p) {
             const img = new Image();
 
             img.onload = () => {
-                const MAX_WIDTH = 800;
-                const MAX_HEIGHT = 800;
+                // রেজোলিউশন ২০০০ (2000) করা হলো একদম নিখুঁত এবং ক্লিয়ার ছবির জন্য
+                const MAX_WIDTH = 2000;
+                const MAX_HEIGHT = 2000;
                 let width = img.width;
                 let height = img.height;
 
@@ -1900,8 +2023,8 @@ function parseParaData(p) {
                 // ক্যানভাসে ছবি আঁকা
                 ctx.drawImage(img, 0, 0, width, height);
                 
-                // জেপিইজি (JPEG) ফরম্যাটে ৬০% কোয়ালিটিতে কমপ্রেস করা
-                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.1);
+                // জেপিইজি (JPEG) ফরম্যাটে ৮০% কোয়ালিটিতে কমপ্রেস করা
+                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.9);
 
                 // --- মেমোরি ক্লিয়ার (সবচেয়ে গুরুত্বপূর্ণ অংশ) ---
                 URL.revokeObjectURL(imgUrl); // ব্লব মেমোরি ফ্রি করা
@@ -1921,6 +2044,7 @@ function parseParaData(p) {
             img.src = imgUrl; // লোড ট্রিগার করা
         });
     }
+    
     function saveExpense() { 
         const date = document.getElementById('expDate').value; 
         const rawReason = document.getElementById('expReason').value; 
@@ -2672,7 +2796,7 @@ dashExpList.innerHTML += `<li class="flex justify-between items-center bg-white 
         }
     }
 
-    function generateReport() {
+ function generateReport() {
         const start = document.getElementById('repStart').value; 
         const end = document.getElementById('repEnd').value;
         const type = document.getElementById('repType').value; 
@@ -2691,6 +2815,9 @@ dashExpList.innerHTML += `<li class="flex justify-between items-center bg-white 
         let totalAmount = 0; 
         let columns = [];
 
+        // ==========================================
+        // ১. All-in-One (Summary) Report
+        // ==========================================
         if (type === 'summary') {
             document.getElementById('repResultTitle').innerText = "আয়-ব্যায় বিস্তারিত হিসাব (All-in-One)";
             columns = ["তারিখ", "বিবরণ (Description)", "উৎস/ধরন", "আয় (Income)", "ব্যয় (Expense)"];
@@ -2713,21 +2840,88 @@ dashExpList.innerHTML += `<li class="flex justify-between items-center bg-white 
             return;
         }
 
+        // ==========================================
+        // ২. Expense (খরচের) Report (NEW GROUPING LOGIC)
+        // ==========================================
         if (type === 'expense') {
             document.getElementById('repResultTitle').innerText = "খরচের রিপোর্ট (Expense Report)"; 
-            columns = ["তারিখ", "বিবরণ (Reason)", "টাকা (Amount)"];
+            columns = ["খরচের কারণ", "খরচের পরিমাণ", "Remarks", "প্রমাণ"];
+            
             let data = store.getExpense().filter(d => getPuja(d) === activePuja);
             let results = data.filter(item => { if(start && item.date < start) return false; if(end && item.date > end) return false; return true; });
             
             let headerRow = '<tr>'; columns.forEach(c => headerRow += `<th class="border p-2 text-left bg-gray-100">${c}</th>`); headerRow += '</tr>'; thead.innerHTML = headerRow;
             results.sort((a,b) => new Date(a.date) - new Date(b.date));
-            results.forEach(r => { totalAmount += Number(r.amount) || 0; tbody.innerHTML += `<tr><td class="border p-2">${new Date(r.date).toLocaleDateString('en-GB')}</td><td class="border p-2 font-bold text-gray-700">${r.reason}</td><td class="border p-2 text-right font-mono font-bold">₹${r.amount}</td></tr>`; });
-        } else {
+
+            // গ্রুপ বাই ডেট (Date Grouping)
+            let groupedExp = {};
+            results.forEach(r => {
+                if (!groupedExp[r.date]) groupedExp[r.date] = [];
+                groupedExp[r.date].push(r);
+            });
+
+            for (let dateKey in groupedExp) {
+                let dailyItems = groupedExp[dateKey];
+                let dailyTotal = 0;
+                let displayDate = new Date(dateKey).toLocaleDateString('en-GB');
+                
+                // ডেট হেডার
+                tbody.innerHTML += `<tr><td colspan="${columns.length}" class="border p-2 bg-red-100 text-red-900 font-bold text-base">তারিখ: ${displayDate}</td></tr>`;
+
+                dailyItems.forEach(r => {
+                    let amount = Number(r.amount) || 0;
+                    dailyTotal += amount;
+                    totalAmount += amount;
+                    
+                    // Attachment Link Logic
+                    let proofHtml = '<span class="text-gray-400 text-xs">নাই</span>';
+                    if (r.images && r.images.length > 0) {
+                        // Clickable link that triggers download of the base64 image
+                        proofHtml = `<a href="${r.images[0]}" download="Bill_${r.date}_${r.reason.substring(0,10)}.jpg" class="text-blue-600 underline font-bold cursor-pointer hover:text-blue-800" title="ক্লিক করে ডাউনলোড করুন">খরচের বিল <i data-lucide="download" class="w-3 h-3 inline"></i></a>`;
+                    }
+
+                    // খরচের ফর্মে আলাদা কোনো Remarks ফিল্ড নেই, তাই ওটা ফাঁকা বা '-' রাখা হলো
+                    tbody.innerHTML += `<tr class="hover:bg-gray-50">
+                        <td class="border p-2 font-bold text-gray-700">${r.reason}</td>
+                        <td class="border p-2 text-right font-mono font-bold text-red-600">₹${amount}</td>
+                        <td class="border p-2 text-xs text-gray-500">-</td>
+                        <td class="border p-2 text-center text-xs">${proofHtml}</td>
+                    </tr>`;
+                });
+
+                // ঐ দিনের মোট খরচ
+                tbody.innerHTML += `<tr>
+                    <td colspan="${columns.length - 2}" class="border p-2 text-right font-bold text-gray-700">ঐ দিনের মোট খরচ:</td>
+                    <td colspan="2" class="border p-2 text-left font-bold text-red-700 bg-red-50">${dailyTotal}/- টাকা</td>
+                </tr>`;
+            }
+
+            // একদম শেষে গ্র্যান্ড টোটাল
+            if (Object.keys(groupedExp).length > 0) {
+                tbody.innerHTML += `<tr>
+                    <td colspan="${columns.length - 2}" class="border p-3 text-right font-bold text-lg text-red-800 bg-red-100">শেষে সর্বমোট খরচ :-</td>
+                    <td colspan="2" class="border p-3 text-left font-bold text-lg text-red-800 bg-red-100">${totalAmount}/- টাকা</td>
+                </tr>`;
+            }
+            
+            lucide.createIcons(); // আইকন রেন্ডার করার জন্য
+        } 
+        // ==========================================
+        // ৩. Income (আয়ের) Report 
+        // ==========================================
+        else {
             const source = document.getElementById('repSource').value; 
             const paraFilter = document.getElementById('repParaSelect').value;
             let sourceText = source === 'all' ? 'সব উৎস' : (source === 'para' ? 'পাড়া কালেকশন' : 'গাড়ির চাঁদা');
             document.getElementById('repResultTitle').innerText = type === 'due_list' ? `চাঁদা বাকী রিপোর্ট - ${sourceText}` : `আয়ের রিপোর্ট - ${sourceText}`; 
-            columns = ["তারিখ", "নাম/গাড়ী", "উৎস", "ধার্য", "জমা (Paid)", "বাকী (Due)"];
+            
+            let isCarOnly = (source === 'car');
+
+            if (isCarOnly) {
+                columns = ["গাড়ীর নং", "ধরন (কয়লা/লোকাল)", "মোট চাঁদা দান", "বাকী", "Remarks"];
+            } else {
+                columns = ["নাম/গাড়ী", "উৎস/ধরন", "ধার্য", "জমা (Paid)", "বাকী (Due)", "Remarks"];
+            }
             
             let rawData = []; 
             const incomeData = store.getIncome().filter(d => getPuja(d) === activePuja) || []; 
@@ -2746,73 +2940,83 @@ dashExpList.innerHTML += `<li class="flex justify-between items-center bg-white 
                 }
                 return true;
             });
+
             let headerRow = '<tr>'; columns.forEach(c => headerRow += `<th class="border p-2 text-left bg-gray-100">${c}</th>`); headerRow += '</tr>'; thead.innerHTML = headerRow;
             results.sort((a,b) => new Date(a.date) - new Date(b.date));
+
+            // গ্রুপ বাই ডেট (Date Grouping)
+            let groupedData = {};
             results.forEach(r => {
-                let name = r.t === 'para' ? `${r.english_name} <br><span class="text-xs text-gray-500">${r.bengali_name}</span>` : `<span class="font-mono font-bold text-blue-800">${r.carNumber}</span><br><span class="text-xs text-gray-500">${r.type}</span>`;
-                let src = r.t === 'para' ? r.para : 'Car Entry'; let paidAmt = Number(r.paid) || 0; let dueAmt = Number(r.due) || 0; let projectedAmt = Number(r.projected) || (paidAmt + dueAmt);
-                totalAmount += (type === 'due_list' ? dueAmt : paidAmt); 
-                let dueHtml = projectedAmt === 0 ? '-' : `₹${dueAmt}`; 
-                tbody.innerHTML += `<tr class="hover:bg-gray-50"><td class="border p-2 text-xs">${new Date(r.date).toLocaleDateString('en-GB')}</td><td class="border p-2">${name}</td><td class="border p-2 text-xs">${src}</td><td class="border p-2 text-right text-gray-400 font-mono">₹${projectedAmt}</td><td class="border p-2 text-right font-bold text-green-600 font-mono">₹${paidAmt}</td><td class="border p-2 text-right font-bold text-red-600 font-mono">${dueHtml}</td></tr>`;
+                if (!groupedData[r.date]) groupedData[r.date] = [];
+                groupedData[r.date].push(r);
             });
+
+            for (let dateKey in groupedData) {
+                let dailyItems = groupedData[dateKey];
+                let dailyTotal = 0;
+                let dailyDueTotal = 0;
+
+                let displayDate = new Date(dateKey).toLocaleDateString('en-GB');
+                tbody.innerHTML += `<tr><td colspan="${columns.length}" class="border p-2 bg-blue-100 text-blue-900 font-bold text-base">তারিখ: ${displayDate}</td></tr>`;
+
+                dailyItems.forEach(r => {
+                    let paidAmt = Number(r.paid) || 0; 
+                    let dueAmt = Number(r.due) || 0; 
+                    let projectedAmt = Number(r.projected) || (paidAmt + dueAmt);
+                    let remarks = r.remarks || '-';
+                    
+                    dailyTotal += paidAmt;
+                    dailyDueTotal += dueAmt;
+                    totalAmount += (type === 'due_list' ? dueAmt : paidAmt);
+
+                    if (isCarOnly) {
+                        let dueHtml = projectedAmt === 0 ? '-' : `₹${dueAmt}`; 
+                        tbody.innerHTML += `<tr class="hover:bg-gray-50">
+                            <td class="border p-2 font-mono font-bold text-blue-800">${r.carNumber}</td>
+                            <td class="border p-2 text-xs text-gray-800 font-semibold">${r.type}</td>
+                            <td class="border p-2 text-right font-bold text-green-600 font-mono">₹${paidAmt}</td>
+                            <td class="border p-2 text-right font-bold text-red-600 font-mono">${dueHtml}</td>
+                            <td class="border p-2 text-xs">${remarks}</td>
+                        </tr>`;
+                    } else {
+                        let name = r.t === 'para' ? `${r.english_name} <br><span class="text-xs text-gray-500">${r.bengali_name}</span>` : `<span class="font-mono font-bold text-blue-800">${r.carNumber}</span><br><span class="text-xs text-gray-500">${r.type}</span>`;
+                        let src = r.t === 'para' ? r.para : 'Car Entry'; 
+                        let dueHtml = projectedAmt === 0 ? '-' : `₹${dueAmt}`; 
+
+                        tbody.innerHTML += `<tr class="hover:bg-gray-50">
+                            <td class="border p-2">${name}</td>
+                            <td class="border p-2 text-xs">${src}</td>
+                            <td class="border p-2 text-right text-gray-400 font-mono">₹${projectedAmt}</td>
+                            <td class="border p-2 text-right font-bold text-green-600 font-mono">₹${paidAmt}</td>
+                            <td class="border p-2 text-right font-bold text-red-600 font-mono">${dueHtml}</td>
+                            <td class="border p-2 text-xs">${remarks}</td>
+                        </tr>`;
+                    }
+                });
+
+                // ঐ দিনের মোট আয় বা বাকী
+                let sumLabel = type === 'due_list' ? 'মোট বাকী' : 'মোট আয়';
+                let sumValue = type === 'due_list' ? dailyDueTotal : dailyTotal;
+                tbody.innerHTML += `<tr>
+                    <td colspan="${columns.length - 2}" class="border p-2 text-right font-bold text-gray-700">${sumLabel}:</td>
+                    <td colspan="2" class="border p-2 text-left font-bold text-purple-700 bg-purple-50">${sumValue}/- টাকা</td>
+                </tr>`;
+            }
+
+            // একদম শেষে গ্র্যান্ড টোটাল
+            if (Object.keys(groupedData).length > 0) {
+                let grandSumLabel = type === 'due_list' ? 'শেষে সর্বোমোট বাকী :-' : 'শেষে সর্বোমোট আয় :-';
+                tbody.innerHTML += `<tr>
+                    <td colspan="${columns.length - 2}" class="border p-3 text-right font-bold text-lg text-red-800 bg-yellow-100">${grandSumLabel}</td>
+                    <td colspan="2" class="border p-3 text-left font-bold text-lg text-red-800 bg-yellow-100">${totalAmount}/- টাকা</td>
+                </tr>`;
+            }
         }
+        
         if(type !== 'summary') document.getElementById('repTotalDisplay').innerText = '₹' + totalAmount;
-    }
-
-    function exportReportExcel() {
-        const table = document.getElementById('exportableTable');
-        const reportTitle = document.getElementById('repResultTitle').innerText.replace(/\s+/g, '_');
-        const wb = XLSX.utils.table_to_book(table, {sheet:"Report"});
-        XLSX.writeFile(wb, `${reportTitle}_${new Date().toISOString().split('T')[0]}.xlsx`);
-    }
-
-    function printReportResult() {
-        const reportTitle = document.getElementById('repResultTitle').innerText;
-        const totalAmount = document.getElementById('repTotalDisplay').innerText;
-        const tableContent = document.querySelector('#reportResultArea table').outerHTML;
-        const startDate = document.getElementById('repStart').value; 
-        const endDate = document.getElementById('repEnd').value;
-        const dateRangeStr = (startDate && endDate) ? `সময়কাল: ${new Date(startDate).toLocaleDateString('en-GB')} থেকে ${new Date(endDate).toLocaleDateString('en-GB')}` : `তারিখ: ${new Date().toLocaleDateString('en-GB')}`;
-        const activePujaName = document.getElementById('pujaSelect').value;
-
-        const win = window.open('', '', 'height=800,width=1000');
-        win.document.write(`<html><head><title>Puja Report Print</title><script src="https://cdn.tailwindcss.com"><\/script><link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet"><style>body { font-family: 'Hind Siliguri', sans-serif; -webkit-print-color-adjust: exact; padding: 40px; } table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; } th { background-color: #f3f4f6 !important; border: 1px solid #9ca3af; padding: 8px; text-align: left; } td { border: 1px solid #d1d5db; padding: 6px; vertical-align: top; } .signature-box { margin-top: 50px; display: flex; justify-content: space-between; page-break-inside: avoid; } .sig-line { border-top: 1px solid black; width: 200px; text-align: center; padding-top: 5px; font-weight: bold; font-size: 12px; } @media print { @page { margin: 15mm; size: A4; } body { padding: 0; } }</style></head><body><div class="text-center mb-6 border-b-2 border-red-600 pb-4"><h1 class="text-3xl font-bold text-red-700">মডার্ণ স্পোর্টিং ক্লাব</h1><p class="text-sm text-gray-600 mt-1">ঠিকানা: ধলতিথা, বসিরহাট, উত্তর ২৪ পরগনা, ৭৪৩৪১২</p><h3 class="text-xl font-bold text-gray-800 mt-2 bg-gray-100 inline-block px-4 py-1 rounded border border-gray-300">${activePujaName}</h3><div class="mt-4 flex justify-between items-end"><div class="text-left"><h2 class="text-lg font-bold text-gray-800">${reportTitle}</h2><p class="text-xs font-bold text-gray-500 mt-1">${dateRangeStr}</p></div><div class="text-right"><p class="text-xs text-gray-400">Generated on: ${new Date().toLocaleString('en-GB')}</p></div></div></div>${tableContent}<div class="flex justify-end mt-4"><div class="bg-gray-100 border border-gray-300 p-3 rounded w-64"><div class="flex justify-between items-center"><span class="font-bold text-gray-700">সর্বমোট (Total):</span><span class="font-bold text-xl text-blue-700">${totalAmount}</span></div></div></div><div class="signature-box"><div class="sig-line">হিসাবরক্ষক (Accountant)<br><span class="text-xs font-normal">Date: ______________</span></div><div class="sig-line">সম্পাদক / সভাপতি<br><span class="text-xs font-normal">(Secretary / President)</span></div></div><script> setTimeout(() => { window.print(); window.close(); }, 800); <\/script></body></html>`);
-        win.document.close();
-    }
-
-function downloadReportPDF() {
-        const reportTitle = document.getElementById('repResultTitle').innerText.replace(/\s+/g, '_');
-        const fileName = `${reportTitle}_${new Date().toISOString().split('T')[0]}.pdf`;
-        const activePujaName = document.getElementById('pujaSelect').value;
-        const tableContent = document.querySelector('#reportResultArea table').outerHTML;
-        const totalAmount = document.getElementById('repTotalDisplay').innerText;
-        const startDate = document.getElementById('repStart').value; 
-        const endDate = document.getElementById('repEnd').value;
-        const dateRangeStr = (startDate && endDate) ? `সময়কাল: ${new Date(startDate).toLocaleDateString('en-GB')} থেকে ${new Date(endDate).toLocaleDateString('en-GB')}` : `তারিখ: ${new Date().toLocaleDateString('en-GB')}`;
-
-        // ডিজাইন আগের মতোই আছে, শুধু সিগনেচার অংশটুকু যাতে না কাটে তাই page-break-inside: avoid; দেওয়া আছে
-        const content = `<div style="font-family: 'Hind Siliguri', sans-serif; padding: 20px; color: #1f2937;"><div style="text-align: center; border-bottom: 2px solid #dc2626; padding-bottom: 10px; margin-bottom: 20px;"><h1 style="font-size: 24px; font-weight: bold; color: #b91c1c; margin: 0;">মডার্ণ স্পোর্টিং ক্লাব</h1><p style="font-size: 12px; color: #4b5563; margin: 5px 0;">ঠিকানা: ধলতিথা, বসিরহাট, উত্তর ২৪ পরগনা, ৭৪৩৪১২</p><h3 style="font-size: 16px; font-weight: bold; background: #f3f4f6; display: inline-block; padding: 4px 10px; border: 1px solid #d1d5db; border-radius: 4px; margin: 5px 0;">${activePujaName}</h3><div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 15px;"><div style="text-align: left;"><h2 style="font-size: 14px; font-weight: bold; margin: 0;">${document.getElementById('repResultTitle').innerText}</h2><p style="font-size: 10px; font-weight: bold; color: #6b7280; margin: 2px 0;">${dateRangeStr}</p></div></div></div>${tableContent}<div style="display: flex; justify-content: flex-end; margin-top: 20px;"><div style="background-color: #f3f4f6; border: 1px solid #d1d5db; padding: 10px; border-radius: 4px; width: 200px;"><div style="display: flex; justify-content: space-between; font-weight: bold;"><span>সর্বমোট:</span><span style="color: #1d4ed8;">${totalAmount}</span></div></div></div><div style="margin-top: 60px; display: flex; justify-content: space-between; page-break-inside: avoid;"><div style="border-top: 1px solid black; width: 150px; text-align: center; font-size: 10px; padding-top: 5px;">হিসাবরক্ষক</div><div style="border-top: 1px solid black; width: 150px; text-align: center; font-size: 10px; padding-top: 5px;">সম্পাদক / সভাপতি</div></div></div>`;
-        
-        const element = document.createElement('div'); element.innerHTML = content;
-        
-        const tables = element.getElementsByTagName('table'); for(let t of tables) { t.style.width = '100%'; t.style.borderCollapse = 'collapse'; t.style.fontSize = '10px'; }
-        const ths = element.getElementsByTagName('th'); for(let t of ths) { t.style.background = '#e5e7eb'; t.style.border = '1px solid #9ca3af'; t.style.padding = '4px'; }
-        const tds = element.getElementsByTagName('td'); for(let t of tds) { t.style.border = '1px solid #d1d5db'; t.style.padding = '4px'; }
-        
-        // সমাধান: avoid: 'tr' দেওয়ার কারণে টেবিলের কোনো Row (যেমন গাড়ির নম্বর) আর অর্ধেক কাটবে না
-        const opt = { 
-            margin: 0.4, 
-            filename: fileName, 
-            image: { type: 'jpeg', quality: 0.98 }, 
-            html2canvas: { scale: 2, useCORS: true }, 
-            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
-            pagebreak: { avoid: 'tr' } 
-        };
-        
-        const btn = document.getElementById('pdfBtn'); const oldText = btn.innerHTML; btn.innerHTML = 'Downloading...';
-        html2pdf().set(opt).from(element).save().then(() => { btn.innerHTML = oldText; });
-    }
-    // ==========================================
+    } 
+  
+     // ==========================================
     // 12. SETTINGS & HISTORY MODULE
     // ==========================================
     function processLegacyUpload() { 

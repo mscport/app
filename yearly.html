@@ -124,9 +124,9 @@
                                 <input type="text" id="inc-fy" readonly class="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm p-2">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700">তারিখ</label>
-                                <input type="date" id="inc-date" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
-                            </div>
+    <label class="block text-sm font-medium text-gray-700">তারিখ</label>
+    <input type="date" id="inc-date" onchange="updateCustomFY('inc-date', 'inc-fy')" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
+</div>
                         </div>
                         <div class="relative">
                             <label class="block text-sm font-medium text-gray-700">প্রদানকারীর নাম (Donor)</label>
@@ -200,9 +200,9 @@
                                 <input type="text" id="exp-fy" readonly class="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm p-2">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700">তারিখ</label>
-                                <input type="date" id="exp-date" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
-                            </div>
+    <label class="block text-sm font-medium text-gray-700">তারিখ</label>
+    <input type="date" id="exp-date" onchange="updateCustomFY('exp-date', 'exp-fy')" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
+</div>
                         </div>
                         <div class="relative">
                             <label class="block text-sm font-medium text-gray-700">খরচের কারণ (Reason)</label>
@@ -647,9 +647,10 @@
         }
 
         function generateReceiptNo() {
-            const count = State.incomeData.length + 1;
-            return `MSC/${State.fy}/${count.toString().padStart(3, '0')}`;
-        }
+    const customFy = document.getElementById('inc-fy').value; // ইনপুট বক্স থেকে আপনার দেওয়া ইয়ার নেবে
+    const count = State.incomeData.length + 1;
+    return `MSC/${customFy}/${count.toString().padStart(3, '0')}`;
+}
 
         async function saveIncome() {
             const date = document.getElementById('inc-date').value;
@@ -1937,6 +1938,23 @@ async function syncSettingsToBackend() {
     } catch(e) {
         console.error("Settings sync failed:", e);
     }
+}
+
+function updateCustomFY(dateInputId, fyInputId) {
+    const dateVal = document.getElementById(dateInputId).value;
+    if (!dateVal) return;
+    const selectedDate = new Date(dateVal);
+    let year = selectedDate.getFullYear();
+    let nextYear = year + 1;
+    
+    // জানুয়ারি থেকে মার্চ মাস হলে সেটি আগের ফাইন্যান্সিয়াল ইয়ারের আওতায় পড়বে
+    if (selectedDate.getMonth() < 3) { 
+        year = year - 1;
+        nextYear = year + 1;
+    }
+    
+    const calculatedFy = `${year}-${nextYear.toString().slice(-2)}`;
+    document.getElementById(fyInputId).value = calculatedFy;
 }
     </script>
 </body>

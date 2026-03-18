@@ -20,17 +20,32 @@
         .tab-btn.active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: bold; }
         .hidden { display: none !important; }
         
-        /* Updated Receipt Print Styles to fit perfectly in TOP HALF of A4 without mobile clipping */
-        #receipt-template {
-            width: 720px; /* Adjusted to fit exactly in A4 without clipping */
-            height: 600px; /* Safely fits the top half of A4 */
+    #receipt-template {
+            width: 720px; 
+            min-#receipt-template {
+            width: 720px; 
+            min-height: 600px; 
+            height: auto !important; /* এটি বক্সকে কনটেন্ট অনুযায়ী বড় হতে সাহায্য করবে */
             padding: 30px; 
+            padding-bottom: 50px; /* নিচের দিকে কিছুটা ফাঁকা জায়গা দেওয়া হলো */
             background: white; 
             border: 2px solid #333;
             margin: auto; 
             position: relative; 
             color: black;
             box-sizing: border-box; 
+            overflow: visible;
+        }height: 600px; 
+            height: auto !important; /* এটি বক্সকে কনটেন্ট অনুযায়ী বড় হতে সাহায্য করবে */
+            padding: 30px; 
+            padding-bottom: 50px; /* নিচের দিকে কিছুটা ফাঁকা জায়গা দেওয়া হলো */
+            background: white; 
+            border: 2px solid #333;
+            margin: auto; 
+            position: relative; 
+            color: black;
+            box-sizing: border-box; 
+            overflow: visible;
         }
         .receipt-header { text-align: center; margin-bottom: 15px; border-bottom: 2px dashed #ccc; padding-bottom: 10px;}
         .receipt-title { font-size: 26px; font-weight: bold; color: #1e3a8a; }
@@ -138,6 +153,21 @@
                             <input type="text" id="inc-category" onkeyup="handleTranslationSuggest(this, 'inc-cat-suggestions')" onclick="showDefaultCategories(this, 'inc-cat-suggestions', 'income')" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 p-2 border" autocomplete="off" placeholder="Type or click for options">
                             <div id="inc-cat-suggestions" class="suggestion-box hidden"></div>
                         </div>
+                        
+                        <div class="grid grid-cols-2 gap-4 bg-blue-50 p-3 rounded border border-blue-100">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">পেমেন্ট পদ্ধতি</label>
+                                <select id="inc-pay-mode" onchange="toggleAccountField()" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 p-2 border">
+                                    <option value="Cash">ক্যাশ (Cash)</option>
+                                    <option value="Online">অনলাইন (Online)</option>
+                                </select>
+                            </div>
+                            <div id="account-field-container" class="hidden">
+                                <label class="block text-sm font-medium text-gray-700">কোন অ্যাকাউন্ট?</label>
+                                <input type="text" id="inc-account" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 p-2 border" placeholder="e.g. SBI / PhonePe">
+                            </div>
+                        </div>
+
                         <div>
                             <label class="block text-sm font-medium text-gray-700">টাকার পরিমান</label>
                             <input type="number" id="inc-amount" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 p-2 border" placeholder="e.g. 5000">
@@ -400,8 +430,9 @@
         <div id="receipt-render-area" style="width: 800px; padding: 20px; background: white;">
             <div id="receipt-template">
                 <div class="receipt-header">
-                    <div class="receipt-title">মডার্ণ স্পোর্টিং ক্লাব</div>
-                    <div class="receipt-address">ইটিন্ডা রোড, ধলতিথা, বসিরহাট, উত্তর ২৪ পরগণা, পিন-৭৪৩৪১২</div>
+                    <div class="receipt-title">ইটিন্ডা রোড ধলতিথা মডার্ণ স্পোর্টিং ক্লাব</div>
+                    <div class="receipt-address">গভঃ রেজিঃ নং-S0035658,ইটিন্ডা রোড, ধলতিথা, বসিরহাট, উত্তর ২৪ পরগণা, পিন-৭৪৩৪১২</div>
+                    <div style="text-align: center; font-weight: bold; margin-top: 8px; font-size: 16px; border: 1px solid black; display: inline-block; padding: 2px 10px; border-radius: 5px; background: #f3f4f6;">ক্যাশ রিসিপ্ট মেমো</div>
                     <canvas id="receipt-qr" class="qr-placeholder"></canvas>
                 </div>
                 
@@ -416,6 +447,7 @@
                         <tr><td>কোন খাতে দান</td><td>: <span id="pr-category"></span></td></tr>
                         <tr><td>টাকার পরিমাণ (সংখ্যায়)</td><td>: <strong style="font-size: 20px;">₹ <span id="pr-amount-num"></span>/-</strong></td></tr>
                         <tr><td>টাকার পরিমাণ (কথায়)</td><td>: <span id="pr-amount-words"></span> মাত্র</td></tr>
+                        <tr><td style="padding-top: 5px;">পেমেন্ট পদ্ধতি</td><td style="padding-top: 5px; font-weight: bold;">: <span id="pr-payment-mode"></span> <span id="pr-account-name" style="font-size: 14px; color: #555;"></span></td></tr>
                     </table>
                 </div>
 
@@ -431,8 +463,9 @@
                         <div style="border-top: 1px solid black; padding-top: 5px;">Treasurer Signature</div>
                     </div>
                 </div>
-                <div style="text-align: center; font-size: 10px; color: gray; margin-top: 10px;">
-                    [System Generated Slip already signed no need signature]
+               
+               <div style="text-align: center; font-size: 10px; color: gray; margin-top: 25px; margin-bottom: 10px;">
+                    [System Generated Slip already signed no need signature-সফটওয়্যারটি নকশা,নির্মান,উৎস ও পরিচর্যায় © মডার্ণ স্পোর্টিং ক্লাব ]
                 </div>
             </div>
         </div>
@@ -652,17 +685,31 @@
     return `MSC/${customFy}/${count.toString().padStart(3, '0')}`;
 }
 
+        function toggleAccountField() {
+            const mode = document.getElementById('inc-pay-mode').value;
+            const accContainer = document.getElementById('account-field-container');
+            if(mode === 'Online') {
+                accContainer.classList.remove('hidden');
+            } else {
+                accContainer.classList.add('hidden');
+                document.getElementById('inc-account').value = '';
+            }
+        }
+
         async function saveIncome() {
             const date = document.getElementById('inc-date').value;
             const donor = document.getElementById('inc-donor').value;
             const cat = document.getElementById('inc-category').value;
             const amt = document.getElementById('inc-amount').value;
             const remarks = document.getElementById('inc-remarks').value;
+            
+            const payMode = document.getElementById('inc-pay-mode') ? document.getElementById('inc-pay-mode').value : 'Cash';
+            const account = document.getElementById('inc-account') ? document.getElementById('inc-account').value : '';
 
             if(!donor || !amt) { alert("নাম এবং পরিমাণ আবশ্যক!"); return; }
 
             const receiptNo = generateReceiptNo();
-            const newData = { id: receiptNo, date, donor, category: cat, amount: Number(amt), remarks };
+            const newData = { id: receiptNo, date, donor, category: cat, amount: Number(amt), remarks, payMode, account };
             
             State.incomeData.push(newData);
             
@@ -1190,7 +1237,7 @@ async function generatePDFReceipt(data) {
             document.getElementById('pr-category').innerText = data.category;
             document.getElementById('pr-amount-num').innerText = data.amount;
             document.getElementById('pr-amount-words').innerText = numberToBengaliWords(data.amount);
-
+if(document.getElementById('pr-payment-mode')) { document.getElementById('pr-payment-mode').innerText = data.payMode || 'Cash'; } if(document.getElementById('pr-account-name')) { document.getElementById('pr-account-name').innerText = (data.payMode === 'Online' && data.account) ? `(A/c: ${data.account})` : ''; }
             new QRious({
                 element: document.getElementById('receipt-qr'),
                 value: data.id, size: 80
@@ -1654,7 +1701,12 @@ function deleteCategory(type, index) {
             document.getElementById('pr-category').innerText = data.category;
             document.getElementById('pr-amount-num').innerText = data.amount;
             document.getElementById('pr-amount-words').innerText = numberToBengaliWords(data.amount);
-
+if(document.getElementById('pr-payment-mode')) {
+                document.getElementById('pr-payment-mode').innerText = data.payMode || 'Cash';
+            }
+            if(document.getElementById('pr-account-name')) {
+                document.getElementById('pr-account-name').innerText = (data.payMode === 'Online' && data.account) ? `(A/c: ${data.account})` : '';
+            }
             new QRious({
                 element: document.getElementById('receipt-qr'),
                 value: data.id, size: 80

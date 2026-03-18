@@ -20,32 +20,16 @@
         .tab-btn.active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: bold; }
         .hidden { display: none !important; }
         
-    #receipt-template {
-            width: 720px; 
-            min-#receipt-template {
-            width: 720px; 
-            min-height: 600px; 
-            height: auto !important; /* এটি বক্সকে কনটেন্ট অনুযায়ী বড় হতে সাহায্য করবে */
-            padding: 30px; 
-            padding-bottom: 50px; /* নিচের দিকে কিছুটা ফাঁকা জায়গা দেওয়া হলো */
+  #receipt-template {
+            width: 794px; /* A4 Width */
+            min-height: 1000px;
+            padding: 40px; 
             background: white; 
             border: 2px solid #333;
-            margin: auto; 
+            margin: 0; 
             position: relative; 
             color: black;
             box-sizing: border-box; 
-            overflow: visible;
-        }height: 600px; 
-            height: auto !important; /* এটি বক্সকে কনটেন্ট অনুযায়ী বড় হতে সাহায্য করবে */
-            padding: 30px; 
-            padding-bottom: 50px; /* নিচের দিকে কিছুটা ফাঁকা জায়গা দেওয়া হলো */
-            background: white; 
-            border: 2px solid #333;
-            margin: auto; 
-            position: relative; 
-            color: black;
-            box-sizing: border-box; 
-            overflow: visible;
         }
         .receipt-header { text-align: center; margin-bottom: 15px; border-bottom: 2px dashed #ccc; padding-bottom: 10px;}
         .receipt-title { font-size: 26px; font-weight: bold; color: #1e3a8a; }
@@ -342,24 +326,41 @@
                 </div>
 
                 <div class="bg-white p-6 rounded-lg shadow">
-                    <h3 class="text-lg font-medium mb-4">রিপোর্ট জেনারেট করুন</h3>
-                    <div class="flex flex-wrap gap-4 items-end">
+                    <h3 class="text-lg font-medium mb-4">বিস্তারিত রিপোর্ট জেনারেট করুন</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                         <div>
                             <label class="block text-sm text-gray-600">From Date</label>
-                            <input type="date" id="report-start" class="border rounded p-2">
+                            <input type="date" id="report-start" class="border rounded p-2 w-full">
                         </div>
                         <div>
                             <label class="block text-sm text-gray-600">To Date</label>
-                            <input type="date" id="report-end" class="border rounded p-2">
+                            <input type="date" id="report-end" class="border rounded p-2 w-full">
                         </div>
-                        <button onclick="generateReport()" class="bg-indigo-600 text-white px-4 py-2 rounded flex items-center gap-2 hover:bg-indigo-700">
+                        <div>
+                            <label class="block text-sm text-gray-600">রিপোর্টের ধরন</label>
+                            <select id="report-type" class="border rounded p-2 w-full">
+                                <option value="all">আয় ও ব্যয় (All)</option>
+                                <option value="income">শুধুমাত্র আয়</option>
+                                <option value="expense">শুধুমাত্র ব্যয়</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-600">আয়/ব্যায়ের খাত</label>
+                            <select id="report-category" class="border rounded p-2 w-full">
+                                <option value="all">সব খাত (All Categories)</option>
+                                </select>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex gap-3">
+                        <button onclick="updateReportCategoryOptions()" class="text-sm bg-gray-200 text-gray-800 px-3 py-2 rounded hover:bg-gray-300">
+                            <i data-lucide="refresh-cw" class="w-4 h-4 inline"></i> ক্যাটাগরি লোড করুন
+                        </button>
+                        <button onclick="generateDetailedReport()" class="bg-indigo-600 text-white px-6 py-2 rounded flex items-center gap-2 hover:bg-indigo-700 font-medium">
                             <i data-lucide="file-text" class="w-4 h-4"></i> জেনারেট পিডিএফ
                         </button>
                     </div>
-                    <p class="text-xs text-gray-500 mt-2">AI বুদ্ধিমত্তা ব্যবহার করে নির্দিষ্ট তারিখের ব্যালেন্সশীট তৈরি হবে।</p>
                 </div>
-            </div>
-
+                 </div>
             <!-- 6. সেটিংস (Admin Only) -->
             <div id="tab-settings" class="tab-content hidden">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -426,7 +427,7 @@
     </div>
 
 
-    <div id="pdf-wrapper" style="position: fixed; top: 0; left: 0; z-index: -9999; opacity: 0; pointer-events: none; width: 800px; background: white;">
+    <div id="pdf-wrapper" style="position: absolute; top: 0; left: -9999px; z-index: -9999; opacity: 0; pointer-events: none; width: 800px; background: white;">
         <div id="receipt-render-area" style="width: 800px; padding: 20px; background: white;">
             <div id="receipt-template">
                 <div class="receipt-header">
@@ -1268,13 +1269,7 @@ if(document.getElementById('pr-payment-mode')) { document.getElementById('pr-pay
             await new Promise(resolve => setTimeout(resolve, 500));
 
             // Aggressive PDF Download Options
-            const opt = {
-                margin:       [10, 0, 0, 0], 
-                filename:     `${data.id.replace(/\//g, '-')}_Receipt.pdf`,
-                image:        { type: 'jpeg', quality: 1 },
-                html2canvas:  { scale: 2, useCORS: true, windowWidth: 800 }, 
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'p' } 
-            };
+            
 
             try {
                 const pdfWorker = html2pdf().set(opt).from(element);
@@ -2007,6 +2002,137 @@ function updateCustomFY(dateInputId, fyInputId) {
     
     const calculatedFy = `${year}-${nextYear.toString().slice(-2)}`;
     document.getElementById(fyInputId).value = calculatedFy;
+}
+
+// ১. ড্রপডাউনে ক্যাটাগরি লোড করার ফাংশন
+function updateReportCategoryOptions() {
+    const type = document.getElementById('report-type').value;
+    const catSelect = document.getElementById('report-category');
+    let options = `<option value="all">সব খাত (All Categories)</option>`;
+    
+    if(type === 'income' || type === 'all') {
+        State.incomeCat.forEach(c => options += `<option value="INC_${c}">আয়: ${c}</option>`);
+    }
+    if(type === 'expense' || type === 'all') {
+        State.expenseCat.forEach(c => options += `<option value="EXP_${c}">ব্যায়: ${c}</option>`);
+    }
+    catSelect.innerHTML = options;
+}
+
+// ২. বিস্তারিত রিপোর্ট তৈরি ও পিডিএফ ডাউনলোডের ফাংশন
+// ২. বিস্তারিত রিপোর্ট তৈরি ও পিডিএফ ডাউনলোডের ফাংশন
+function generateDetailedReport() {
+    const start = document.getElementById('report-start').value;
+    const end = document.getElementById('report-end').value;
+    const type = document.getElementById('report-type').value;
+    const selectedCat = document.getElementById('report-category').value;
+
+    let incData = State.incomeData;
+    let expData = State.expenseData;
+
+    // Date Filtering
+    if (start) {
+        incData = incData.filter(d => d.date >= start);
+        expData = expData.filter(d => d.date >= start);
+    }
+    if (end) {
+        incData = incData.filter(d => d.date <= end);
+        expData = expData.filter(d => d.date <= end);
+    }
+
+    let reportHtml = `
+        <div id="report-print-area" style="padding: 30px; font-family: 'Tiro Bangla', serif; color: black;">
+            <div style="text-align:center; border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px;">
+                <h2 style="font-size: 24px; color:#1e3a8a; margin:0;">মডার্ণ স্পোর্টিং ক্লাব</h2>
+                <p style="font-size: 14px; margin: 5px 0;">ইটিন্ডা রোড, ধলতিথা, বসিরহাট, উত্তর ২৪ পরগণা, পিন-৭৪৩৪১২</p>
+                <h3 style="font-size: 18px; margin: 10px 0;">বিস্তারিত আর্থিক রিপোর্ট</h3>
+                <p style="font-size:12px; font-weight: bold;">
+                    Date Range: ${start ? formatDate(start) : 'All Time'} - ${end ? formatDate(end) : 'Present'}
+                </p>
+            </div>
+    `;
+
+    // Helper Function to render tables
+    const renderTable = (data, title, isIncome) => {
+        if (data.length === 0) return '';
+        let total = 0;
+        let rows = data.map(d => {
+            total += d.amount;
+            // 🟢 Row যেন মাঝখান থেকে না ভাঙে তার জন্য স্টাইল যোগ করা হয়েছে
+            return `
+                <tr style="page-break-inside: avoid; break-inside: avoid;">
+                    <td style="padding: 6px; border: 1px solid #ccc;">${isIncome ? d.donor : d.reason}</td>
+                    <td style="padding: 6px; border: 1px solid #ccc; text-align: center;">${d.id}</td>
+                    <td style="padding: 6px; border: 1px solid #ccc; text-align: center;">${formatDate(d.date)}</td>
+                    <td style="padding: 6px; border: 1px solid #ccc; text-align: right;">₹ ${d.amount}</td>
+                </tr>
+            `;
+        }).join('');
+
+        return `
+            <div style="margin-bottom: 25px; page-break-inside: auto;">
+                <h4 style="background: ${isIncome ? '#e6ffed' : '#ffe6e6'}; padding: 8px; border-left: 4px solid ${isIncome ? 'green' : 'red'}; margin-bottom: 0; page-break-after: avoid; break-after: avoid;">${title}</h4>
+                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                    <thead style="background: #f3f4f6; display: table-header-group;">
+                        <tr>
+                            <th style="padding: 6px; border: 1px solid #ccc; text-align: left;">${isIncome ? 'প্রদানকারীর নাম' : 'খরচের কারণ'}</th>
+                            <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">রিসিপ্ট/ভাউচার নং</th>
+                            <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">তারিখ</th>
+                            <th style="padding: 6px; border: 1px solid #ccc; text-align: right;">টাকার পরিমাণ</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                    <tfoot style="display: table-row-group;">
+                        <tr style="page-break-inside: avoid; break-inside: avoid;">
+                            <td colspan="3" style="padding: 8px; border: 1px solid #ccc; text-align: right; font-weight: bold;">মোট ${title}:</td>
+                            <td style="padding: 8px; border: 1px solid #ccc; text-align: right; font-weight: bold; color: ${isIncome ? 'green' : 'red'};">₹ ${total}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        `;
+    };
+
+    // Income Rendering
+    if (type === 'all' || type === 'income') {
+        State.incomeCat.forEach(cat => {
+            if (selectedCat === 'all' || selectedCat === `INC_${cat}`) {
+                const filtered = incData.filter(d => d.category === cat);
+                reportHtml += renderTable(filtered, cat, true);
+            }
+        });
+    }
+
+    // Expense Rendering
+    if (type === 'all' || type === 'expense') {
+        State.expenseCat.forEach(cat => {
+            if (selectedCat === 'all' || selectedCat === `EXP_${cat}`) {
+                const filtered = expData.filter(d => d.category === cat);
+                reportHtml += renderTable(filtered, cat, false);
+            }
+        });
+    }
+
+    reportHtml += `
+            <p style="font-size:10px; text-align:center; color:gray; margin-top: 30px;">Generated on: ${new Date().toLocaleString()}</p>
+        </div>
+    `;
+
+    // PDF Generation
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = reportHtml;
+    document.body.appendChild(tempDiv);
+    
+    // 🟢 html2pdf এর সেটিংসে পেজ ব্রেক এবং মার্জিন ফিক্স করা হয়েছে
+    html2pdf().set({
+        margin: [15, 10, 15, 10], 
+        filename: 'Detailed_Report.pdf', 
+        pagebreak: { mode: 'css', avoid: ['tr', 'h4', 'tfoot'] },
+        html2canvas: { scale: 2, scrollY: 0 }, 
+        jsPDF: { format: 'a4', orientation: 'p' }
+    }).from(tempDiv.firstElementChild).save().then(()=>{
+        document.body.removeChild(tempDiv);
+    });
 }
     </script>
 </body>

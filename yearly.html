@@ -1925,41 +1925,45 @@ function deleteCategory(type, index) {
 // ==========================================
 
 
-// ১. ফেক (Dummy) ডাটা আসা বন্ধ করা হলো এবং লোকাল মেমোরি থেকে ডাটা লোড করা হলো
+// ১. Local Storage থেকে ডাটা লোড করার ফাংশন (বানান ঠিক করা হয়েছে)
 window.mockData = function() {
     const savedIncome = localStorage.getItem('msc_local_income');
-    const savedExpense = localStorage.getItem('msc_local_expese');
-    const savedSigns = localStorage.getItem('msc_local_signs'); // 🟢 সিগনেচার লোড করার কমান্ড
+    const savedExpense = localStorage.getItem('msc_local_expense'); // এখানে 'expese' ভুল বানান ছিল, ঠিক করা হলো
+    const savedSigns = localStorage.getItem('msc_local_signs'); 
 
     if(savedIncome) State.incomeData = JSON.parse(savedIncome);
     if(savedExpense) State.expenseData = JSON.parse(savedExpense);
-    if(savedSigns) State.signatories = JSON.parse(savedSigns); // 🟢 সিগনেচার স্টেটে সেট করার কমান্ড
+    if(savedSigns) State.signatories = JSON.parse(savedSigns); 
 };
 
-
-// ২. নতুন ডাটা সেভ বা ডিলিট করার পর তা ব্রাউজারে পার্মানেন্টলি সেভ করার লজিক
-
-const renderIncStorageHook = window.renderIncomeTable;
-
-window.renderIncomeTable = function() {
-
-renderIncStorageHook(); // আগের রেন্ডার লজিক কল করা হলো
-
-localStorage.setItem('msc_local_income', JSON.stringify(State.incomeData)); // ডাটা সেভ
-
-};
-
-
-const renderExpStorageHook = window.renderExpenseTable;
-
-window.renderExpenseTable = function() {
-
-renderExpStorageHook(); // আগের রেন্ডার লজিক কল করা হলো
-
-localStorage.setItem('msc_local_expense', JSON.stringify(State.expenseData)); // ডাটা সেভ
-
-};
-
+// ২. Google Sheet থেকে ডাটা ফেচ করার ফাংশন (Console Log সহ)
+async function fetchDataFromBackend() {
+    if(WEB_APP_URL === "আপনার_গুগল_শিটের_ওয়েব_অ্যাপ_লিংক_এখানে_দিন" || !WEB_APP_URL) return;
+    try {
+        const response = await fetch(`${WEB_APP_URL}?action=getData`);
+        const result = await response.json();
+        
+        console.log("Backend Data Received:", result); // ব্রাউজারের Console-এ চেক করার জন্য
+        
+        if(result && result.status === "success") {
+            State.incomeData = result.incomeData || [];
+            State.expenseData = result.expenseData || []; // Google Sheet থেকে expenseData ঠিকভাবে আসছে কিনা লক্ষ্য রাখবেন
+            
+            if(result.incomeCat && result.incomeCat.length > 0) State.incomeCat = result.incomeCat;
+            if(result.expenseCat && result.expenseCat.length > 0) State.expenseCat = result.expenseCat;
+            if(result.signatories && result.signatories.length > 0) State.signatories = result.signatories;
+            
+            populateSelects();
+            renderSettings();
+            
+            if(State.currentTab === 'saved-income') renderIncomeTable();
+            if(State.currentTab === 'saved-expense') renderExpenseTable();
+            updateDashboard();
+        }
+    } catch(error) {
+        console.error("Backend থেকে ডাটা আনতে সমস্যা হচ্ছে:", error);
+    }
+}
 
 // Google Sheet থেকে ডাটা ফেচ করার নতুন ফাংশন
 async function fetchDataFromBackend() {
@@ -2054,16 +2058,16 @@ function updateReportCategoryOptions() {
     catSelect.innerHTML = options;
 }
 
-// ২. বিস্তারিত রিপোর্ট তৈরি ও পিডিএফ ডাউনলোডের ফাংশন
-// ২. বিস্তারিত রিপোর্ট তৈরি ও পিডিএফ ডাউনলোডের ফাংশন
-function generateDetailedReport() {
+// ২. বিস্তারিত রিপোর্ট তৈরি ও পিডিএফ ডাউনলোডের ফাংশন (Final Fixes)
+async function generateDetailedReport() {
     const start = document.getElementById('report-start').value;
     const end = document.getElementById('report-end').value;
     const type = document.getElementById('report-type').value;
     const selectedCat = document.getElementById('report-category').value;
+    const fy = State.fy || document.getElementById('inc-fy').value;
 
-    let incData = State.incomeData;
-    let expData = State.expenseData;
+    let incData = State.incomeData || [];
+    let expData = State.expenseData || [];
 
     // Date Filtering
     if (start) {
@@ -2075,52 +2079,213 @@ function generateDetailedReport() {
         expData = expData.filter(d => d.date <= end);
     }
 
-    let reportHtml = `
-        <div id="report-print-area" style="padding: 30px; font-family: 'Tiro Bangla', serif; color: black;">
-            <div style="text-align:center; border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px;">
-                <h2 style="font-size: 24px; color:#1e3a8a; margin:0;">মডার্ণ স্পোর্টিং ক্লাব</h2>
-                <p style="font-size: 14px; margin: 5px 0;">ইটিন্ডা রোড, ধলতিথা, বসিরহাট, উত্তর ২৪ পরগণা, পিন-৭৪৩৪১২</p>
-                <h3 style="font-size: 18px; margin: 10px 0;">বিস্তারিত আর্থিক রিপোর্ট</h3>
-                <p style="font-size:12px; font-weight: bold;">
-                    Date Range: ${start ? formatDate(start) : 'All Time'} - ${end ? formatDate(end) : 'Present'}
-                </p>
+    // Category Filtering
+    if (selectedCat !== 'all') {
+        if (selectedCat.startsWith('INC_')) {
+            const catName = selectedCat.replace('INC_', '');
+            incData = incData.filter(d => d.category === catName);
+            expData = []; 
+        } else if (selectedCat.startsWith('EXP_')) {
+            const catName = selectedCat.replace('EXP_', '');
+            expData = expData.filter(d => d.category === catName);
+            incData = []; 
+        }
+    }
+
+    // --- ১. Summary Data Calculation ---
+    let totalInc = 0;
+    let totalExp = 0;
+    const incSummary = {};
+    const expSummary = {};
+
+    incData.forEach(d => {
+        totalInc += d.amount;
+        incSummary[d.category] = (incSummary[d.category] || 0) + d.amount;
+    });
+
+    expData.forEach(d => {
+        totalExp += d.amount;
+        expSummary[d.category] = (expSummary[d.category] || 0) + d.amount;
+    });
+
+    // --- ২. Signatures Setup (Secretary Left, Treasurer Right) ---
+    const validSigns = State.signatories.filter(s => s.base64 && s.base64.length > 50);
+    const secSign = validSigns.slice().reverse().find(s => s.desig && s.desig.toLowerCase().includes('sec'));
+    const treSign = validSigns.slice().reverse().find(s => s.desig && s.desig.toLowerCase().includes('tre'));
+
+    const secSignHtml = secSign ? `<img src="${secSign.base64}" style="height:35px; object-fit:contain; border-bottom:1px solid #000; margin-bottom:2px;"><br>` : `<div style="height:40px; border-bottom:1px solid #000; margin-bottom:2px;"></div>`;
+    const treSignHtml = treSign ? `<img src="${treSign.base64}" style="height:35px; object-fit:contain; border-bottom:1px solid #000; margin-bottom:2px;"><br>` : `<div style="height:40px; border-bottom:1px solid #000; margin-bottom:2px;"></div>`;
+
+    // Reusable Signature Block
+    const getSignatureBlock = () => `
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 40px; padding: 0 10px; page-break-inside: avoid;">
+            <div style="text-align: center; font-size: 14px; font-weight: bold; width: 160px;">
+                ${secSignHtml}
+                Secretary Signature
             </div>
+            <div style="text-align: center; font-size: 14px; font-weight: bold; color: #333; padding-bottom: 5px;">
+                পৃষ্ঠা নং- ______
+            </div>
+            <div style="text-align: center; font-size: 14px; font-weight: bold; width: 160px;">
+                ${treSignHtml}
+                Treasurer Signature
+            </div>
+        </div>
     `;
 
-    // Helper Function to render tables
-    const renderTable = (data, title, isIncome) => {
+    // Reusable Header Block
+    const getReportHeader = (reportTitle) => `
+        <div style="text-align:center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px;">
+            <h2 style="font-size: 26px; color:#1e3a8a; margin:0; font-weight: bold;">মডার্ণ স্পোর্টিং ক্লাব</h2>
+            <p style="font-size: 14px; margin: 5px 0; color: #444;">গভঃ রেজিঃ নং-S0035658, ইটিন্ডা রোড, ধলতিথা, বসিরহাট, উত্তর ২৪ পরগণা, পিন-৭৪৩৪১২</p>
+            <div style="display:inline-block; margin-top: 10px; padding: 5px 15px; border: 1px solid #000; border-radius: 5px; background: #f9fafb; font-weight: bold; font-size: 16px;">
+                ${reportTitle} (Financial Year: ${fy})
+            </div>
+            <p style="font-size:13px; font-weight: bold; margin-top: 10px;">
+                (Date Range: ${start ? formatDate(start) : 'All Time'} - ${end ? formatDate(end) : 'Present'})
+            </p>
+        </div>
+    `;
+
+    const buildSummaryTable = (title, summaryObj, totalAmt) => {
+        let rows = Object.keys(summaryObj).map((cat, i) => `
+            <tr>
+                <td style="padding: 8px; border: 1px solid #000;">${i + 1}) ${cat}</td>
+                <td style="padding: 8px; border: 1px solid #000; text-align: right;">₹ ${summaryObj[cat]}</td>
+            </tr>
+        `).join('');
+        
+        if(Object.keys(summaryObj).length === 0) rows = `<tr><td colspan="2" style="text-align:center; padding: 8px; border: 1px solid #000;">কোনো ডেটা নেই</td></tr>`;
+
+        return `
+            <table style="width: 100%; border-collapse: collapse; font-size: 15px; margin-bottom: 10px;">
+                <thead>
+                    <tr style="background: #f3f4f6;">
+                        <th style="padding: 8px; border: 1px solid #000; text-align: left;">${title}</th>
+                        <th style="padding: 8px; border: 1px solid #000; text-align: right; width: 35%;">মোট (₹)</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+                <tfoot>
+                    <tr style="font-weight: bold; background: #e5e7eb;">
+                        <td style="padding: 8px; border: 1px solid #000; text-align: right;">মোট:</td>
+                        <td style="padding: 8px; border: 1px solid #000; text-align: right;">₹ ${totalAmt}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        `;
+    };
+
+    let reportHtml = `<div id="report-print-area" style="padding: 30px; font-family: 'Tiro Bangla', serif; color: black; width: 100%; box-sizing: border-box;">`;
+
+    // --- ৩. Summary Page Construction ---
+    if (type === 'all') {
+        reportHtml += getReportHeader('আর্থিক ব্যালেন্সশীট');
+        let balanceAmt = totalInc - totalExp;
+        let balanceText = balanceAmt >= 0 ? 'উদ্বৃত্ত (Surplus)' : 'ঘাটতি (Deficit)';
+        let absBalance = Math.abs(balanceAmt);
+
+        reportHtml += `
+            <div style="display: flex; justify-content: space-between; gap: 20px;">
+                <div style="width: 48%;">
+                    <h3 style="text-align: center; border-bottom: 1px solid #000; padding-bottom: 5px;">আয়ের খাত</h3>
+                    ${buildSummaryTable('আয়ের খাত (Category)', incSummary, totalInc)}
+                    <p style="font-size: 14px; font-weight: bold; margin-top: 5px;">মোট আয় কথায়: ${numberToBengaliWords(totalInc)} মাত্র</p>
+                </div>
+
+                <div style="width: 48%;">
+                    <h3 style="text-align: center; border-bottom: 1px solid #000; padding-bottom: 5px;">ব্যয়ের খাত</h3>
+                    ${buildSummaryTable('ব্যয়ের কারণ (Category)', expSummary, totalExp)}
+                    <p style="font-size: 14px; font-weight: bold; margin-top: 5px;">মোট ব্যয় কথায়: ${numberToBengaliWords(totalExp)} মাত্র</p>
+                </div>
+            </div>
+            
+            <div style="margin-top: 30px; padding: 15px; border: 2px dashed #000; text-align: center; background: ${balanceAmt >= 0 ? '#f0fdf4' : '#fef2f2'}; page-break-inside: avoid;">
+                <h3 style="margin: 0; color: ${balanceAmt >= 0 ? '#166534' : '#991b1b'};">
+                    মোট আয় ব্যয় করে ${balanceText}: ₹ ${absBalance}/-
+                </h3>
+                <p style="margin: 5px 0 0 0; font-weight: bold;">(কথায়: ${numberToBengaliWords(absBalance)} মাত্র)</p>
+            </div>
+        `;
+    } else if (type === 'income') {
+        reportHtml += getReportHeader('আয়ের রিপোর্ট');
+        reportHtml += `
+            <div style="width: 80%; margin: 0 auto;">
+                ${buildSummaryTable('আয়ের খাত (Category)', incSummary, totalInc)}
+                <div style="margin-top: 15px; padding: 10px; border: 1px solid #000; background: #f3f4f6; text-align: center;">
+                    <p style="font-size: 16px; font-weight: bold; margin: 0;">মোট আয়: ₹ ${totalInc}/-</p>
+                    <p style="font-size: 14px; font-weight: bold; margin: 5px 0 0 0;">(কথায়: ${numberToBengaliWords(totalInc)} মাত্র)</p>
+                </div>
+            </div>
+        `;
+    } else if (type === 'expense') {
+        reportHtml += getReportHeader('ব্যয়ের রিপোর্ট');
+        reportHtml += `
+            <div style="width: 80%; margin: 0 auto;">
+                ${buildSummaryTable('ব্যয়ের কারণ (Category)', expSummary, totalExp)}
+                <div style="margin-top: 15px; padding: 10px; border: 1px solid #000; background: #f3f4f6; text-align: center;">
+                    <p style="font-size: 16px; font-weight: bold; margin: 0;">মোট ব্যয়: ₹ ${totalExp}/-</p>
+                    <p style="font-size: 14px; font-weight: bold; margin: 5px 0 0 0;">(কথায়: ${numberToBengaliWords(totalExp)} মাত্র)</p>
+                </div>
+            </div>
+        `;
+    }
+
+    // Summary পেজের নিচে সিগনেচার
+    reportHtml += getSignatureBlock();
+    reportHtml += `<div class="html2pdf__page-break"></div>`;
+
+
+    // --- ৪. Details Pages Construction ---
+    const renderDetailsTable = (data, title, isIncome) => {
         if (data.length === 0) return '';
         let total = 0;
         let rows = data.map(d => {
             total += d.amount;
-            // 🟢 Row যেন মাঝখান থেকে না ভাঙে তার জন্য স্টাইল যোগ করা হয়েছে
+            let attachLink = '-';
+            if(d.imageUrl) {
+                attachLink = `<a href="${d.imageUrl}" target="_blank" style="color: blue; text-decoration: underline;">ডাউনলোড</a>`;
+            } else if (d.imageBase64) {
+                attachLink = `<a href="${d.imageBase64}" download="Bill_${d.id}.jpg" style="color: blue; text-decoration: underline;">ডাউনলোড</a>`;
+            }
+
+            // word-break: break-word ব্যবহার করা হলো যাতে ভাউচার নং ওভারফ্লো না করে
             return `
-                <tr style="page-break-inside: avoid; break-inside: avoid;">
-                    <td style="padding: 6px; border: 1px solid #ccc;">${isIncome ? d.donor : d.reason}</td>
-                    <td style="padding: 6px; border: 1px solid #ccc; text-align: center;">${d.id}</td>
-                    <td style="padding: 6px; border: 1px solid #ccc; text-align: center;">${formatDate(d.date)}</td>
-                    <td style="padding: 6px; border: 1px solid #ccc; text-align: right;">₹ ${d.amount}</td>
+                <tr style="page-break-inside: avoid;">
+                    <td style="padding: 6px; border: 1px solid #000; text-align: center; font-size: 13px;">${formatDate(d.date)}</td>
+                    <td style="padding: 6px; border: 1px solid #000; text-align: center; font-size: 13px; font-weight: bold; word-break: break-word; overflow-wrap: break-word;">${d.id}</td>
+                    <td style="padding: 6px; border: 1px solid #000; font-size: 13px;">${isIncome ? d.donor : d.reason}</td>
+                    <td style="padding: 6px; border: 1px solid #000; text-align: right; font-weight: bold; font-size: 13px;">₹ ${d.amount}</td>
+                    <td style="padding: 6px; border: 1px solid #000; font-size: 13px;">${d.remarks || '-'}</td>
+                    <td style="padding: 6px; border: 1px solid #000; text-align: center; font-size: 13px;">${attachLink}</td>
                 </tr>
             `;
         }).join('');
 
+        let headerText = isIncome ? `আয়ের খাত : ${title}` : `ব্যয়ের কারণ : ${title}`;
+
         return `
-            <div style="margin-bottom: 25px; page-break-inside: auto;">
-                <h4 style="background: ${isIncome ? '#e6ffed' : '#ffe6e6'}; padding: 8px; border-left: 4px solid ${isIncome ? 'green' : 'red'}; margin-bottom: 0; page-break-after: avoid; break-after: avoid;">${title}</h4>
-                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                    <thead style="background: #f3f4f6; display: table-header-group;">
+            <div style="margin-bottom: 30px; page-break-inside: auto;">
+                <h4 style="background: #374151; color: white; padding: 8px 10px; margin-bottom: 0; page-break-after: avoid; font-size: 15px; border: 1px solid #000;">
+                    ${headerText}
+                </h4>
+                <table style="width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 14px;">
+                    <thead style="background: #e5e7eb; display: table-header-group;">
                         <tr>
-                            <th style="padding: 6px; border: 1px solid #ccc; text-align: left;">${isIncome ? 'প্রদানকারীর নাম' : 'খরচের কারণ'}</th>
-                            <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">রিসিপ্ট/ভাউচার নং</th>
-                            <th style="padding: 6px; border: 1px solid #ccc; text-align: center;">তারিখ</th>
-                            <th style="padding: 6px; border: 1px solid #ccc; text-align: right;">টাকার পরিমাণ</th>
+                            <th style="padding: 6px; border: 1px solid #000; text-align: center; width: 12%;">তারিখ</th>
+                            <th style="padding: 6px; border: 1px solid #000; text-align: center; width: 20%;">রিসিপ্ট/ভাউচার নং</th>
+                            <th style="padding: 6px; border: 1px solid #000; text-align: left; width: 23%;">${isIncome ? 'প্রদানকারীর নাম' : 'কারণ'}</th>
+                            <th style="padding: 6px; border: 1px solid #000; text-align: right; width: 13%;">পরিমান (₹)</th>
+                            <th style="padding: 6px; border: 1px solid #000; text-align: left; width: 20%;">মন্তব্য (Remarks)</th>
+                            <th style="padding: 6px; border: 1px solid #000; text-align: center; width: 12%;">প্রমাণ</th>
                         </tr>
                     </thead>
                     <tbody>${rows}</tbody>
                     <tfoot style="display: table-row-group;">
-                        <tr style="page-break-inside: avoid; break-inside: avoid;">
-                            <td colspan="3" style="padding: 8px; border: 1px solid #ccc; text-align: right; font-weight: bold;">মোট ${title}:</td>
-                            <td style="padding: 8px; border: 1px solid #ccc; text-align: right; font-weight: bold; color: ${isIncome ? 'green' : 'red'};">₹ ${total}</td>
+                        <tr style="page-break-inside: avoid; background: #f3f4f6;">
+                            <td colspan="3" style="padding: 8px; border: 1px solid #000; text-align: right; font-weight: bold;">মোট (Date Range Wise):</td>
+                            <td style="padding: 8px; border: 1px solid #000; text-align: right; font-weight: bold;">₹ ${total}</td>
+                            <td colspan="2" style="padding: 8px; border: 1px solid #000;"></td>
                         </tr>
                     </tfoot>
                 </table>
@@ -2128,46 +2293,100 @@ function generateDetailedReport() {
         `;
     };
 
-    // Income Rendering
+    // Income Details Section
     if (type === 'all' || type === 'income') {
+        let hasIncome = false;
+        let incomeDetailsHtml = `
+            <div style="text-align:center; margin-bottom: 20px; border-bottom: 2px solid #ccc; padding-bottom: 10px; page-break-after: avoid;">
+                <h3 style="font-size: 20px; color:#1e3a8a; margin:0; font-weight: bold;">আয়ের বিস্তারিত</h3>
+                <p style="font-size: 14px; font-weight: bold; margin-top: 5px;">
+                    (Financial Year: ${fy} | Date Range: ${start ? formatDate(start) : 'All Time'} - ${end ? formatDate(end) : 'Present'})
+                </p>
+            </div>
+        `;
+
         State.incomeCat.forEach(cat => {
             if (selectedCat === 'all' || selectedCat === `INC_${cat}`) {
                 const filtered = incData.filter(d => d.category === cat);
-                reportHtml += renderTable(filtered, cat, true);
+                if(filtered.length > 0) {
+                    incomeDetailsHtml += renderDetailsTable(filtered, cat, true);
+                    hasIncome = true;
+                }
             }
         });
+        
+        if(hasIncome) reportHtml += incomeDetailsHtml;
     }
 
-    // Expense Rendering
+    // Expense Details Section
     if (type === 'all' || type === 'expense') {
+        let hasExpense = false;
+        let expenseDetailsHtml = `
+            <div style="text-align:center; margin-top: 30px; margin-bottom: 20px; border-bottom: 2px solid #ccc; padding-bottom: 10px; page-break-after: avoid;">
+                <h3 style="font-size: 20px; color:#1e3a8a; margin:0; font-weight: bold;">খরচের বিস্তারিত</h3>
+                <p style="font-size: 14px; font-weight: bold; margin-top: 5px;">
+                    (Financial Year: ${fy} | Date Range: ${start ? formatDate(start) : 'All Time'} - ${end ? formatDate(end) : 'Present'})
+                </p>
+            </div>
+        `;
+
         State.expenseCat.forEach(cat => {
             if (selectedCat === 'all' || selectedCat === `EXP_${cat}`) {
                 const filtered = expData.filter(d => d.category === cat);
-                reportHtml += renderTable(filtered, cat, false);
+                if(filtered.length > 0) {
+                    expenseDetailsHtml += renderDetailsTable(filtered, cat, false);
+                    hasExpense = true;
+                }
             }
         });
+        
+        if(hasExpense) reportHtml += expenseDetailsHtml;
     }
 
+    // Details পেজের শেষে সিগনেচার
+    reportHtml += getSignatureBlock();
+    
+    // রিপোর্টের সমাপ্তি
     reportHtml += `
-            <p style="font-size:10px; text-align:center; color:gray; margin-top: 30px;">Generated on: ${new Date().toLocaleString()}</p>
+            <div style="text-align:center; font-weight:bold; font-size: 18px; margin-top: 40px; padding-top: 15px; border-top: 2px dashed #000; page-break-inside: avoid;">
+                -:সমাপ্ত:-
+            </div>
         </div>
     `;
 
-    // PDF Generation
+    // --- ৫. PDF Generation Setup ---
+    const generateBtn = document.querySelector('button[onclick="generateDetailedReport()"]');
+    const originalBtnText = generateBtn.innerHTML;
+    generateBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> জেনারেট হচ্ছে...`;
+    generateBtn.disabled = true;
+
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = reportHtml;
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    tempDiv.style.top = '0';
     document.body.appendChild(tempDiv);
     
-    // 🟢 html2pdf এর সেটিংসে পেজ ব্রেক এবং মার্জিন ফিক্স করা হয়েছে
-    html2pdf().set({
-        margin: [15, 10, 15, 10], 
-        filename: 'Detailed_Report.pdf', 
-        pagebreak: { mode: 'css', avoid: ['tr', 'h4', 'tfoot'] },
-        html2canvas: { scale: 2, scrollY: 0 }, 
-        jsPDF: { format: 'a4', orientation: 'p' }
-    }).from(tempDiv.firstElementChild).save().then(()=>{
+    const opt = {
+        margin:       [10, 10, 15, 10], 
+        filename:     `MSC_Financial_Report_${Date.now()}.pdf`,
+        image:        { type: 'jpeg', quality: 1 }, 
+        pagebreak:    { mode: ['css', 'legacy'], avoid: ['tr', 'tfoot', 'h4'] },
+        html2canvas:  { scale: 3, useCORS: true, letterRendering: true }, 
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'p' }
+    };
+
+    try {
+        await html2pdf().set(opt).from(tempDiv.firstElementChild).save();
+    } catch (e) {
+        console.error("PDF Generation Error:", e);
+        alert("PDF তৈরি করতে সমস্যা হয়েছে।");
+    } finally {
         document.body.removeChild(tempDiv);
-    });
+        generateBtn.innerHTML = originalBtnText;
+        generateBtn.disabled = false;
+        if(window.lucide) lucide.createIcons();
+    }
 }
     </script>
 </body>

@@ -427,7 +427,7 @@
     </div>
 
 
-    <div id="pdf-wrapper" style="position: absolute; top: 0; left: -9999px; z-index: -9999; opacity: 0; pointer-events: none; width: 800px; background: white;">
+    <div id="pdf-wrapper" style="position: absolute; top: 0; left: 0; z-index: -9999; visibility: hidden; width: 800px; background: white;">
         <div id="receipt-render-area" style="width: 800px; padding: 20px; background: white;">
             <div id="receipt-template">
                 <div class="receipt-header">
@@ -714,29 +714,65 @@
             
             State.incomeData.push(newData);
             
-      // Backend এ ডেটা পাঠানোর লজিক (Fetch API)
-if(WEB_APP_URL !== "আপনার_গুগল_শিটের_ওয়েব_অ্যাপ_লিংক_এখানে_দিন") {
-    fetch(WEB_APP_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: "addIncome", data: newData })
-    })
-    .then(res => res.json())
-    .then(data => console.log("Income Saved to Google Sheet:", data))
-    .catch(err => console.error("Error saving to sheet:", err));
-}
+            // Backend এ ডেটা পাঠানোর লজিক (Fetch API)
+            if(WEB_APP_URL !== "আপনার_গুগল_শিটের_ওয়েব_অ্যাপ_লিংক_এখানে_দিন") {
+                fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: "addIncome", data: newData })
+                })
+                .then(res => res.json())
+                .then(data => console.log("Income Saved to Google Sheet:", data))
+                .catch(err => console.error("Error saving to sheet:", err));
+            }
 
-            // Generate PDF Automatically
-            await generatePDFReceipt(newData);
-
-            clearForm('income');
-            // Show Success UI (Not alert as per rules, using subtle visual cue)
+            // বাটনের এনিমেশন (SAVED দেখানোর জন্য)
             const btn = document.querySelector('button[onclick="saveIncome()"]');
             const originalText = btn.innerHTML;
             btn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> SAVED!`;
             btn.classList.replace('bg-green-600', 'bg-blue-600');
-            lucide.createIcons();
-            setTimeout(() => { btn.innerHTML = originalText; btn.classList.replace('bg-blue-600', 'bg-green-600'); lucide.createIcons();}, 2000);
+            if(window.lucide) lucide.createIcons();
+            setTimeout(() => { btn.innerHTML = originalText; btn.classList.replace('bg-blue-600', 'bg-green-600'); if(window.lucide) lucide.createIcons();}, 2000);
+
+            // 🟢 নতুন Pop-up (Yes/No) লজিক
+            showCustomPopup(`
+                <div class="text-center py-4">
+                    <i data-lucide="check-circle-2" class="w-16 h-16 text-green-500 mx-auto mb-3"></i>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">সফলভাবে সেভ হয়েছে!</h3>
+                    <p class="text-sm text-gray-600 mb-6">রিসিপ্ট নং: <strong class="text-blue-600">${newData.id}</strong></p>
+                    <p class="mb-5 text-gray-700 font-medium">আপনি কি এই বিলের PDF ডাউনলোড করতে চান?</p>
+                    <div class="flex justify-center gap-4">
+                        <button id="btn-dl-yes" class="bg-blue-600 text-white px-6 py-2 rounded shadow hover:bg-blue-700 flex items-center gap-2">
+                            <i data-lucide="download" class="w-4 h-4"></i> হ্যাঁ (Yes)
+                        </button>
+                        <button id="btn-dl-no" class="bg-gray-200 text-gray-800 px-6 py-2 rounded shadow hover:bg-gray-300">
+                            না (No)
+                        </button>
+                    </div>
+                </div>
+            `, "নিশ্চিতকরণ (Confirmation)");
+
+            // যদি 'হ্যাঁ' তে ক্লিক করে
+            document.getElementById('btn-dl-yes').onclick = async () => {
+                const dlBtn = document.getElementById('btn-dl-yes');
+                dlBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> ডাউনলোড হচ্ছে...`;
+                dlBtn.disabled = true;
+                document.getElementById('btn-dl-no').disabled = true;
+                
+                await generatePDFReceipt(newData); // PDF ডাউনলোড হবে
+                
+                closeModal(); // Pop-up বন্ধ হবে
+                clearForm('income'); // ফর্ম ক্লিয়ার হবে
+            };
+
+            // যদি 'না' তে ক্লিক করে
+            document.getElementById('btn-dl-no').onclick = () => {
+                closeModal(); // শুধু Pop-up বন্ধ হবে
+                clearForm('income'); // ফর্ম ক্লিয়ার হবে
+            };
+
+            // আইকনগুলো লোড করার জন্য
+            setTimeout(() => { if(window.lucide) lucide.createIcons(); }, 10);
         }
 
         // --- 6. EXPENSE LOGIC & IMAGE UPLOAD ---
@@ -1689,19 +1725,20 @@ function deleteCategory(type, index) {
 
         // 1. FORCED AGGRESSIVE PDF DOWNLOAD (Prompts user for Path automatically)
         window.generatePDFReceipt = async function(data) {
-            // Setup exactly as before to avoid breaking layout
             document.getElementById('pr-receipt-no').innerText = data.id;
             document.getElementById('pr-date').innerText = formatDate(data.date);
             document.getElementById('pr-donor').innerText = data.donor;
             document.getElementById('pr-category').innerText = data.category;
             document.getElementById('pr-amount-num').innerText = data.amount;
             document.getElementById('pr-amount-words').innerText = numberToBengaliWords(data.amount);
-if(document.getElementById('pr-payment-mode')) {
+            
+            if(document.getElementById('pr-payment-mode')) {
                 document.getElementById('pr-payment-mode').innerText = data.payMode || 'Cash';
             }
             if(document.getElementById('pr-account-name')) {
                 document.getElementById('pr-account-name').innerText = (data.payMode === 'Online' && data.account) ? `(A/c: ${data.account})` : '';
             }
+            
             new QRious({
                 element: document.getElementById('receipt-qr'),
                 value: data.id, size: 80
@@ -1715,32 +1752,30 @@ if(document.getElementById('pr-payment-mode')) {
             const secArea = document.getElementById('pr-sec-sign-area');
             const treArea = document.getElementById('pr-tre-sign-area');
             
-  // ১. ক্রস-অরিজিন পলিসি বাইপাস করার জন্য crossorigin="anonymous" যোগ করা হলো
-secArea.innerHTML = secSign && secSign.base64 ? `<img src="${secSign.base64}" class="sign-img" crossorigin="anonymous">` : `<div style="height:40px; margin-bottom:2px;"></div>`;
-secArea.innerHTML += `<div style="border-top: 1px solid black; padding-top: 5px;">Secretary Signature</div>`;
+            secArea.innerHTML = secSign && secSign.base64 ? `<img src="${secSign.base64}" class="sign-img" crossorigin="anonymous">` : `<div style="height:40px; margin-bottom:2px;"></div>`;
+            secArea.innerHTML += `<div style="border-top: 1px solid black; padding-top: 5px;">Secretary Signature</div>`;
 
-treArea.innerHTML = treSign && treSign.base64 ? `<img src="${treSign.base64}" class="sign-img" crossorigin="anonymous">` : `<div style="height:40px; margin-bottom:2px;"></div>`;
-treArea.innerHTML += `<div style="border-top: 1px solid black; padding-top: 5px;">Treasurer Signature</div>`;
+            treArea.innerHTML = treSign && treSign.base64 ? `<img src="${treSign.base64}" class="sign-img" crossorigin="anonymous">` : `<div style="height:40px; margin-bottom:2px;"></div>`;
+            treArea.innerHTML += `<div style="border-top: 1px solid black; padding-top: 5px;">Treasurer Signature</div>`;
 
-// 🌟 ২. জাদুকরী লাইন (RACE CONDITION FIX): 
-// ব্রাউজারকে ছবিটি DOM-এ সম্পূর্ণ রেন্ডার করার জন্য ৮০০ মিলিসেকেন্ড সময় দেওয়া হলো
-await new Promise(resolve => setTimeout(resolve, 800));
+            await new Promise(resolve => setTimeout(resolve, 800));
 
-const element = document.getElementById('receipt-template');
-const parentContainer = document.getElementById('receipt-render-area').parentNode;
-            parentContainer.style.display = 'block'; 
+            const element = document.getElementById('receipt-template');
+            const parentContainer = document.getElementById('receipt-render-area').parentNode;
+            
+            // রেন্ডার করার আগে ভিজিবল করতে হবে যেন ঠিকমতো ছবি তুলতে পারে
+            parentContainer.style.visibility = 'visible'; 
 
-           // PDF Options Update: Forcing STRICT Portrait (A4)
-           const opt = {
-                margin:       [10, 0, 0, 0], // উপরে ১০ মিমি মার্জিন
+            // 🟢 এই অপশনটি আপনার কোড থেকে ডিলিট হয়ে গিয়েছিল, এটিই কম্পিউটারকে কাটতে বাধা দেবে
+            const opt = {
+                margin:       [10, 0, 0, 0], 
                 filename:     `${data.id.replace(/\//g, '-')}_Receipt.pdf`,
                 image:        { type: 'jpeg', quality: 1 },
-                html2canvas:  { scale: 2, useCORS: true, windowWidth: 800 }, 
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'p' } // 'p' মানে Portrait বা লম্বালম্বি
+                html2canvas:  { scale: 2, useCORS: true, windowWidth: 800, scrollX: 0, scrollY: 0, x: 0, y: 0 }, 
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'p' } 
             };
 
             try {
-                // Aggressive BLOB download forces Mobile devices to ask for Storage Access/Path
                 const pdfWorker = html2pdf().set(opt).from(element);
                 const pdfBlob = await pdfWorker.outputPdf('blob');
                 const blobUrl = URL.createObjectURL(pdfBlob);
@@ -1752,7 +1787,6 @@ const parentContainer = document.getElementById('receipt-render-area').parentNod
                 document.body.appendChild(a);
                 a.click();
                 
-                // Cleanup URL memory after triggering
                 setTimeout(() => {
                     document.body.removeChild(a);
                     URL.revokeObjectURL(blobUrl);
@@ -1762,7 +1796,8 @@ const parentContainer = document.getElementById('receipt-render-area').parentNod
                 console.error("Advanced Download Error, falling back...", error);
                 await html2pdf().set(opt).from(element).save();
             } finally {
-                parentContainer.style.display = 'none'; 
+                // কাজ শেষ হলে আবার লুকিয়ে দেওয়া হলো
+                parentContainer.style.visibility = 'hidden'; 
             }
         };
 

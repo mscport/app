@@ -22,7 +22,7 @@
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 15px; }
         input, select { width: 100%; padding: 10px; border: 1px solid #cfd8dc; border-radius: 6px; font-family: 'Hind Siliguri', sans-serif; font-size: 16px; }
-        .btn-submit { width: 100%; padding: 12px; background: var(--primary-color); color: white; border: none; border-radius: 6px; font-size: 18px; font-weight: 600; margin-top: 10px; }
+        .btn-submit { width: 100%; padding: 12px; background: var(--primary-color); color: white; border: none; border-radius: 6px; font-size: 18px; font-weight: 600; margin-top: 10px; cursor: pointer; }
         .table-responsive { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 5px; }
         th, td { border-bottom: 1px solid #eee; padding: 10px 5px; text-align: left; vertical-align: middle; }
@@ -49,7 +49,7 @@
         #suggestions div:hover { background-color: #f1f1f1; color: var(--primary-color); }
         #timerModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; display: none; flex-direction: column; justify-content: center; align-items: center; color: white; }
         .timer-display { font-size: clamp(30px, 11vw, 55px); font-weight: bold; font-family: monospace; color: #00e676; margin: 15px 0; text-shadow: 0 0 10px rgba(0,230,118,0.5); width: 100%; text-align: center; white-space: nowrap; overflow: hidden; }
-        #loginModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 9999; display: flex; justify-content: center; align-items: center; }
+        #loginModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 9999; display: none; justify-content: center; align-items: center; }
         .loader { display: none; text-align: center; color: var(--primary-color); }
         .games-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .game-checkbox { background: #fff; padding: 8px; border: 1px solid #ddd; border-radius: 4px; display: flex; align-items: center; font-size: 14px; }
@@ -77,10 +77,11 @@
 
 <div id="loginModal">
     <div style="background:white; padding:30px; border-radius:10px; width:85%; max-width:300px; text-align:center;">
-        <h2 style="color:var(--primary-color);">লগিন</h2>
-        <input type="number" id="loginPin" placeholder="PIN" style="text-align:center; font-size:24px; letter-spacing:5px;" inputmode="numeric">
-        <button class="btn-submit" onclick="checkLogin()">প্রবেশ</button>
-        <p style="font-size:12px; margin-top:10px; color:#666;">xxxx (Admin) | 1234 (Staff)</p>
+        <h2 id="loginModalTitle" style="color:var(--primary-color);">লগিন</h2>
+        <input type="text" id="loginUsername" placeholder="Username" style="margin-bottom:15px; text-align:center;">
+        <input type="password" id="loginPassword" placeholder="Password" style="margin-bottom:15px; text-align:center;">
+        <button class="btn-submit" onclick="processLogin()">প্রবেশ</button>
+        <button class="btn-submit" style="background:#f44336; margin-top:10px;" onclick="closeLoginModal()">বাতিল</button>
     </div>
 </div>
 
@@ -239,6 +240,13 @@
 </div>
 
 <div class="container">
+    <div id="authHeader" style="display: flex; justify-content: flex-end; padding: 10px; background: #e0f2f1; border-top-left-radius: 8px; border-top-right-radius: 8px; border-bottom: 1px solid #b2dfdb;">
+        <button id="btnJudgeLogin" class="btn-sm" style="background: var(--primary-color); padding: 5px 15px; font-weight: bold; margin-right: 5px;" onclick="showLoginModal('judges')">বিচারক লগিন</button>
+        <button id="btnMemberLogin" class="btn-sm" style="background: #1976d2; padding: 5px 15px; font-weight: bold;" onclick="showLoginModal('member')">সদস্য লগিন</button>
+        <span id="loggedInUserText" style="display:none; margin-right: 10px; font-weight: bold; color: var(--primary-color); align-self: center;"></span>
+        <button id="btnLogoutTop" class="btn-sm btn-del" style="display:none; padding: 5px 15px; font-weight: bold;" onclick="doLogout()">লগআউট</button>
+    </div>
+    
     <div class="tabs">
         <button class="tab-btn active" id="tab-reg" onclick="switchTab('registration')">নাম নথিভুক্ত</button>
         <button class="tab-btn" id="tab-part" onclick="switchTab('participants')">যোগদাতা</button>
@@ -589,30 +597,84 @@
         renderPlayerList();
     }
 
-    function checkLogin() {
-        const pin = document.getElementById('loginPin').value;
-        if(pin === '12349') { SafeSession.setItem('role', 'admin'); initApp(); }
-        else if(pin === '1234') { SafeSession.setItem('role', 'staff'); initApp(); }
-        else alert('ভুল পিন!');
+    // ========================================================
+    // AUTHENTICATION LOGIC
+    // ========================================================
+    let expectedRoleForLogin = '';
+
+    function showLoginModal(roleType) {
+        expectedRoleForLogin = roleType;
+        document.getElementById('loginModalTitle').innerText = roleType === 'judges' ? 'বিচারক লগিন' : 'সদস্য লগিন';
+        document.getElementById('loginUsername').value = '';
+        document.getElementById('loginPassword').value = '';
+        document.getElementById('loginModal').style.display = 'flex';
+    }
+
+    function closeLoginModal() {
+        document.getElementById('loginModal').style.display = 'none';
+    }
+
+    function processLogin() {
+        const u = document.getElementById('loginUsername').value.trim();
+        const p = document.getElementById('loginPassword').value.trim();
+
+        if (expectedRoleForLogin === 'judges' && u === 'judges' && p === '12349') {
+            SafeSession.setItem('role', 'admin');
+            closeLoginModal();
+            initApp();
+        } else if (expectedRoleForLogin === 'member' && u === 'member' && p === '12349') {
+            SafeSession.setItem('role', 'staff');
+            closeLoginModal();
+            initApp();
+        } else {
+            alert('ভুল ইউজারনেম বা পাসওয়ার্ড!');
+        }
     }
 
     function initApp() {
-        document.getElementById('loginModal').style.display = 'none';
         const role = SafeSession.getItem('role');
-        if(role === 'staff') {
-            document.getElementById('tab-mgmt').style.display = 'none';
-            document.getElementById('tab-set').style.display = 'none';
+
+        // Default constraints for NO LOGIN (NORMAL LANDING PAGE)
+        document.getElementById('tab-mgmt').style.display = 'none';
+        document.getElementById('tab-set').style.display = 'none';
+        
+        // Auth UI
+        document.getElementById('btnJudgeLogin').style.display = 'inline-block';
+        document.getElementById('btnMemberLogin').style.display = 'inline-block';
+        document.getElementById('btnLogoutTop').style.display = 'none';
+        document.getElementById('loggedInUserText').style.display = 'none';
+
+        if(role === 'admin') {
+            // Full Access
+            document.getElementById('tab-mgmt').style.display = '';
+            document.getElementById('tab-set').style.display = '';
+            
+            document.getElementById('btnJudgeLogin').style.display = 'none';
+            document.getElementById('btnMemberLogin').style.display = 'none';
+            document.getElementById('loggedInUserText').innerText = '👤 বিচারক';
+            document.getElementById('loggedInUserText').style.display = 'inline-block';
+            document.getElementById('btnLogoutTop').style.display = 'inline-block';
+        } else if(role === 'staff') {
+            // Limited Access (already hidden by default rules above)
+            document.getElementById('btnJudgeLogin').style.display = 'none';
+            document.getElementById('btnMemberLogin').style.display = 'none';
+            document.getElementById('loggedInUserText').innerText = '👤 সদস্য';
+            document.getElementById('loggedInUserText').style.display = 'inline-block';
+            document.getElementById('btnLogoutTop').style.display = 'inline-block';
         }
+
         document.getElementById('regDate').valueAsDate = new Date();
         
         fetchData().then(() => {
             if(document.getElementById('registration').classList.contains('active')) {
                 switchTab('registration');
+            } else if (!role && (document.getElementById('management').classList.contains('active') || document.getElementById('settings').classList.contains('active'))) {
+                switchTab('registration');
             }
         });
     }
 
-async function fetchData() {
+    async function fetchData() {
         if(!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("URL")) return;
         try {
             let res = await fetch(GOOGLE_SCRIPT_URL);
@@ -1341,7 +1403,6 @@ async function fetchData() {
     function showToast(m) { let t=document.createElement("div"); t.innerText=m; Object.assign(t.style,{position:"fixed",bottom:"20px",right:"20px",background:"#333",color:"#fff",padding:"15px",borderRadius:"5px",zIndex:"10000"}); document.body.appendChild(t); setTimeout(()=>{t.remove()},5000); }
     async function manualRefresh(b) { b.innerText="..."; try{await fetchData(); renderMgmt(); renderResults(); alert("আপডেট হয়েছে");}catch(e){alert("Error");} b.innerText="🔄 ডাটা রিফ্রেশ"; }
     function doLogout() { if(confirm("লগআউট?")) { SafeSession.clear(); location.reload(); } }
-    if(SafeSession.getItem('role')) checkLogin();
     
 // --- New Functions for Detailed Popup & Image Management ---
 
@@ -1728,6 +1789,9 @@ async function generateDrawingCertificate(p, rank) {
 }
 // ========================================================
     
+// Initialize UI state on page load
+initApp();
+
 </script>
 </body>
 </html>

@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ক্রীড়া প্রতিযোগিতা ম্যানেজমেন্ট</title>
-    <!-- ফন্ট ও স্টাইল -->
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root { --primary-color: #00695c; --secondary-color: #004d40; --accent-color: #ff8f00; --bg-color: #eceff1; --text-color: #263238; --white: #ffffff; }
         * { box-sizing: border-box; }
@@ -98,7 +98,24 @@
         </div>
     </div>
 </div>
+<div id="fullEditModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:4000; justify-content:center; align-items:center;">
+    <div style="background:white; padding:20px; border-radius:8px; width:90%; max-width:400px;">
+        <h3 style="margin-top:0; color:var(--primary-color);">তথ্য সংশোধন</h3>
+        <label>নামের বানান:</label>
+        <input type="text" id="fullEditName" style="margin-bottom:10px;">
+        <label>ফোন নং:</label>
+        <input type="number" id="fullEditMobile" style="margin-bottom:10px;">
+        <label>ঠিকানা:</label>
+        <input type="text" id="fullEditAddress" style="margin-bottom:10px;">
+        <label>ক্লাস:</label>
+        <select id="fullEditClass" style="margin-bottom:15px; width:100%; padding:10px; border:1px solid #cfd8dc; border-radius:6px; font-family:'Hind Siliguri';"></select>
 
+        <div style="text-align:right;">
+            <button onclick="document.getElementById('fullEditModal').style.display='none'" style="padding:8px 15px; background:#f44336; color:white; border:none; border-radius:4px; cursor:pointer;">বাতিল</button>
+            <button onclick="saveFullEditData()" style="padding:8px 15px; background:#4caf50; color:white; border:none; border-radius:4px; cursor:pointer;">সেভ করুন</button>
+        </div>
+    </div>
+</div>
 <div id="artSlipModal" class="art-slip-modal">
     <div class="slip-content">
         <div id="slipToPrint" style="padding:15px; background:white; position:relative;">
@@ -168,50 +185,28 @@
     </div>
 </div>
 
-<!-- ======================================================== -->
-<!-- FEATURE 3: NEW DRAWING CERTIFICATE TEMPLATE (Hidden A4)  -->
-<!-- ======================================================== -->
-<div id="artCertNewTemplate" style="display:none; width: 210mm; height: 297mm; background: #ffffff; padding: 20mm; position: absolute; left: -9999px; top: -9999px; box-sizing: border-box; font-family: 'Times New Roman', Times, serif;">
-    <div style="border: 8px double #166534; padding: 15mm; height: 100%; position: relative; border-radius: 10px;">
-        <!-- Headers -->
-        <div style="position: absolute; top: 15mm; left: 15mm; font-size: 14px; font-weight: bold;">
-            Certificate No: <span id="feat3CertNo" style="color: #b91c1c;"></span>
-        </div>
-        <div style="position: absolute; top: 15mm; right: 15mm; font-size: 14px; font-weight: bold;">
-            Date of Issue: <span id="feat3IssueDate"></span>
+<div id="artCertNewTemplate" style="display:none; width: 1123px; height: 794px; min-width: 1123px; min-height: 794px; position: fixed; top: 0; left: 0; z-index: -9999; box-sizing: border-box; font-family: 'Times New Roman', Times, serif; color: #000; background: #fff;">
+    <img src="https://i.ibb.co/93kMRnmq/Picsart-26-03-25-07-46-24-090.jpg" crossorigin="anonymous" style="position: absolute; top:0; left:0; width:100%; height:100%; z-index: 1;">
+
+    <div style="position: absolute; top:0; left:0; width:100%; height:100%; z-index: 2;">
+        
+        <div id="feat3Name" style="position: absolute; top: 38%; left: 0; width: 100%; text-align: center; font-size: 50px; font-weight: bold; color: #000; font-family: 'Playfair Display', serif; font-style: italic;">
+            Name Here
         </div>
 
-        <!-- Title -->
-        <div style="text-align: center; margin-top: 40mm;">
-            <h1 style="font-size: 42px; color: #15803d; margin-bottom: 10mm; text-transform: uppercase; letter-spacing: 2px;">
-                CERTIFICATE OF ACHIEVEMENT
-            </h1>
+        <div id="feat3Pos" style="position: absolute; top: 48%; left: 46%; transform: translateX(-50%); font-size: 32px; font-weight: bold; color: #000; text-align: center; width: 100px;">
+            1ST
         </div>
 
-        <!-- Body -->
-        <div style="text-align: center; font-size: 24px; line-height: 1.8; margin-top: 25mm;">
-            <p>This is to proudly certify that</p>
-            <h2 id="feat3Name" style="font-size: 36px; color: #1e3a8a; border-bottom: 2px solid #000; display: inline-block; padding: 0 30px; margin: 15px 0; font-style: italic;"></h2>
-            <p>of Class <span id="feat3Class" style="font-weight: bold;"></span></p>
-            <p style="margin-top: 20px;">
-                has secured the <span id="feat3Pos" style="font-weight: bold; font-size: 28px; color: #c2410c;"></span> Position in the Drawing Competition
-            </p>
-            <p>
-                held on <span id="feat3EventDate" style="font-weight: bold;"></span> by <span id="feat3Org" style="font-weight: bold;"></span>.
-            </p>
+        <div id="feat3CertNo" style="position: absolute; bottom: 10%; left: 24%; font-size: 24px; font-weight: bold; color: #000;">
+            12345
         </div>
 
-        <!-- Footer Signatures -->
-        <div style="position: absolute; bottom: 25mm; left: 25mm; width: 60mm; text-align: center; border-top: 2px solid #000; padding-top: 10px; font-weight: bold; font-size: 18px;">
-            Judges Signature
-        </div>
-        <div style="position: absolute; bottom: 25mm; right: 25mm; width: 60mm; text-align: center; border-top: 2px solid #000; padding-top: 10px; font-weight: bold; font-size: 18px;">
-            Authority Signature
+        <div id="feat3Badge" style="position: absolute; top: 42%; left: 8%; width: 130px; height: 130px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 42px; font-weight: bold; color: white; box-shadow: 0 6px 12px rgba(0,0,0,0.5); border: 5px solid #fff; z-index: 10; font-family: Arial, sans-serif; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
+            1ST
         </div>
     </div>
 </div>
-<!-- ======================================================== -->
-
 <div id="timerModal">
     <button style="position:absolute; top:20px; right:20px; background:none; border:none; color:white; font-size:30px;" onclick="closeTimer()">✕</button>
     <h2 id="timerPlayerName" style="color:#ddd; margin-bottom:5px;">Player</h2>
@@ -240,9 +235,11 @@
 </div>
 
 <div class="container">
-    <div id="authHeader" style="display: flex; justify-content: flex-end; padding: 10px; background: #e0f2f1; border-top-left-radius: 8px; border-top-right-radius: 8px; border-bottom: 1px solid #b2dfdb;">
-        <button id="btnJudgeLogin" class="btn-sm" style="background: var(--primary-color); padding: 5px 15px; font-weight: bold; margin-right: 5px;" onclick="showLoginModal('judges')">বিচারক লগিন</button>
+    <div id="authHeader" style="display: flex; justify-content: flex-end; padding: 10px; background: #e0f2f1; border-top-left-radius: 8px; border-top-right-radius: 8px; border-bottom: 1px solid #b2dfdb; gap: 5px;">
+        <button id="btnJudgeLogin" class="btn-sm" style="background: var(--primary-color); padding: 5px 15px; font-weight: bold;" onclick="showLoginModal('judges')">বিচারক লগিন</button>
         <button id="btnMemberLogin" class="btn-sm" style="background: #1976d2; padding: 5px 15px; font-weight: bold;" onclick="showLoginModal('member')">সদস্য লগিন</button>
+        <button id="btnNyksLogin" class="btn-sm" style="background: #d84315; padding: 5px 15px; font-weight: bold;" onclick="showLoginModal('nyks')">NYKS লগিন</button>
+        
         <span id="loggedInUserText" style="display:none; margin-right: 10px; font-weight: bold; color: var(--primary-color); align-self: center;"></span>
         <button id="btnLogoutTop" class="btn-sm btn-del" style="display:none; padding: 5px 15px; font-weight: bold;" onclick="doLogout()">লগআউট</button>
     </div>
@@ -454,7 +451,6 @@
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzemcbN-bUKYjMWnYCs6WLavKsJIWsWIX9ZCSo3viSgELp14favmttcfNyhk1KNdeNhcg/exec";
     // ******************************************************
 
-    // --- Safe Storage Wrapper to handle SecurityError ---
     const SafeStorage = (function() {
         try {
             const ls = window.localStorage;
@@ -494,7 +490,6 @@
     let participants = [];
     const CLASS_LIST = ['Nursery', 'LKG', 'UKG', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', 'Graduate'];
     
-    // --- কাস্টম বাংলা ডিকশনারি ---
     const bengaliSurnameDictionary = {
         "shaw": "সাউ", "roy": "রায়", "de": "দে", "dey": "দে", "dutta": "দত্ত", "bose": "বসু",
         "ghosh": "ঘোষ", "mitra": "মিত্র", "das": "দাস", "chakraborty": "চক্রবর্তী",
@@ -521,10 +516,6 @@
     };
     if(SafeStorage.getItem('artConfig_v1')) artConfig = JSON.parse(SafeStorage.getItem('artConfig_v1'));
 
-    // ========================================================
-    // FEATURE 2: ADVANCED GAME CONFIGURATION UPGRADE
-    // Extended properties strictly preserved format
-    // ========================================================
     let gameConfig = {
         'hari_bhanga': { label: 'হাড়িভাঙ্গা', type: 'manual', unit: 'সেমি', sort: 'low', status: 'active', operationMode: 'manual', parameterType: 'scale' },
         'shankha': { label: 'শঙ্খবাজানো', type: 'open', unit: 'মিলি সেকেন্ড', sort: 'high', status: 'active', operationMode: 'stopwatch', parameterType: 'numeric' },
@@ -540,9 +531,6 @@
         for(let k in saved) if(gameConfig[k]) Object.assign(gameConfig[k], saved[k]);
     }
 
-    // ========================================================
-    // FEATURE 1: HELPER FUNCTION FOR SYNCING CHECKBOXES
-    // ========================================================
     function syncRegistrationGamesStatus() {
         document.querySelectorAll('.game-checkbox').forEach(label => {
             const checkbox = label.querySelector('input');
@@ -597,14 +585,14 @@
         renderPlayerList();
     }
 
-    // ========================================================
-    // AUTHENTICATION LOGIC
-    // ========================================================
     let expectedRoleForLogin = '';
 
     function showLoginModal(roleType) {
         expectedRoleForLogin = roleType;
-        document.getElementById('loginModalTitle').innerText = roleType === 'judges' ? 'বিচারক লগিন' : 'সদস্য লগিন';
+        if(roleType === 'judges') document.getElementById('loginModalTitle').innerText = 'বিচারক লগিন';
+        else if(roleType === 'member') document.getElementById('loginModalTitle').innerText = 'সদস্য লগিন';
+        else if(roleType === 'nyks') document.getElementById('loginModalTitle').innerText = 'NYKS লগিন';
+        
         document.getElementById('loginUsername').value = '';
         document.getElementById('loginPassword').value = '';
         document.getElementById('loginModal').style.display = 'flex';
@@ -626,6 +614,10 @@
             SafeSession.setItem('role', 'staff');
             closeLoginModal();
             initApp();
+        } else if (expectedRoleForLogin === 'nyks' && u === 'nyks' && p === '12349') {
+            SafeSession.setItem('role', 'nyks');
+            closeLoginModal();
+            initApp();
         } else {
             alert('ভুল ইউজারনেম বা পাসওয়ার্ড!');
         }
@@ -634,39 +626,58 @@
     function initApp() {
         const role = SafeSession.getItem('role');
 
-        // Default constraints for NO LOGIN (NORMAL LANDING PAGE)
         document.getElementById('tab-mgmt').style.display = 'none';
         document.getElementById('tab-set').style.display = 'none';
         
-        // Auth UI
+        document.getElementById('tab-reg').style.display = 'inline-block';
+        document.getElementById('tab-part').style.display = 'inline-block';
+        document.getElementById('tab-res').style.display = 'inline-block';
+        
         document.getElementById('btnJudgeLogin').style.display = 'inline-block';
         document.getElementById('btnMemberLogin').style.display = 'inline-block';
+        document.getElementById('btnNyksLogin').style.display = 'inline-block';
         document.getElementById('btnLogoutTop').style.display = 'none';
         document.getElementById('loggedInUserText').style.display = 'none';
 
         if(role === 'admin') {
-            // Full Access
-            document.getElementById('tab-mgmt').style.display = '';
-            document.getElementById('tab-set').style.display = '';
+            document.getElementById('tab-mgmt').style.display = 'inline-block';
+            document.getElementById('tab-set').style.display = 'inline-block';
             
             document.getElementById('btnJudgeLogin').style.display = 'none';
             document.getElementById('btnMemberLogin').style.display = 'none';
+            document.getElementById('btnNyksLogin').style.display = 'none';
             document.getElementById('loggedInUserText').innerText = '👤 বিচারক';
             document.getElementById('loggedInUserText').style.display = 'inline-block';
             document.getElementById('btnLogoutTop').style.display = 'inline-block';
         } else if(role === 'staff') {
-            // Limited Access (already hidden by default rules above)
             document.getElementById('btnJudgeLogin').style.display = 'none';
             document.getElementById('btnMemberLogin').style.display = 'none';
+            document.getElementById('btnNyksLogin').style.display = 'none';
             document.getElementById('loggedInUserText').innerText = '👤 সদস্য';
             document.getElementById('loggedInUserText').style.display = 'inline-block';
             document.getElementById('btnLogoutTop').style.display = 'inline-block';
+        } else if(role === 'nyks') {
+            document.getElementById('tab-reg').style.display = 'none';
+            document.getElementById('tab-part').style.display = 'none';
+            document.getElementById('tab-mgmt').style.display = 'none';
+            document.getElementById('tab-set').style.display = 'none';
+            
+            document.getElementById('btnJudgeLogin').style.display = 'none';
+            document.getElementById('btnMemberLogin').style.display = 'none';
+            document.getElementById('btnNyksLogin').style.display = 'none';
+            document.getElementById('loggedInUserText').innerText = '👤 NYKS Official';
+            document.getElementById('loggedInUserText').style.display = 'inline-block';
+            document.getElementById('btnLogoutTop').style.display = 'inline-block';
+            
+            switchTab('results'); 
         }
 
         document.getElementById('regDate').valueAsDate = new Date();
         
         fetchData().then(() => {
-            if(document.getElementById('registration').classList.contains('active')) {
+            if(role === 'nyks') {
+                if(!document.getElementById('results').classList.contains('active')) switchTab('results');
+            } else if(document.getElementById('registration').classList.contains('active')) {
                 switchTab('registration');
             } else if (!role && (document.getElementById('management').classList.contains('active') || document.getElementById('settings').classList.contains('active'))) {
                 switchTab('registration');
@@ -699,16 +710,16 @@
             participants = JSON.parse(SafeStorage.getItem('db_v8')) || []; 
         }
 
-        syncRegistrationGamesStatus(); // Ensure initial state is synced
+        syncRegistrationGamesStatus(); 
         
-        if(document.getElementById('registration').classList.contains('active')) {
+        if(SafeSession.getItem('role') === 'nyks') {
+            switchTab('results');
+        } else if(document.getElementById('registration').classList.contains('active')) {
             switchTab('registration');
         }
     }
 
-    // --- Robust pushData Function with Retry Logic ---
     async function pushData(action, payload, retryCount = 0) {
-        // 1. Save to Local Storage first (Backup)
         if(action === 'register') participants.push(payload.data);
         else if(action === 'updateScore') {
             let p = participants.find(x => x.id == payload.id);
@@ -727,10 +738,34 @@
              let p = participants.find(x => x.id == payload.id);
              if(p) { p.name = payload.newName; p.games = payload.newGames; }
         }
-        
+        else if(action === 'approveNYKS') {
+             let p = participants.find(x => x.id == payload.id);
+             if(p) { 
+                 if(!p.nyksApproved) p.nyksApproved = {};
+                 p.nyksApproved[payload.gameCode] = true;
+             }
+        }
+        // pushData ফাংশনের ভিতরে if-else ব্লকে এটি যোগ করুন:
+else if(action === 'editFullPlayer') {
+     let p = participants.find(x => x.id == payload.id);
+     if(p) {
+         p.name = payload.name;
+         if(payload.mobile !== undefined) p.mobile = payload.mobile;
+         if(payload.address !== undefined) p.address = payload.address;
+         if(payload.class) {
+             p.class = payload.class;
+             // ক্লাস বদলালে গ্রুপ এবং কনসেপ্টও আপডেট করা হলো
+             const gInfo = getArtGroupInfo(payload.class);
+             if(gInfo) {
+                 p.groupKey = gInfo.key;
+                 p.groupLabel = gInfo.label;
+                 p.concept = gInfo.concept;
+             }
+         }
+     }
+}
         SafeStorage.setItem('db_v8', JSON.stringify(participants));
 
-        // 2. Send to Server (Backend)
         if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("URL")) {
             console.warn("Google Script URL is missing or invalid.");
             return;
@@ -739,8 +774,6 @@
         const dataToSend = { action: action, ...payload };
 
         try {
-            // REMOVE HEADERS to prevent Preflight CORS issues
-            // Use simple request format
             const response = await fetch(GOOGLE_SCRIPT_URL, {
                 method: "POST",
                 redirect: "follow",
@@ -841,30 +874,45 @@
         return null;
     }
 
-    async function register() {
-        let name = document.getElementById('nameInput').value;
-        const date = document.getElementById('regDate').value;
-        const games = Array.from(document.querySelectorAll('.game-checkbox input:checked')).map(c=>c.value);
-        if(!name || games.length === 0) return alert("নাম ও খেলা দিন");
+ async function register() {
+    let name = document.getElementById('nameInput').value;
+    const date = document.getElementById('regDate').value;
+    const games = Array.from(document.querySelectorAll('.game-checkbox input:checked')).map(c=>c.value);
+    if(!name || games.length === 0) return alert("নাম ও খেলা দিন");
+    
+    let artData = {};
+    if(games.includes('art_comp')) {
+        const cls = document.getElementById('artClassSelect').value;
+        const addr = document.getElementById('artAddress').value;
+        const mob = document.getElementById('artMobile').value;
+        if(!cls || !addr || !mob) return alert("অঙ্কন প্রতিযোগিতার তথ্য দিন!");
         
-        let artData = {};
-        if(games.includes('art_comp')) {
-            const cls = document.getElementById('artClassSelect').value;
-            const addr = document.getElementById('artAddress').value;
-            const mob = document.getElementById('artMobile').value;
-            if(!cls || !addr || !mob) return alert("অঙ্কন প্রতিযোগিতার তথ্য দিন!");
-            const gInfo = getArtGroupInfo(cls);
-            artData = { class: cls, address: addr, mobile: mob, groupKey: gInfo.key, groupLabel: gInfo.label, concept: gInfo.concept };
-        }
+        // --- Duplicate Check Logic ---
+        const isDuplicate = participants.some(p => 
+            p.games && p.games.includes('art_comp') &&
+            p.name.trim().toLowerCase() === name.trim().toLowerCase() &&
+            p.class === cls &&
+            p.mobile === mob
+        );
 
-        document.getElementById('regLoader').style.display = 'block';
-        const newPlayer = { id: Date.now(), name, date, games, scores: {}, ...artData };
-        await pushData('register', { data: newPlayer });
-        document.getElementById('regLoader').style.display = 'none';
-        
-        if(games.includes('art_comp')) showArtSlip(newPlayer);
-        else { resetRegForm(); alert("নথিভুক্ত হয়েছে"); }
+        if(isDuplicate) {
+            alert("এই প্রতিযোগী ইতিমধ্যে একই নাম, ক্লাস ও ফোন নম্বর দিয়ে অঙ্কন প্রতিযোগিতায় নথিভুক্ত হয়েছেন!");
+            return; // এখানেই বন্ধ হয়ে যাবে
+        }
+        // -----------------------------
+
+        const gInfo = getArtGroupInfo(cls);
+        artData = { class: cls, address: addr, mobile: mob, groupKey: gInfo.key, groupLabel: gInfo.label, concept: gInfo.concept };
     }
+
+    document.getElementById('regLoader').style.display = 'block';
+    const newPlayer = { id: Date.now(), name, date, games, scores: {}, nyksApproved: {}, ...artData };
+    await pushData('register', { data: newPlayer });
+    document.getElementById('regLoader').style.display = 'none';
+    
+    if(games.includes('art_comp')) showArtSlip(newPlayer);
+    else { resetRegForm(); alert("নথিভুক্ত হয়েছে"); }
+}
 
     function showArtSlip(p) {
         document.getElementById('slipRegNo').innerText = p.id;
@@ -904,71 +952,46 @@
         });
     }
 
-    
     async function uploadImage(input, id) {
         if (!input.files || !input.files[0]) return;
         const file = input.files[0];
-        
-        // আমরা লেবেল খুঁজে বের করছি
         const label = document.getElementById(`lbl_${id}`);
         
-        // ১. লোডিং স্টাইল: আমরা টেক্সট পাল্টাবো না, শুধু রঙ পাল্টাবো যাতে বাটন নষ্ট না হয়
         if(label) {
-            label.style.background = "#ffa000"; // হলুদ রঙ (বোঝাবে কাজ চলছে)
+            label.style.background = "#ffa000";
             label.style.opacity = "0.7";
-            label.style.pointerEvents = "none"; // আপলোড চলাকালীন আবার ক্লিক করা যাবে মাতৃ
+            label.style.pointerEvents = "none";
         }
 
         try {
-            // কমপ্রেশন লজিক
             const compressedBase64 = await compressImage(file);
-            
-            if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("URL")) {
-                throw new Error("Google Script URL সেট করা হয়নি!");
-            }
+            if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("URL")) throw new Error("Google Script URL সেট করা হয়নি!");
 
-            // সার্ভারে পাঠানো
             const res = await fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
                 redirect: "follow",
-                body: JSON.stringify({
-                    action: 'uploadImage',
-                    imageName: `art_${id}_${Date.now()}.jpg`,
-                    imageData: compressedBase64
-                })
+                body: JSON.stringify({ action: 'uploadImage', imageName: `art_${id}_${Date.now()}.jpg`, imageData: compressedBase64 })
             });
             
-            if (!res.ok) {
-                throw new Error(`HTTP Error: ${res.status}`);
-            }
-
+            if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
             const data = await res.json();
 
             if (data.status === 'success') {
-                // ডাটাবেসে সেভ করা
                 await pushData('saveImage', { id: id, url: data.imageUrl });
-                
-                // সফল হলে লিস্ট রিফ্রেশ হবে
                 renderMgmt(); 
                 alert("✅ ছবি আপলোড সফল হয়েছে!");
-
             } else { throw new Error(data.message); }
 
         } catch (error) {
             console.error(error);
             alert("আপলোড ব্যর্থ!\nকারণ: " + error.message);
-            
-            // ফেইল করলে আগের অবস্থায় ফেরত
             if(label) {
-                label.style.background = ""; // আগের রঙ
+                label.style.background = "";
                 label.style.opacity = "1";
                 label.style.pointerEvents = "auto";
             }
         }
     }
-    
-    
-    
 
     function compressImage(file) {
         return new Promise((resolve, reject) => {
@@ -979,24 +1002,12 @@
                 img.src = event.target.result;
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    
-                    // SAFE LIMIT: 800px ensures payload stays well under GAS limits
                     const MAX_WIDTH = 800; 
-                    
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > MAX_WIDTH) {
-                        height *= MAX_WIDTH / width;
-                        width = MAX_WIDTH;
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
+                    let width = img.width, height = img.height;
+                    if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                    canvas.width = width; canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
-                    
-                    // Quality 0.4 for very small size (<50KB target)
                     resolve(canvas.toDataURL('image/jpeg', 0.4)); 
                 };
                 img.onerror = (err) => reject(err);
@@ -1010,7 +1021,6 @@
         const search = document.getElementById('mgmtSearch').value.toLowerCase();
         const area = document.getElementById('mgmtArea');
         area.innerHTML = '';
-        
         if(!game) return;
         
         if(gameConfig[game] && gameConfig[game].status === 'inactive') {
@@ -1033,7 +1043,6 @@
         else renderStandardMgmt(players, area, game);
     }
 
-    // এই ফাংশনটি দিয়ে পুরোনো renderArtMgmt ফাংশনটি রিপ্লেস করুন
     function renderArtMgmt(players, container) {
         const filterGroup = document.getElementById('artGroupFilter').value;
         if(filterGroup !== 'all') players = players.filter(p => p.groupKey === filterGroup);
@@ -1041,11 +1050,7 @@
         let table = `<table width="100%">`;
         players.forEach((p, i) => {
             const sc = (p.scores && p.scores['art_comp']) ? p.scores['art_comp'] : '';
-            
-            // Image Logic for Management View
-            let imgDisplay = p.artImage 
-                ? `<img src="${p.artImage}" style="max-width:50px; max-height:50px; border-radius:4px; border:1px solid #ccc;">` 
-                : `<span style="font-size:30px; color:#ddd;">🖼️</span>`;
+            let imgDisplay = p.artImage ? `<img src="${p.artImage}" style="max-width:50px; max-height:50px; border-radius:4px; border:1px solid #ccc;">` : `<span style="font-size:30px; color:#ddd;">🖼️</span>`;
 
             let control = '';
             if(sc) {
@@ -1058,11 +1063,7 @@
                     <div style="display:flex; flex-direction:column; gap:5px;">
                         <label class="photo-upload-label" id="lbl_${p.id}" style="position: relative; overflow: hidden;">
     📷 আপলোড
-    <input type="file" 
-           accept="image/*" 
-           capture="environment" 
-           style="position: absolute; top: 0; left: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer;" 
-           onchange="uploadImage(this, ${p.id})">
+    <input type="file" accept="image/*" capture="environment" style="position: absolute; top: 0; left: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer;" onchange="uploadImage(this, ${p.id})">
 </label>
                         <div style="margin-top:5px;">
                             <button class="btn-sm btn-1st" onclick="setRank(${p.id}, 'art_comp', '1st')">১ম</button>
@@ -1073,7 +1074,6 @@
                 `;
             }
             
-            // Clickable Name Cell
             const details = `<small style="color:gray;">${p.groupLabel || '-'} (${p.class || ''})</small>`;
             table += `<tr>
                 <td style="width:30px;">${i+1}</td>
@@ -1086,6 +1086,7 @@
         });
         container.innerHTML = table + `</table>`;
     }
+    
     function renderStandardMgmt(players, container, game) {
         const conf = gameConfig[game];
         let table = `<table width="100%">`;
@@ -1125,6 +1126,11 @@
     async function saveSajo(id, rank) { const c = document.getElementById(`sajo_c_${id}`).value, m = document.getElementById(`sajo_m_${id}`).value; if(c && m) { await pushData('updateScore', { id, gameCode: 'sajo', score: `${rank}#${c}#${m}` }); renderMgmt(); } }
     async function editScore(id, game, oldVal) { const newVal = prompt("নতুন স্কোর:", oldVal); if(newVal && newVal !== oldVal) { await pushData('updateScore', { id, gameCode: game, score: newVal }); renderMgmt(); } }
     async function resetScore(id, game) { if(confirm("মুছে আবার খেলবেন?")) { await pushData('updateScore', { id, gameCode: game, score: "" }); renderMgmt(); } }
+    
+    async function approveByNyks(id, game) {
+        await pushData('approveNYKS', { id: id, gameCode: game });
+        renderResults();
+    }
 
     let timerInt, running = false, timerData = null, elapsedTime = 0;
     function formatTime(ms) { if(isNaN(ms)||ms<0)return "00:00:00.00"; let m=Math.floor((ms/(1000*60))%60),s=Math.floor((ms/1000)%60),mil=Math.floor((ms%1000)/10); return `00:${m<10?'0'+m:m}:${s<10?'0'+s:s}:${mil<10?'0'+mil:mil}`; }
@@ -1144,8 +1150,8 @@
         if(!game) return;
 
         const conf = gameConfig[game];
+        const currentRole = SafeSession.getItem('role');
         
-        // ১. ফিল্টার লজিক পরিবর্তন: স্কোর থাকলে অথবা (অঙ্কন হলে এবং ছবি থাকলে) লিস্টে আসবে
         let list = participants.filter(p => {
             const hasScore = p.scores && p.scores[game];
             const hasImage = (game === 'art_comp' && p.artImage);
@@ -1159,12 +1165,10 @@
 
         document.getElementById('resTitle').innerText = conf.label + " - চূড়ান্ত তালিকা";
         
-        // ২. সর্টিং লজিক (যাদের স্কোর নেই তাদের নিচে রাখা হবে)
         list.sort((a, b) => {
             let sa = (a.scores && a.scores[game]) ? a.scores[game] : '';
             let sb = (b.scores && b.scores[game]) ? b.scores[game] : '';
 
-            // যদি স্কোর না থাকে, তাকে শেষে পাঠাও
             if(!sa && !sb) return 0;
             if(!sa) return 1; 
             if(!sb) return -1;
@@ -1173,7 +1177,6 @@
                 const rankMap = { '1st':1, '2nd':2, '3rd':3 };
                 const ra = (sa.includes('#') ? sa.split('#')[0] : sa).toLowerCase();
                 const rb = (sb.includes('#') ? sb.split('#')[0] : sb).toLowerCase();
-                // ম্যাপে না থাকলে (যেমন 4th বা অন্য কিছু) তাকে নিচে রাখো (99)
                 return (rankMap[ra] || 99) - (rankMap[rb] || 99);
             }
             if(game === 'glass_circle') return sa.split('|')[0].trim().localeCompare(sb.split('|')[0].trim());
@@ -1181,20 +1184,19 @@
             return (conf.sort === 'low') ? (parseFloat(sa)-parseFloat(sb)) : (parseFloat(sb)-parseFloat(sa));
         });
 
-        // ৩. টেবিল রেন্ডারিং
         list.forEach((p, i) => {
             let displayScore = (p.scores && p.scores[game]) ? p.scores[game] : '';
             let rankDisplay = (i+1) + "।"; 
             let rowStyle = "";
             let isWinner = false;
-            let badgeIcon = ""; // মেডেল বা স্ট্যাটাস লোগো
+            let badgeIcon = ""; 
+            
+            let isApproved = (p.nyksApproved && p.nyksApproved[game]) ? true : false;
 
-            // ফরম্যাটিং
             if(displayScore && game === 'hari_bhanga') displayScore += " সেমি";
             if(displayScore && (game === 'candle' || game === 'phuchka')) displayScore += " টি";
             if(displayScore && game === 'glass_circle') displayScore = `সময় ${displayScore.split('|')[0]}`;
             
-            // সাজো লজিক
             if(game === 'sajo' && displayScore) {
                 const parts = displayScore.split('#');
                 if(parts.length > 1) {
@@ -1206,46 +1208,48 @@
                 }
             }
 
-            // অঙ্কন ও মিউজিক্যাল চেয়ার লজিক
             if((game === 'musical_chair' || game === 'art_comp') && displayScore) {
                 if(displayScore === '1st') { rankDisplay = '১।'; isWinner = true; badgeIcon = '🥇'; }
                 else if(displayScore === '2nd') { rankDisplay = '২।'; isWinner = true; badgeIcon = '🥈'; }
                 else if(displayScore === '3rd') { rankDisplay = '৩।'; isWinner = true; badgeIcon = '🥉'; }
-                else { rankDisplay = (i+1) + "।"; } // র‍্যাঙ্ক নেই কিন্তু ছবি আছে
+                else { rankDisplay = (i+1) + "।"; } 
             }
 
-            // যদি স্কোর না থাকে কিন্তু ছবি থাকে (অংশগ্রহণ করেছে)
             if(!displayScore && game === 'art_comp' && p.artImage) {
                  rankDisplay = '-';
                  displayScore = '<small style="color:gray">অংশগ্রহণকারী</small>';
             }
 
-            // স্টাইল সেট করা
             if(isWinner) {
                 if(displayScore === '1st') rowStyle = "background:#fff9c4; font-weight:bold;";
                 if(displayScore === '2nd') rowStyle = "background:#f5f5f5; font-weight:bold;";
                 if(displayScore === '3rd') rowStyle = "background:#ffe0b2; font-weight:bold;";
             }
 
-            // অ্যাকশন বাটন তৈরি (ফলাফল কলামের জন্য)
             let actionButtons = `<div style="display:flex; align-items:center; gap:5px;">`;
             
-            // ১. স্ট্যাটাস লোগো (Badge)
             if(badgeIcon) actionButtons += `<span style="font-size:20px;">${badgeIcon}</span>`;
             else actionButtons += `<span style="font-weight:bold; font-size:14px;">${displayScore}</span>`;
 
-            // ২. সার্টিফিকেট লোগো
-            if(game === 'art_comp' && isWinner) {
-                actionButtons += `<button onclick="generateCertificate(${p.id}, '${displayScore}')" style="background:none; border:none; font-size:20px; cursor:pointer;" title="সার্টিফিকেট">🎖️</button>`;
+            if(isWinner) {
+                if(currentRole === 'nyks') {
+                    if(!isApproved) {
+                        actionButtons += `<button onclick="approveByNyks(${p.id}, '${game}')" style="background:#4caf50; color:white; border:none; padding:3px 8px; border-radius:4px; cursor:pointer; font-size:12px;">Approve</button>`;
+                    } else {
+                        actionButtons += `<span style="color:green; font-size:12px; font-weight:bold;">✅ Approved</span>`;
+                    }
+                }
+
+                if(isApproved) {
+                    actionButtons += `<button onclick="generateCertificate(${p.id}, '${displayScore}')" style="background:none; border:none; font-size:20px; cursor:pointer;" title="সার্টিফিকেট">🎖️</button>`;
+                }
             }
 
-            // ৩. চোখের চিহ্ন (ছবি প্রিভিউ) - শুধুমাত্র ছবি থাকলে
             if(game === 'art_comp' && p.artImage) {
                 actionButtons += `<button onclick="viewResultImage('${p.artImage}', '${p.name}')" style="background:none; border:none; font-size:20px; cursor:pointer;" title="ছবি দেখুন">👁️</button>`;
             }
             actionButtons += `</div>`;
 
-            // নামের কলামে অতিরিক্ত তথ্য
             let nameDetails = p.name;
             if(game === 'art_comp') nameDetails += `<br><small style='color:gray'>${p.groupLabel}, শ্রেণী: ${p.class}</small>`;
 
@@ -1260,44 +1264,11 @@
     }
 
     function generateCertificate(id, rank) {
-        // ========================================================
-        // FEATURE 3: DRAWING CERTIFICATE SYSTEM (DYNAMIC PDF)
-        // Intercepting for art_comp to output A4 PDF 
-        // ========================================================
         const p_feat3 = participants.find(x => x.id == id);
-        if(p_feat3 && p_feat3.games && p_feat3.games.includes('art_comp')) {
+        if(p_feat3) {
             generateDrawingCertificate(p_feat3, rank);
             return; 
         }
-        // ========================================================
-
-        const p = participants.find(x => x.id == id);
-        if(!p) return;
-
-        const nameParts = p.name.split('|');
-        const certName = nameParts.length > 1 ? nameParts[1].trim() : nameParts[0].trim();
-
-        document.getElementById('certName').innerText = certName;
-        document.getElementById('certRankText').innerText = rank + " Position";
-        document.getElementById('certBadge').innerText = rank;
-        document.getElementById('certBadge').style.background = rank === '1st' ? '#FFD700' : (rank === '2nd' ? '#C0C0C0' : '#CD7F32');
-        document.getElementById('certGroup').innerText = p.groupLabel;
-        document.getElementById('certClass').innerText = p.class;
-        
-        const cert = document.getElementById('certTemplate');
-        cert.style.display = 'block';
-        cert.style.position = 'fixed';
-        cert.style.top = '0';
-        cert.style.left = '0';
-        cert.style.zIndex = '10000';
-
-        html2canvas(cert).then(canvas => {
-            let link = document.createElement("a");
-            link.download = `Certificate_${certName}_${rank}.png`;
-            link.href = canvas.toDataURL("image/png");
-            link.click();
-            cert.style.display = 'none'; cert.style.top = '-9999px'; cert.style.left = '-9999px';
-        });
     }
 
     function renderSettingsUI() {
@@ -1319,16 +1290,12 @@
 
     function updateArtConfig(k, f, v) { artConfig[k][f] = v; }
     
-    // --- UPDATED SAVE SETTINGS (Now sends to server) ---
     async function saveArtConfig() { 
         SafeStorage.setItem('artConfig_v1', JSON.stringify(artConfig)); 
         await pushData('saveConfig', { artConfig: artConfig });
         alert("অঙ্কন কনফিগারেশন সেভ হয়েছে (Local + Server)!"); 
     }
     
-    // ========================================================
-    // FEATURE 1: Game Active/Inactive Proper Sync Included Below
-    // ========================================================
     function updateConfig(g, k, v) { 
         if(k==='duration')v=parseInt(v); 
         gameConfig[g][k]=v; 
@@ -1340,7 +1307,6 @@
         }
     }
     
-    // --- UPDATED SAVE GAME CONFIG (Now sends to server) ---
     async function saveConfig() { 
         SafeStorage.setItem('gameConfig_v10', JSON.stringify(gameConfig)); 
         await pushData('saveConfig', { gameConfig: gameConfig });
@@ -1366,7 +1332,6 @@
         });
     }
 
-    // New safe function to show games
     function showPlayerGames(id) {
         const p = participants.find(x => x.id == id);
         if(!p) return;
@@ -1403,14 +1368,11 @@
     function showToast(m) { let t=document.createElement("div"); t.innerText=m; Object.assign(t.style,{position:"fixed",bottom:"20px",right:"20px",background:"#333",color:"#fff",padding:"15px",borderRadius:"5px",zIndex:"10000"}); document.body.appendChild(t); setTimeout(()=>{t.remove()},5000); }
     async function manualRefresh(b) { b.innerText="..."; try{await fetchData(); renderMgmt(); renderResults(); alert("আপডেট হয়েছে");}catch(e){alert("Error");} b.innerText="🔄 ডাটা রিফ্রেশ"; }
     function doLogout() { if(confirm("লগআউট?")) { SafeSession.clear(); location.reload(); } }
-    
-// --- New Functions for Detailed Popup & Image Management ---
 
     function openPlayerDetails(id) {
         const p = participants.find(x => x.id == id);
         if(!p) return;
 
-        // Populate Data
         document.getElementById('detId').innerText = p.id;
         document.getElementById('detName').innerText = p.name;
         document.getElementById('detMobile').innerText = p.mobile || '-';
@@ -1420,11 +1382,9 @@
         document.getElementById('detGroup').innerText = p.groupLabel || '-';
         document.getElementById('detConcept').innerText = p.concept || '-';
         
-        // Status Logic
         const rank = (p.scores && p.scores['art_comp']) ? p.scores['art_comp'] : 'ফলাফল হয়নি';
         document.getElementById('detStatus').innerText = rank;
 
-        // Image Icon Logic
         const eyeIcon = document.getElementById('detImgIcon');
         if(p.artImage) {
             eyeIcon.style.display = 'inline-block';
@@ -1436,8 +1396,6 @@
         document.getElementById('playerDetailsModal').style.display = 'flex';
     }
 
-  
-
     async function deletePlayerImage(id) {
         if(!confirm("আপনি কি নিশ্চিত ছবিটা ডিলিট করতে চান? ড্রাইভ থেকেও মুছে যেতে পারে।")) return;
 
@@ -1445,18 +1403,15 @@
         delBtn.innerText = "মুছছে...";
         delBtn.disabled = true;
 
-        // 1. Update Local Data (Remove Image URL)
         let p = participants.find(x => x.id == id);
-        if(p) { p.artImage = ""; } // Clear locally
+        if(p) { p.artImage = ""; } 
 
-        // 2. Send request to server to overwrite image with empty string
         try {
             await pushData('saveImage', { id: id, url: '' });
-            
             alert("ছবি ডিলিট করা হয়েছে। এখন নতুন ছবি আপলোড করুন।");
             document.getElementById('imgPreviewModal').style.display = 'none';
             document.getElementById('playerDetailsModal').style.display = 'none';
-            renderMgmt(); // Refresh list to show upload button again
+            renderMgmt(); 
         } catch(e) {
             alert("ডিলিট করতে সমস্যা হয়েছে।");
         } finally {
@@ -1465,7 +1420,6 @@
         }
     }    
     
-  // ম্যানেজমেন্ট ট্যাবের জন্য (ডিলিট বাটনসহ)
     function showFullImage(id, url, name) {
         const modal = document.getElementById('imgPreviewModal');
         document.getElementById('fullSizeImg').src = url;
@@ -1474,7 +1428,6 @@
         dlBtn.href = url;
         dlBtn.download = `Art_${name}_${id}.jpg`;
         
-        // ডিলিট বাটন দেখাও
         const delBtn = document.getElementById('deleteImgBtn');
         delBtn.style.display = 'inline-block'; 
         delBtn.onclick = function() { deletePlayerImage(id); };
@@ -1482,7 +1435,6 @@
         modal.style.display = 'flex';
     }
 
-    // ফলাফল ট্যাবের জন্য (ডিলিট বাটন ছাড়া)
     function viewResultImage(url, name) {
         const modal = document.getElementById('imgPreviewModal');
         document.getElementById('fullSizeImg').src = url;
@@ -1491,15 +1443,12 @@
         dlBtn.href = url;
         dlBtn.download = `Art_${name}_Result.jpg`;
         
-        // ডিলিট বাটন লুকাও
         document.getElementById('deleteImgBtn').style.display = 'none';
-
         modal.style.display = 'flex';
     }  
  
- // --- Camera & Direct Upload Logic ---
     let videoStream = null;
-    let currentCameraFacingMode = 'environment'; // back camera by default
+    let currentCameraFacingMode = 'environment'; 
     let targetPlayerIdForCamera = null;
 
     async function openCamera(playerId) {
@@ -1517,7 +1466,7 @@
             videoStream = await navigator.mediaDevices.getUserMedia({
                 video: { 
                     facingMode: currentCameraFacingMode,
-                    width: { ideal: 640 },  // ব্রাউজারকে বলা হচ্ছে কম রেজোলিউশন ব্যবহার করতে
+                    width: { ideal: 640 }, 
                     height: { ideal: 480 }
                 }
             });
@@ -1526,7 +1475,7 @@
             alert("ক্যামেরা অ্যাক্সেস পাওয়া যাচ্ছে না! দয়া করে পারমিশন দিন।");
             closeCamera();
         }
-}
+    }
 
     function switchCamera() {
         currentCameraFacingMode = (currentCameraFacingMode === 'environment') ? 'user' : 'environment';
@@ -1541,16 +1490,14 @@
         }
     }
 
-  function capturePhoto() {
+    function capturePhoto() {
         const video = document.getElementById('cameraFeed');
         const canvas = document.getElementById('cameraCanvas');
         
-        // --- ফিক্স শুরু: মেমোরি বাঁচাতে ছবির সাইজ ছোট করা হচ্ছে ---
-        const MAX_WIDTH = 800; // সর্বোচ্চ ৮০০ পিক্সেল চওড়া হবে
+        const MAX_WIDTH = 800; 
         let width = video.videoWidth;
         let height = video.videoHeight;
 
-        // অনুপাত ঠিক রেখে সাইজ ছোট করা
         if (width > MAX_WIDTH) {
             height = height * (MAX_WIDTH / width);
             width = MAX_WIDTH;
@@ -1558,23 +1505,19 @@
 
         canvas.width = width;
         canvas.height = height;
-        // --- ফিক্স শেষ ---
 
         const ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0, width, height);
         
-        // কোয়ালিটি ০.৫ রাখা হয়েছে যা মেমোরি কম খাবে
         const imgData = canvas.toDataURL('image/jpeg', 0.5);
         
         if(confirm("ছবিটি কি আপলোড করবেন?")) {
-            // মেমোরি লিক এড়াতে ভেরিয়েবল ক্লিয়ার করার চেষ্টা
             uploadCapturedImage(imgData, targetPlayerIdForCamera);
             closeCamera();
         }
     }
 
     async function uploadCapturedImage(base64Data, id) {
-        // বাটনের টেক্সট চেঞ্জ করার জন্য লেবেল খোঁজা
         const label = document.getElementById(`cam_btn_${id}`);
         const originalText = label ? label.innerHTML : "📷 ছবি";
         
@@ -1602,7 +1545,7 @@
 
             if (data.status === 'success') {
                 await pushData('saveImage', { id: id, url: data.imageUrl });
-                renderMgmt(); // লিস্ট রিফ্রেশ
+                renderMgmt(); 
                 alert("✅ ছবি সফলভাবে আপলোড হয়েছে!");
             } else { 
                 throw new Error(data.message); 
@@ -1616,7 +1559,8 @@
             }
         }
     }
- async function staffRefresh(btn) {
+    
+    async function staffRefresh(btn) {
         const originalText = btn.innerHTML;
         btn.innerHTML = "⏳..."; 
         btn.disabled = true;
@@ -1624,7 +1568,6 @@
         try {
             await fetchData(); 
             renderPlayerList(); 
-            // ছোট টোস্ট মেসেজ
             let t=document.createElement("div"); t.innerText="✅ আপডেট সম্পন্ন"; 
             Object.assign(t.style,{position:"fixed",bottom:"60px",right:"20px",background:"black",color:"white",padding:"5px 10px",borderRadius:"5px",fontSize:"12px"}); 
             document.body.appendChild(t); setTimeout(()=>{t.remove()},2000);
@@ -1637,11 +1580,11 @@
         }
     }
       
-// যোগদাতা লিস্ট রেন্ডার করা
 function renderParticipants() {
     const gameFilter = document.getElementById('partGameSelector').value;
     const search = document.getElementById('partSearch').value.toLowerCase();
     const container = document.getElementById('partArea');
+    const currentRole = SafeSession.getItem('role'); // লগিন রোল চেক
     
     let filteredList = participants.filter(p => p.name.toLowerCase().includes(search));
     if (gameFilter) filteredList = filteredList.filter(p => p.games.includes(gameFilter));
@@ -1652,7 +1595,7 @@ function renderParticipants() {
                 <th>প্রতিযোগীর নাম</th>
                 <th>নথিভূক্ত ক্রীড়া</th>
                 <th>সময়সূচী</th>
-                <th style="text-align:center;">স্লিপ</th>
+                <th style="text-align:center;">অ্যাকশন</th>
             </tr>
         </thead>
         <tbody>`;
@@ -1664,11 +1607,18 @@ function renderParticipants() {
             const gamesNames = p.games.map(g => gameConfig[g] ? gameConfig[g].label : g).join(', ');
             const dispName = p.name.includes('|') ? p.name.split('|')[1].trim() : p.name;
             
+            // বিচারক হলে এডিট বাটন দেখাবে
+            let editBtn = '';
+            if(currentRole === 'admin') {
+                editBtn = `<button onclick="openFullEditModal(${p.id})" style="background:none; border:none; font-size:22px; cursor:pointer;" title="এডিট করুন">✏️</button>`;
+            }
+
             tableHTML += `<tr>
                 <td style="font-weight:bold; color:var(--primary-color);">${dispName}</td>
                 <td style="font-size:13px;">${gamesNames}</td>
                 <td style="font-size:13px; color:var(--accent-color);">যথা সময়ে</td>
                 <td style="text-align:center;">
+                    ${editBtn}
                     <button onclick="openGenSlip(${p.id})" style="background:none; border:none; font-size:22px; cursor:pointer;" title="PDF স্লিপ">📄</button>
                 </td>
             </tr>`;
@@ -1677,8 +1627,6 @@ function renderParticipants() {
     tableHTML += `</tbody></table></div>`;
     container.innerHTML = tableHTML;
 }
-
-// স্লিপ ওপেন করা
 function openGenSlip(id) {
     const p = participants.find(x => x.id === id);
     if(!p) return;
@@ -1695,7 +1643,6 @@ function openGenSlip(id) {
     document.getElementById('genSlipModal').style.display = 'flex';
 }
 
-// আসল PDF ডাউনলোড ফাংশন
 function downloadGenSlipPDF() {
     const printArea = document.getElementById("genSlipToPrint");
     const btn = event.target;
@@ -1706,23 +1653,22 @@ function downloadGenSlipPDF() {
     html2canvas(printArea, { scale: 3, useCORS: true }).then(canvas => {
         const imgData = canvas.toDataURL('image/png');
         
-        // jsPDF লাইব্রেরি কল করা
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF({
             orientation: "portrait",
             unit: "mm",
-            format: "a4" // A4 সাইজ পেপার
+            format: "a4" 
         });
 
         const pdfWidth = pdf.internal.pageSize.getWidth();
-        const margin = 10; // 10mm মার্জিন
+        const margin = 10; 
         const imgWidth = pdfWidth - (margin * 2);
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
         pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
         
         const playerName = document.getElementById('genSlipName').innerText;
-        pdf.save(`Slip_${playerName}_${Date.now()}.pdf`); // PDF ফাইল সেভ হবে
+        pdf.save(`Slip_${playerName}_${Date.now()}.pdf`); 
         
         btn.innerText = originalText;
         btn.disabled = false;
@@ -1730,68 +1676,120 @@ function downloadGenSlipPDF() {
 }
 
 // ========================================================
-// FEATURE 3: DRAWING CERTIFICATE SYSTEM (DYNAMIC PDF LOGIC)
+// FEATURE 3: NEW IMAGE BASED CERTIFICATE PDF GENERATOR
 // ========================================================
-let drawingCertCounter = parseInt(localStorage.getItem('drawingCertCounter')) || 1000;
-
 async function generateDrawingCertificate(p, rank) {
-    const template = document.getElementById('artCertNewTemplate');
-    
-    // Auto-increment Cert Number
-    drawingCertCounter++;
-    localStorage.setItem('drawingCertCounter', drawingCertCounter.toString());
-    const newCertNo = `ART-${new Date().getFullYear()}-${drawingCertCounter}`;
-
-    // Name format
-    const nameParts = p.name.split('|');
-    const certName = nameParts.length > 1 ? nameParts[1].trim() : nameParts[0].trim();
-
-    // Format position string securely
-    let posString = rank;
-
-    // Default dates & fallbacks
-    const eventDate = document.getElementById('regDate') ? document.getElementById('regDate').value || new Date().toLocaleDateString() : new Date().toLocaleDateString();
-
-    // Populate dynamic text replacement
-    document.getElementById('feat3CertNo').innerText = newCertNo;
-    document.getElementById('feat3IssueDate').innerText = new Date().toLocaleDateString();
-    document.getElementById('feat3Name').innerText = certName;
-    document.getElementById('feat3Class').innerText = p.class || '';
-    document.getElementById('feat3Pos').innerText = posString;
-    document.getElementById('feat3EventDate').innerText = p.date ? new Date(p.date).toLocaleDateString() : eventDate;
-    document.getElementById('feat3Org').innerText = "ক্রীড়া প্রতিযোগিতা কমিটি";
-
-    // Show for capture
-    template.style.display = 'block';
+    const btn = event.currentTarget || event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "⏳...";
+    btn.disabled = true;
 
     try {
+        const template = document.getElementById('artCertNewTemplate');
+
+        // 1. Name format - Extract English name ONLY (Index 0 is always English part before the | symbol)
+        const nameParts = p.name.split('|');
+        const certName = nameParts[0].trim();
+
+        // 2. Format position securely based on Rank
+        let posString = rank;
+        if(rank === '1st') posString = '1ST';
+        else if(rank === '2nd') posString = '2ND';
+        else if(rank === '3rd') posString = '3RD';
+
+        // 3. Populate dynamic text replacement
+        document.getElementById('feat3Name').innerText = certName;
+        document.getElementById('feat3Pos').innerText = posString;
+        document.getElementById('feat3CertNo').innerText = p.id; 
+        document.getElementById('feat3Badge').innerText = posString;
+        
+        // 4. Changing Badge color dynamically based on Rank
+        let badgeColor = '#FFD700'; // Gold
+        if(posString === '2ND') badgeColor = '#C0C0C0'; // Silver
+        if(posString === '3RD') badgeColor = '#CD7F32'; // Bronze
+        document.getElementById('feat3Badge').style.background = `radial-gradient(circle at 30% 30%, #fff, ${badgeColor} 70%)`;
+
+        // Show for capture
+        template.style.display = 'block';
+
+        // 5. High Quality scale factor (3) ensures the text does not blur or pixelate
         const canvas = await html2canvas(template, { 
-            scale: 2, 
+            scale: 3, 
             useCORS: true,
             logging: false 
         });
         
-        const imgData = canvas.toDataURL('image/jpeg', 1.0);
-        const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4'); 
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        
+        // Use jsPDF directly to save as exact A4 without messing up proportions
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('l', 'mm', 'a4'); 
         
         const pdfWidth = pdf.internal.pageSize.getWidth(); 
         const pdfHeight = pdf.internal.pageSize.getHeight(); 
         
         pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`Drawing_Certificate_${certName.replace(/\s+/g, '_')}.pdf`);
+        pdf.save(`Certificate_${certName.replace(/\s+/g, '_')}.pdf`);
         
     } catch (error) {
-        console.error("Failed to generate Drawing PDF:", error);
-        alert("An error occurred while generating the certificate.");
+        console.error("Failed to generate PDF:", error);
+        alert("সার্টিফিকেট তৈরি করতে সমস্যা হয়েছে। ইন্টারনেট কানেকশন চেক করুন।");
     } finally {
-        template.style.display = 'none';
+        document.getElementById('artCertNewTemplate').style.display = 'none';
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     }
 }
 // ========================================================
     
-// Initialize UI state on page load
 initApp();
+let currentFullEditId = null;
 
+function openFullEditModal(id) {
+    const p = participants.find(x => x.id == id);
+    if(!p) return;
+    currentFullEditId = id;
+
+    document.getElementById('fullEditName').value = p.name || '';
+    document.getElementById('fullEditMobile').value = p.mobile || '';
+    document.getElementById('fullEditAddress').value = p.address || '';
+
+    const classSel = document.getElementById('fullEditClass');
+    classSel.innerHTML = '<option value="">-- শ্রেণী নির্বাচন করুন --</option>';
+    CLASS_LIST.forEach(c => {
+        let opt = document.createElement('option');
+        opt.value = c;
+        opt.text = c;
+        if(p.class === c) opt.selected = true;
+        classSel.appendChild(opt);
+    });
+
+    document.getElementById('fullEditModal').style.display = 'flex';
+}
+
+async function saveFullEditData() {
+    if(!currentFullEditId) return;
+
+    const newName = document.getElementById('fullEditName').value.trim();
+    const newMobile = document.getElementById('fullEditMobile').value.trim();
+    const newAddress = document.getElementById('fullEditAddress').value.trim();
+    const newClass = document.getElementById('fullEditClass').value;
+
+    if(!newName) return alert("নাম দেওয়া বাধ্যতামূলক!");
+
+    // ডাটা পুশ করা
+    await pushData('editFullPlayer', {
+        id: currentFullEditId,
+        name: newName,
+        mobile: newMobile,
+        address: newAddress,
+        class: newClass
+    });
+
+    document.getElementById('fullEditModal').style.display = 'none';
+    renderParticipants(); // যোগদাতা টেবিল আপডেট হবে
+    alert("তথ্য সফলভাবে সংশোধন হয়েছে!");
+}
 </script>
 </body>
 </html>

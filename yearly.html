@@ -2,7 +2,7 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>মডার্ণ স্পোর্টিং ক্লাব - ফিন্যান্স ম্যানেজমেন্ট</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -79,7 +79,7 @@
     </div>
 
     <!-- Main App Layout -->
-    <div id="app-screen" class="hidden min-h-screen flex flex-col">
+    <div id="app-screen" class="hidden h-screen w-full flex flex-col overflow-hidden">
         <!-- Header -->
         <header class="bg-white shadow-sm sticky top-0 z-20">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -110,7 +110,7 @@
         </header>
 
         <!-- Main Content Area -->
-        <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+       <main class="flex-1 max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-4 sm:py-8 w-full overflow-y-auto overflow-x-hidden relative pb-20 sm:pb-8">
             
             <!-- 1. আয়ের হিসাব (Income Entry) -->
             <div id="tab-income-entry" class="tab-content">
@@ -914,21 +914,25 @@ async function saveExpense() {
     }
 }
 
-        function clearForm(type) {
-            if(type === 'income') {
-                document.getElementById('inc-donor').value = '';
-                document.getElementById('inc-amount').value = '';
-                document.getElementById('inc-remarks').value = '';
-                document.getElementById('inc-category').value = '';
-            } else {
-                document.getElementById('exp-reason').value = '';
-                document.getElementById('exp-amount').value = '';
-                document.getElementById('exp-remarks').value = '';
-                document.getElementById('exp-category').value = '';
-                removeImage();
-            }
-            calculateFY(); // Reset date
-        }
+   function clearForm(type) {
+    if(type === 'income') {
+        document.getElementById('inc-donor').value = '';
+        document.getElementById('inc-amount').value = '';
+        document.getElementById('inc-remarks').value = '';
+        document.getElementById('inc-category').value = '';
+        // Date ইনপুট ক্লিয়ার করা হলো না, তাই আগের তারিখ থেকে যাবে
+    } else {
+        document.getElementById('exp-reason').value = '';
+        document.getElementById('exp-amount').value = '';
+        document.getElementById('exp-remarks').value = '';
+        document.getElementById('exp-category').value = '';
+        removeImage();
+        // Date ইনপুট ক্লিয়ার করা হলো না
+    }
+    // calculateFY() মুছে ফেলা হয়েছে। 
+    // ফলে নতুন এন্ট্রির সময় আপনার দেওয়া শেষ তারিখটিই বহাল থাকবে। 
+    // অ্যাপ রিলোড হলে window.onload থেকে কারেন্ট ডেট অটোমেটিক নেবে।
+}
 
         // --- 7. TABLES & PAGINATION ---
         function renderIncomeTable() {

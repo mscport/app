@@ -846,20 +846,35 @@ let globalData = { income: [], expense: [], car: [], paras: [], signatures: [] }
     }
 
 
-// ===== DATE FIX HELPER =====
-    function fixDateOffset(dateStr) {
-        if (!dateStr) return '';
-        // যদি আগে থেকেই YYYY-MM-DD ফরম্যাটে থাকে, তবে সেটাই রিটার্ন করবে
-        if (dateStr.length === 10 && dateStr.includes('-')) return dateStr;
-        
-        const d = new Date(dateStr);
-        if (isNaN(d.getTime())) return dateStr.split('T')[0];
-        
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
+// ১. আপডেট করা fixDateOffset ফাংশন
+function fixDateOffset(dateStr) {
+    if (!dateStr) return '';
+    if (dateStr.length === 10 && dateStr.includes('-')) return dateStr;
+
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr.split('T')[0];
+
+    // ব্রাউজারের টাইমজোনের উপর ভরসা না করে সরাসরি IST (UTC+5:30) ক্যালকুলেট করা
+    const istTime = new Date(d.getTime() + (5.5 * 60 * 60 * 1000));
+    
+    const year = istTime.getUTCFullYear();
+    const month = String(istTime.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(istTime.getUTCDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+}
+
+// ২. নতুন Date Formatter ফাংশন
+function formatDisplayDate(dateStr) {
+    if (!dateStr) return '';
+    // যদি ফরম্যাট YYYY-MM-DD হয়, তবে সরাসরি স্প্লিট করে তারিখ দেখাবে (Timezone Bug এড়াতে)
+    if (dateStr.length === 10 && dateStr.includes('-')) {
+        const parts = dateStr.split('-');
+        return `${parts[2]}/${parts[1]}/${parts[0]}`; 
     }
+    // ফলব্যাক হিসেবে পুরানো মেথড
+    try { return new Date(dateStr).toLocaleDateString('en-GB'); } catch(e) { return dateStr; }
+}
 
     async function fetchAllData() {
         document.body.style.cursor = 'wait'; 
@@ -1229,7 +1244,7 @@ function parseParaData(p) {
 
         currentReceiptItem = item;
         const activePujaName = document.getElementById('pujaSelect').value;
-        const dateStr = new Date(item.date).toLocaleDateString('en-GB');
+        const dateStr = formatDisplayDate(item.date);
         const rcptNo = "RCPT-" + new Date().getFullYear() + "-" + String(item.id).slice(-4);
         const amountWords = numberToBengaliWords(item.paid);
 
@@ -1726,7 +1741,7 @@ function parseParaData(p) {
             tr.className = "hover:bg-purple-50 cursor-pointer transition";
             tr.onclick = (e) => { if(!e.target.closest('button')) openCollectionModal(row.id); };
             tr.innerHTML = `
-               <td class="text-gray-500">${new Date(row.date).toLocaleDateString('en-GB')}</td><td class="text-center text-gray-500">${serial++}</td>
+               <td class="text-gray-500">${formatDisplayDate(row.date)}</td><td class="text-center text-gray-500">${serial++}</td>
                 <td>${row.para}</td><td class="font-bold text-gray-700">${row.english_name}</td><td class="font-siliguri">${row.bengali_name}</td>
                 <td class="text-right font-mono text-gray-500 font-bold">${projectedAmt > 0 ? '₹'+projectedAmt : '-'}</td>
                 <td class="text-right font-mono text-green-600 font-bold">₹${paidAmt}</td><td class="text-right font-mono">${dueHtml}</td>
@@ -2142,7 +2157,7 @@ function parseParaData(p) {
 
             const tr = document.createElement('tr'); 
             tr.className = "hover:bg-red-50 border-b"; 
-            tr.innerHTML = `<td class="p-3">${new Date(row.date).toLocaleDateString('en-GB')}</td><td class="p-3 font-bold text-gray-700">${row.reason}</td><td class="p-3 text-right font-mono">₹${row.amount}</td><td class="p-3 text-center"><div class="flex justify-center gap-2">${attachHtml}<button onclick="openExpenseEdit('${row.id}')" class="bg-blue-100 text-blue-600 p-2 rounded hover:bg-blue-600 transition"><i data-lucide="pencil" class="w-4 h-4"></i></button><button onclick="deleteExpense('${row.id}')" class="bg-red-100 text-red-600 p-2 rounded hover:bg-red-600 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></td>`; 
+            tr.innerHTML = `<td class="p-3">${formatDisplayDate(row.date)}</td><td class="p-3 font-bold text-gray-700">${row.reason}</td><td class="p-3 text-right font-mono">₹${row.amount}</td><td class="p-3 text-center"><div class="flex justify-center gap-2">${attachHtml}<button onclick="openExpenseEdit('${row.id}')" class="bg-blue-100 text-blue-600 p-2 rounded hover:bg-blue-600 transition"><i data-lucide="pencil" class="w-4 h-4"></i></button><button onclick="deleteExpense('${row.id}')" class="bg-red-100 text-red-600 p-2 rounded hover:bg-red-600 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></td>`; 
             tbody.appendChild(tr); 
         }); 
         lucide.createIcons(); 
@@ -2402,7 +2417,7 @@ function renderCarTable() {
 
     data.forEach(c => {
         let hasLogs = false;
-        let baseDateStr = new Date(c.date).toLocaleDateString('en-GB');
+        let baseDateStr = formatDisplayDate(c.date);
         const toYMD = (dStr) => { let parts = dStr.split('/'); return parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : dStr; };
         let cleanRemarks = c.remarks ? c.remarks.replace(/\[.*?\]/g, '').replace(/-/g, '').trim() : '-';
         if(!cleanRemarks) cleanRemarks = '-';
@@ -2552,7 +2567,7 @@ function changeCarPage(page) {
             historyBox.innerHTML += customRemarksHtml;
         }
 
-        const baseDate = new Date(item.date).toLocaleDateString('en-GB'); // প্রথম এন্ট্রির তারিখ
+        const dateStr = formatDisplayDate(item.date);
         let historyHTML = '';
         let hasInitialLog = false;
         let subsequentPaid = 0;
@@ -2885,7 +2900,7 @@ dashExpList.innerHTML += `<li class="flex justify-between items-center bg-white 
             for (let dateKey in groupedExp) {
                 let dailyItems = groupedExp[dateKey];
                 let dailyTotal = 0;
-                let displayDate = new Date(dateKey).toLocaleDateString('en-GB');
+                let displayDate = formatDisplayDate(dateKey);
                 
                 // ডেট হেডার
                 tbody.innerHTML += `<tr><td colspan="${columns.length}" class="border p-2 bg-red-100 text-red-900 font-bold text-base">তারিখ: ${displayDate}</td></tr>`;

@@ -21,10 +21,40 @@
 </head>
 <body class="bg-gray-50 font-sans text-gray-800">
 
-    <div class="max-w-[95%] mx-auto px-4 py-8">
+    <!-- Login Modal Override -->
+    <div id="loginModal" class="fixed inset-0 z-[100] bg-gray-900 bg-opacity-90 flex items-center justify-center hidden">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md transform transition-all">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 text-blue-600 text-3xl">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-blue-900 uppercase">Club Portal Login</h2>
+                <p class="text-gray-500 text-sm mt-1">Select your role to access the database</p>
+            </div>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Select Role</label>
+                    <select id="loginRole" onchange="toggleLoginPassword()" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition-shadow">
+                        <option value="member">Member (View Only)</option>
+                        <option value="admin">Admin (Full Access)</option>
+                    </select>
+                </div>
+                <div id="passwordContainer" class="mb-6 hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Admin Password</label>
+                    <input type="password" id="loginPassword" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 transition-shadow" placeholder="Enter password">
+                    <p class="text-xs text-gray-400 mt-1"><i class="fas fa-info-circle"></i> Hint: admin123</p>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-md transition-colors shadow-sm"><i class="fas fa-sign-in-alt mr-2"></i> Login to Portal</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="max-w-[95%] mx-auto px-4 py-8 relative">
         
         <!-- Header -->
-        <div class="mb-8 text-center">
+        <button onclick="logout()" id="logoutBtn" class="hidden absolute top-0 right-4 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 px-4 py-2 rounded-md text-sm font-semibold transition-colors shadow-sm z-10"><i class="fas fa-sign-out-alt mr-2"></i>Logout</button>
+        
+        <div class="mb-8 text-center pt-4">
             <h1 class="text-2xl md:text-4xl font-extrabold text-blue-900 tracking-tight uppercase">ITINDA ROAD DHALTITHA MODERN SPORTING CLUB</h1>
             <p class="text-gray-600 mt-2 font-medium">Itinda Road, Dhaltitha, Basirhat, North 24 Parganas, West Bengal 743412</p>
         </div>
@@ -41,7 +71,7 @@
                     <button onclick="downloadCategoryPDF()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-md shadow-sm text-sm font-semibold flex items-center transition-colors">
                         <i class="fas fa-file-pdf mr-2"></i> Download <span id="downloadBtnText" class="ml-1 uppercase">GB Data</span>
                     </button>
-                    <button onclick="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-md shadow-sm text-sm font-semibold flex items-center transition-colors">
+                    <button onclick="openModal()" id="addMemberBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-md shadow-sm text-sm font-semibold flex items-center transition-colors">
                         <i class="fas fa-user-plus mr-2"></i> Add Member
                     </button>
                 </div>
@@ -64,8 +94,8 @@
                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address, Contact & Email</th>
                         <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Membership Info</th>
-                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Signature</th>
-                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-right">Admin Actions</th>
+                        <th scope="col" id="th-signature" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Signature</th>
+                        <th scope="col" id="th-actions" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-right">Admin Actions</th>
                     </tr>
                 </thead>
                 <tbody id="memberTableBody" class="bg-white divide-y divide-gray-200">
@@ -250,6 +280,9 @@
         // ✅ YOUR GOOGLE APPS SCRIPT URL HAS BEEN PASTED HERE
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwmLRiq5DIzKkzBpiE-js8AiZTxZRSacemJQmDcAHwJ7tIBaDbloSt2n4XDFv4wCfC6AQ/exec";
 
+        // Global User Role Management
+        let userRole = localStorage.getItem('clubUserRole') || null;
+
         // Helper to fix Google Drive Image CORS and display issues globally
         function getValidImageUrl(url) {
             if (!url) return '';
@@ -261,6 +294,81 @@
                 }
             }
             return url;
+        }
+
+        // Login Methods
+        function checkLogin() {
+            if (!userRole) {
+                document.getElementById('loginModal').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                document.getElementById('logoutBtn').classList.add('hidden');
+            } else {
+                document.getElementById('loginModal').classList.add('hidden');
+                document.body.style.overflow = 'auto';
+                document.getElementById('logoutBtn').classList.remove('hidden');
+                applyRoleState();
+            }
+        }
+
+        function toggleLoginPassword() {
+            const role = document.getElementById('loginRole').value;
+            document.getElementById('passwordContainer').style.display = role === 'admin' ? 'block' : 'none';
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const role = document.getElementById('loginRole').value;
+            const pass = document.getElementById('loginPassword').value;
+            
+            if (role === 'admin' && pass !== 'admin123') {
+                alert('Incorrect Admin Password!');
+                return;
+            }
+            
+            localStorage.setItem('clubUserRole', role);
+            userRole = role;
+            checkLogin();
+            if(membersData && membersData.length > 0) {
+                renderTable(); // Re-render if data already fetched
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('clubUserRole');
+            userRole = null;
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('loginRole').value = 'member';
+            toggleLoginPassword();
+            checkLogin();
+        }
+
+        function applyRoleState() {
+            const addBtn = document.getElementById('addMemberBtn');
+            const thSig = document.getElementById('th-signature');
+            const thAction = document.getElementById('th-actions');
+            
+            if (userRole === 'member') {
+                if(addBtn) addBtn.style.display = 'none';
+                if(thSig) thSig.style.display = 'none';
+                if(thAction) thAction.innerText = 'Actions';
+            } else {
+                if(addBtn) addBtn.style.display = 'flex';
+                if(thSig) thSig.style.display = 'table-cell';
+                if(thAction) thAction.innerText = 'Admin Actions';
+            }
+        }
+
+        // Global Signatures retrieval
+        function getGlobalSignatures() {
+            if(!membersData) return { presidentSig: null, secretarySig: null };
+            
+            const president = membersData.find(m => m.designation && m.designation.toUpperCase() === 'PRESIDENT');
+            const secretary = membersData.find(m => m.designation && m.designation.toUpperCase() === 'SECRETARY');
+            
+            return {
+                presidentSig: president ? getValidImageUrl(president.signatureBase64) : null,
+                secretarySig: secretary ? getValidImageUrl(secretary.signatureBase64) : null
+            };
         }
 
         // State Management
@@ -277,6 +385,7 @@
 
         // App Initialization: Fetch Data from Database on Load
         document.addEventListener('DOMContentLoaded', () => { 
+            checkLogin();
             fetchDatabaseData();
         });
 
@@ -412,33 +521,49 @@
                 `;
 
                 let idProofsHTML = '';
-                if(member.idProofs && member.idProofs.length > 0) {
-                    member.idProofs.forEach(proof => {
-                        idProofsHTML += `
-                            <div class="text-[10px] font-semibold text-gray-700 bg-gray-100 p-1.5 rounded mb-1 inline-block text-left w-full">
-                                ${proof.type}: <span class="font-mono text-gray-900">${proof.number}</span>
-                                ${proof.docBase64 ? `<a href="#" onclick="viewDoc('${proof.docBase64}'); return false;" class="text-blue-600 hover:text-blue-900 ml-2" title="View Document"><i class="fas fa-paperclip"></i> View</a>` : ''}
-                            </div>
-                        `;
-                    });
+                if(userRole === 'member') {
+                    idProofsHTML = `<span class="text-[11px] text-red-500 font-semibold bg-red-50 px-2 py-1 rounded"><i class="fas fa-lock mr-1"></i> Hidden</span>`;
                 } else {
-                    idProofsHTML = `<span class="text-xs text-gray-400 italic">No ID Saved</span>`;
+                    if(member.idProofs && member.idProofs.length > 0) {
+                        member.idProofs.forEach(proof => {
+                            idProofsHTML += `
+                                <div class="text-[10px] font-semibold text-gray-700 bg-gray-100 p-1.5 rounded mb-1 inline-block text-left w-full">
+                                    ${proof.type}: <span class="font-mono text-gray-900">${proof.number}</span>
+                                    ${proof.docBase64 ? `<a href="#" onclick="viewDoc('${proof.docBase64}'); return false;" class="text-blue-600 hover:text-blue-900 ml-2" title="View Document"><i class="fas fa-paperclip"></i> View</a>` : ''}
+                                </div>
+                            `;
+                        });
+                    } else {
+                        idProofsHTML = `<span class="text-xs text-gray-400 italic">No ID Saved</span>`;
+                    }
                 }
+
+                let actionButtons = '';
+                if (userRole === 'admin') {
+                    actionButtons += `
+                        <button onclick="editMember('${member.id}')" class="text-indigo-600 hover:text-indigo-900 text-xs border border-indigo-200 px-2 py-1 rounded bg-indigo-50" title="Edit Profile"><i class="fas fa-edit"></i> Edit</button>
+                        <button onclick="deleteMember('${member.id}')" class="text-red-600 hover:text-red-900 text-xs border border-red-200 px-2 py-1 rounded bg-red-50" title="Delete Profile"><i class="fas fa-trash"></i></button>
+                    `;
+                }
+                actionButtons += `<button onclick="downloadProfilePDF('${member.id}')" class="text-gray-600 hover:text-gray-900 text-xs border border-gray-200 px-2 py-1 rounded bg-gray-50 flex items-center" title="Download Profile PDF"><i class="fas fa-file-pdf mr-1"></i> PDF</button>`;
 
                 const cell5 = `
                     <td class="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div class="flex flex-col items-start mb-2">${idProofsHTML}</div>
                         <div class="flex flex-col items-end space-y-2 mt-1">
                             <div class="flex space-x-1 mt-1">
-                                <button onclick="editMember('${member.id}')" class="text-indigo-600 hover:text-indigo-900 text-xs border border-indigo-200 px-2 py-1 rounded bg-indigo-50" title="Edit Profile"><i class="fas fa-edit"></i> Edit</button>
-                                <button onclick="deleteMember('${member.id}')" class="text-red-600 hover:text-red-900 text-xs border border-red-200 px-2 py-1 rounded bg-red-50" title="Delete Profile"><i class="fas fa-trash"></i></button>
-                                <button onclick="downloadProfilePDF('${member.id}')" class="text-gray-600 hover:text-gray-900 text-xs border border-gray-200 px-2 py-1 rounded bg-gray-50" title="Download Profile PDF"><i class="fas fa-file-pdf"></i></button>
+                                ${actionButtons}
                             </div>
                         </div>
                     </td>
                 `;
 
-                tr.innerHTML = slCell + cell1 + cell2 + cell3 + cell4 + sigCell + cell5;
+                if (userRole === 'admin') {
+                    tr.innerHTML = slCell + cell1 + cell2 + cell3 + cell4 + sigCell + cell5;
+                } else {
+                    tr.innerHTML = slCell + cell1 + cell2 + cell3 + cell4 + cell5; // Skips sigCell for members
+                }
+                
                 tbody.appendChild(tr);
             });
         }
@@ -559,6 +684,7 @@
         }
 
         function openModal() {
+            if (userRole !== 'admin') return; // Extra check to ensure members can't trigger it via console
             isEditMode = false;
             editingMemberId = null;
             existingProfilePic = null;
@@ -604,6 +730,8 @@
 
         async function handleFormSubmit(e) {
             e.preventDefault();
+            if (userRole !== 'admin') return;
+
             const saveBtn = document.getElementById('saveBtn');
             saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving to Database...';
             saveBtn.disabled = true;
@@ -709,6 +837,7 @@
 
         // DB Delete Integration
         async function deleteMember(id) {
+            if (userRole !== 'admin') return;
             if(!confirm("Are you sure you want to completely delete this member from the database?")) return;
             
             showToast("Deleting...", false);
@@ -729,6 +858,7 @@
 
         // Edit function - মেম্বার এডিট করার ফাংশন
         function editMember(id) {
+            if (userRole !== 'admin') return;
             const member = membersData.find(m => m.id.toString() === id.toString());
             if(!member) return;
             
@@ -839,11 +969,12 @@
             }
         }
 
-        // Download Category Data PDF - লিস্ট পিডিএফ জেনারেট করা
+        // Download Category Data PDF - লিস্ট পিডিএফ জেনারেট করা (A4 Landscape)
         function downloadCategoryPDF() {
-            showToast('Generating Category Data PDF...');
+            showToast('Generating Landscape Category Data PDF...');
             const filteredMembers = membersData.filter(m => m.tabCategory === currentTab);
             const categoryName = tabNames[currentTab];
+            const { presidentSig, secretarySig } = getGlobalSignatures();
 
             let tableRows = '';
             filteredMembers.forEach((member, index) => {
@@ -886,15 +1017,15 @@
                 `;
             });
 
-            // Using pure string input for html2pdf to prevent DOM/viewport clipping and blank pdfs
+            // Adjust width for landscape format (~1060px inner width works well for html2pdf A4 Landscape scale 2)
             const htmlContent = `
-            <div style="width: 730px; padding: 10px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1f2937; background-color: #ffffff; box-sizing: border-box;">
+            <div style="width: 1060px; padding: 15px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1f2937; background-color: #ffffff; box-sizing: border-box;">
                     <div style="text-align: center; margin-bottom: 20px;">
-                        <h2 style="margin: 0; font-size: 22px; color: #1e3a8a; font-weight: bold; text-transform: uppercase;">ITINDA ROAD DHALTITHA MODERN SPORTING CLUB</h2>
-                        <p style="margin: 5px 0 0 0; font-size: 11px; color: #4b5563;">Itinda Road, Dhaltitha, Basirhat, North 24 Parganas, West Bengal 743412</p>
-                        <h3 style="margin: 15px 0 0 0; font-size: 16px; text-decoration: underline; text-transform: uppercase;">${categoryName} DATA SHEET</h3>
+                        <h2 style="margin: 0; font-size: 24px; color: #1e3a8a; font-weight: bold; text-transform: uppercase;">ITINDA ROAD DHALTITHA MODERN SPORTING CLUB</h2>
+                        <p style="margin: 5px 0 0 0; font-size: 12px; color: #4b5563;">Itinda Road, Dhaltitha, Basirhat, North 24 Parganas, West Bengal 743412</p>
+                        <h3 style="margin: 15px 0 0 0; font-size: 18px; text-decoration: underline; text-transform: uppercase;">${categoryName} DATA SHEET</h3>
                     </div>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 40px; background-color: #ffffff; table-layout: fixed;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 40px; background-color: #ffffff; table-layout: fixed;">
                         <thead style="background-color: #f3f4f6; display: table-header-group;">
                             <tr>
                                 <th style="border: 1px solid #d1d5db; padding: 8px; width: 4%;">Sl.</th>
@@ -912,10 +1043,12 @@
                     
                     <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 30px; padding: 0 40px; page-break-inside: avoid;">
                         <div style="text-align: center;">
-                            <div style="border-top: 1px solid #1f2937; width: 180px; padding-top: 8px; font-weight: bold; font-size: 12px;">Secretary Signature</div>
+                            ${presidentSig ? `<img src="${presidentSig}" crossorigin="anonymous" style="height: 40px; object-fit: contain; margin-bottom: 5px; display: block; margin-left: auto; margin-right: auto;">` : `<div style="height: 40px;"></div>`}
+                            <div style="border-top: 1px solid #1f2937; width: 200px; padding-top: 8px; font-weight: bold; font-size: 13px;">President Signature</div>
                         </div>
                         <div style="text-align: center;">
-                            <div style="border-top: 1px solid #1f2937; width: 180px; padding-top: 8px; font-weight: bold; font-size: 12px;">President Signature</div>
+                            ${secretarySig ? `<img src="${secretarySig}" crossorigin="anonymous" style="height: 40px; object-fit: contain; margin-bottom: 5px; display: block; margin-left: auto; margin-right: auto;">` : `<div style="height: 40px;"></div>`}
+                            <div style="border-top: 1px solid #1f2937; width: 200px; padding-top: 8px; font-weight: bold; font-size: 13px;">Secretary Signature</div>
                         </div>
                     </div>
                 </div>
@@ -926,11 +1059,11 @@
                 filename:     `Club_Data_${currentTab}_List.pdf`,
                 image:        { type: 'jpeg', quality: 0.98 },
                 html2canvas:  { scale: 2, useCORS: true },
-               jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
             };
 
             html2pdf().set(opt).from(htmlContent).save().then(() => {
-                showToast('List PDF Downloaded!');
+                showToast('Landscape List PDF Downloaded!');
             }).catch(err => {
                 console.error(err);
                 showToast('Error generating PDF', true);
@@ -943,6 +1076,8 @@
             if(!member) return;
             showToast('Generating Profile PDF...');
             
+            const { presidentSig, secretarySig } = getGlobalSignatures();
+
             let idsString = member.idProofs && member.idProofs.length > 0 
                 ? member.idProofs.map(p => `<li><strong>${p.type}:</strong> ${p.number}</li>`).join('') 
                 : '<li>N/A</li>';
@@ -959,8 +1094,13 @@
                     </div>
                     
                     <div style="display: flex; gap: 30px; margin-bottom: 35px;">
-                        <div style="flex-shrink: 0;">
+                        <div style="flex-shrink: 0; text-align: center; width: 150px;">
                             ${safeProfile ? `<img src="${safeProfile}" crossorigin="anonymous" style="width: 150px; height: 150px; border-radius: 8px; object-fit: cover; border: 2px solid #e5e7eb;" />` : `<div style="width: 150px; height: 150px; border-radius: 8px; border: 2px solid #e5e7eb; background: #f3f4f6; display: flex; align-items: center; justify-content: center; color: #9ca3af;">No Photo</div>`}
+                            
+                            <div style="margin-top: 15px;">
+                                ${safeSig ? `<img src="${safeSig}" crossorigin="anonymous" style="height: 40px; object-fit: contain; margin: 0 auto; display: block;">` : `<div style="height: 40px; color: #9ca3af; font-size: 10px; display: flex; align-items: center; justify-content: center; font-style: italic;">No Signature</div>`}
+                                <div style="border-top: 1px solid #9ca3af; width: 120px; margin: 5px auto 0; padding-top: 3px; font-size: 11px; font-weight: bold; color: #4b5563;">Member's Signature</div>
+                            </div>
                         </div>
                         <div style="flex-grow: 1;">
                             <h2 style="margin: 0 0 12px 0; font-size: 26px; text-transform: uppercase;">${member.fullName}</h2>
@@ -990,14 +1130,14 @@
                         </div>
                     </div>
 
-                    <div style="margin-top: 50px; display: flex; justify-content: space-between; align-items: flex-end;">
+                    <div style="margin-top: 50px; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 20px;">
                         <div style="text-align: center;">
-                            ${safeSig ? `<img src="${safeSig}" crossorigin="anonymous" style="height: 50px; object-fit: contain; margin-bottom: 5px;">` : `<div style="height: 50px;"></div>`}
-                            <div style="border-top: 1px solid #9ca3af; width: 200px; padding-top: 5px; font-size: 14px;">Member's Signature</div>
+                            ${presidentSig ? `<img src="${presidentSig}" crossorigin="anonymous" style="height: 50px; object-fit: contain; margin-bottom: 5px; display: block; margin-left: auto; margin-right: auto;">` : `<div style="height: 50px;"></div>`}
+                            <div style="border-top: 1px solid #9ca3af; width: 200px; padding-top: 5px; font-size: 14px; font-weight: bold;">President Signature</div>
                         </div>
                         <div style="text-align: center;">
-                            <div style="height: 50px;"></div>
-                            <div style="border-top: 1px solid #9ca3af; width: 200px; padding-top: 5px; font-size: 14px;">Authorized Signature</div>
+                            ${secretarySig ? `<img src="${secretarySig}" crossorigin="anonymous" style="height: 50px; object-fit: contain; margin-bottom: 5px; display: block; margin-left: auto; margin-right: auto;">` : `<div style="height: 50px;"></div>`}
+                            <div style="border-top: 1px solid #9ca3af; width: 200px; padding-top: 5px; font-size: 14px; font-weight: bold;">Secretary Signature</div>
                         </div>
                     </div>
                 </div>

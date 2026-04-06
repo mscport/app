@@ -409,23 +409,20 @@
                             </div>
                         </div>
 
-                     <div id="repSubFilters" class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mt-3">
-    <div id="repStatusBox" class="w-full col-span-1 md:col-span-2">
-        <label class="text-xs font-bold text-gray-500 block mb-1">পাড়া নির্বাচন করুন (একাধিক সিলেক্ট করা যাবে)</label>
-        <div id="repStatus" class="w-full border p-2 rounded h-32 overflow-y-auto bg-white flex flex-col gap-2 shadow-inner">
-            </div>
-        <small class="text-[10px] text-gray-400">যে পাড়াগুলোর রিপোর্ট দেখতে চান, সেগুলোতে টিক দিন। (কিছু সিলেক্ট না করলে সব পাড়ার রিপোর্ট দেখাবে)</small>
-    </div>
-</div>
-                            <div id="repStatusBox" class="w-full">
+   <div id="repSubFilters" class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                            <div id="repParaListBox" class="w-full">
+                                <label class="text-xs font-bold text-gray-500 block mb-1">পাড়া নির্বাচন (একাধিক করা যাবে)</label>
+                                <div id="repParaCheckboxList" class="w-full border p-2 rounded h-32 overflow-y-auto bg-white flex flex-col gap-2 shadow-inner">
+                                    </div>
+                            </div>
+                            <div id="repRealStatusBox" class="w-full">
                                 <label class="text-xs font-bold text-gray-500 block mb-1">অবস্থা (Status)</label>
-                                <select id="repStatus" class="w-full border p-2 rounded bg-gray-100" disabled>
+                                <select id="repActiveStatus" class="w-full border p-2 rounded bg-white font-bold text-gray-700">
                                     <option value="all">সব (All)</option>
-                                    <option value="paid">টাকা দিয়েছে (Paid)</option>
-                                    <option value="due">বাকী আছে (Due)</option>
-                                    <option value="zero">মোটেই দেয়নি (Zero)</option>
+                                    <option value="paid">সম্পূর্ণ জমা (Paid)</option>
+                                    <option value="due">সম্পূর্ণ বাকী (Due)</option>
+                                    <option value="partial_due">আংশিক বাকী (Partial Due)</option>
                                 </select>
-                                <small class="text-[10px] text-gray-400">স্ট্যাটাস ফিল্টার এখন Report Type থেকে কন্ট্রোল হয়</small>
                             </div>
                         </div>
                         <button onclick="generateReport()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded font-bold shadow mt-2 text-base">রিপোর্ট দেখুন (Generate)</button>
@@ -632,6 +629,41 @@
             </div>
             <div class="mb-4"><label class="text-xs font-bold">মন্তব্য</label><input type="text" id="ceRem" class="w-full border p-2 rounded"></div>
             <div class="flex justify-end gap-2"><button onclick="closeModal('carEditModal')" class="px-4 py-2 border rounded">Cancel</button><button onclick="saveCarFullEdit()" class="px-5 py-2 bg-purple-600 text-white rounded font-bold">Update All</button></div>
+        </div>
+    </div>
+    
+    <div id="duplicateBillModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-[9999] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white p-5 sm:p-6 rounded-lg shadow-2xl w-full max-w-md border-t-4 border-orange-500 relative">
+            <div class="flex items-center gap-2 mb-3 text-orange-600">
+                <i data-lucide="alert-circle" class="w-6 h-6"></i>
+                <h3 class="text-lg sm:text-xl font-bold">আগে চাঁদা নেওয়া হয়েছে!</h3>
+            </div>
+            
+            <div class="bg-orange-50 p-3 rounded mb-4 text-sm border border-orange-200">
+                <p class="mb-1"><strong class="text-gray-700">নাম:</strong> <span id="dupNameDisp" class="font-bold text-blue-800"></span></p>
+                <p class="mb-1"><strong class="text-gray-700">উৎস (পাড়া):</strong> <span id="dupParaDisp" class="text-gray-800 font-bold"></span></p>
+                <p class="mb-1"><strong class="text-gray-700">আগের জমা:</strong> <span id="dupPrevRecord" class="font-bold text-green-700 font-mono text-base"></span></p>
+            </div>
+
+            <input type="hidden" id="dupBillId">
+
+            <div class="mb-3">
+                <label class="block text-sm font-bold mb-1 text-gray-700">নতুন জমার তারিখ</label>
+                <input type="date" id="dupBillDate" class="w-full border p-2 rounded focus:border-orange-500 font-bold text-gray-800 bg-gray-50">
+            </div>
+            <div class="mb-3">
+                <label class="block text-sm font-bold mb-1 text-gray-700">নতুন টাকার পরিমাণ (Only Number)</label>
+                <input type="number" id="dupBillAmount" class="w-full border-2 border-orange-200 p-2 rounded focus:border-orange-500 text-xl font-mono text-center" placeholder="₹">
+            </div>
+            <div class="mb-5">
+                <label class="block text-sm font-bold mb-1 text-gray-700">মন্তব্য</label>
+                <input type="text" id="dupBillRemarks" class="w-full border p-2 rounded focus:border-orange-500" placeholder="প্রয়োজন হলে লিখুন...">
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <button onclick="closeModal('duplicateBillModal')" class="px-4 py-2 border rounded font-bold text-gray-600 hover:bg-gray-100 transition">Close</button>
+                <button onclick="saveDuplicateBillUpdate()" class="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded font-bold shadow-md transition flex items-center gap-1"><i data-lucide="save" class="w-4 h-4"></i> Save</button>
+            </div>
         </div>
     </div>
     <!-- PARA MODAL -->
@@ -1669,7 +1701,7 @@ function parseParaData(p) {
         document.getElementById('billRemarks').value = '';
     }
 
-    function saveBill() {
+function saveBill() {
         const rawName = document.getElementById('billNameInput').value; 
         const cleaned = cleanDoublePipe(rawName); 
         
@@ -1682,10 +1714,39 @@ function parseParaData(p) {
         }
         
         const para = document.getElementById('billPara').value; 
-        if (!para) { alert("দয়া করে পাড়া নির্বাচন করুন!"); return; } 
-        if (!nameEn) { alert("নাম লিখুন!"); return; }
+        if (!para) { window.originalAlert("দয়া করে পাড়া নির্বাচন করুন!"); return; } 
+        if (!nameEn && !nameBn) { window.originalAlert("নাম লিখুন!"); return; }
 
         const activePuja = document.getElementById('pujaSelect').value;
+
+        // --- NEW: DUPLICATE CHECK LOGIC ---
+        const existingEntry = globalData.income.find(i => 
+            getPuja(i) === activePuja && 
+            i.para === para && 
+            ((nameBn && i.bengali_name === nameBn) || (nameEn && i.english_name === nameEn))
+        );
+
+        if (existingEntry) {
+            // পপ-আপে পুরনো ডাটা সেট করা
+            document.getElementById('dupBillId').value = existingEntry.id;
+            document.getElementById('dupNameDisp').innerText = `${existingEntry.bengali_name} (${existingEntry.english_name})`;
+            document.getElementById('dupParaDisp').innerText = existingEntry.para;
+            
+            let prevDate = formatDisplayDate(existingEntry.date);
+            document.getElementById('dupPrevRecord').innerText = `${prevDate} তারিখে ₹${existingEntry.paid}`;
+
+            // নতুন ইনপুট ক্লিয়ার করা
+            setLocalTodayDate('dupBillDate');
+            document.getElementById('dupBillAmount').value = '';
+            document.getElementById('dupBillRemarks').value = '';
+
+            // পপ-আপ দেখানো
+            document.getElementById('duplicateBillModal').classList.remove('hidden');
+            if(window.lucide) window.lucide.createIcons();
+            return; // এখানেই সেভ হওয়া আটকে দেওয়া হলো
+        }
+        // --- END DUPLICATE CHECK ---
+
         const projectedAmt = Number(document.getElementById('billAmount').value) || 0;
         const advanceAmt = Number(document.getElementById('billAdvance').value) || 0;
 
@@ -1706,8 +1767,57 @@ function parseParaData(p) {
         syncData('add', 'income', item);
         
         clearBillForm(); 
-         
-        alert("সফলভাবে বিল সেভ হয়েছে!");
+        window.originalAlert("সফলভাবে বিল সেভ হয়েছে!");
+    }
+
+function saveDuplicateBillUpdate() {
+        const id = document.getElementById('dupBillId').value;
+        const newDate = document.getElementById('dupBillDate').value;
+        const newAmount = Number(document.getElementById('dupBillAmount').value);
+        const newRemarks = safeTrim(document.getElementById('dupBillRemarks').value);
+
+        if (!newAmount || newAmount <= 0) {
+            window.originalAlert("দয়া করে সঠিক টাকার পরিমাণ দিন!");
+            return;
+        }
+        if (!newDate) {
+            window.originalAlert("তারিখ দিন!");
+            return;
+        }
+
+        let data = store.getIncome();
+        const idx = data.findIndex(i => String(i.id) === String(id));
+
+        if (idx !== -1) {
+            let item = data[idx];
+            
+            // পুরনো টাকার সাথে নতুন টাকা যোগ করা হচ্ছে
+            item.paid += newAmount;
+            
+            // যদি কেউ নতুন করে টাকা দেয়, তবে তার ধার্য (Projected) পরিমাণও বেড়ে যাবে (যদি বাকী না থাকে)
+            if (item.due <= 0) {
+                item.projected += newAmount;
+            } else {
+                item.due = item.projected - item.paid;
+                if (item.due < 0) {
+                    item.projected += Math.abs(item.due);
+                    item.due = 0;
+                }
+            }
+            
+            item.date = newDate;
+
+            // রিমার্কস-এ হিস্ট্রি সেভ রাখা
+            const displayDate = formatDisplayDate(newDate);
+            const historyLog = ` [পুনরায় জমা: ₹${newAmount} (${displayDate})]`;
+            item.remarks = (item.remarks || '') + historyLog + (newRemarks ? ` - ${newRemarks}` : '');
+
+            syncData('update', 'income', item);
+
+            closeModal('duplicateBillModal');
+            clearBillForm();
+            window.originalAlert("আগের নামের সাথে নতুন টাকা সফলভাবে যুক্ত হয়েছে!");
+        }
     }
 
     function renderCollectionTable() {
@@ -2800,21 +2910,24 @@ dashExpList.innerHTML += `<li class="flex justify-between items-center bg-white 
 }
 
 
+
 function handleReportUI() {
         const type = document.getElementById('repType').value; 
         const source = document.getElementById('repSource').value;
         const sourceBox = document.getElementById('repSourceBox'); 
         const subFilters = document.getElementById('repSubFilters');
-        const statusBoxContainer = document.getElementById('repStatus');
+        const paraListContainer = document.getElementById('repParaCheckboxList');
+        const paraListBox = document.getElementById('repParaListBox');
+        const statusBox = document.getElementById('repRealStatusBox');
 
         // Populate Para Checkboxes if empty
-        if (statusBoxContainer && statusBoxContainer.children.length === 0) {
+        if (paraListContainer && paraListContainer.children.length === 0) {
             store.getParas().forEach(p => {
                 const data = parseParaData(p);
                 const label = document.createElement('label');
                 label.className = "flex items-center gap-2 text-sm font-bold text-gray-700 cursor-pointer p-1 hover:bg-gray-50 rounded border border-transparent hover:border-gray-200 transition-colors";
                 label.innerHTML = `<input type="checkbox" value="${data.name}" class="para-filter-checkbox w-4 h-4 text-blue-600 rounded focus:ring-blue-500"> <span>${data.name}</span>`;
-                statusBoxContainer.appendChild(label);
+                paraListContainer.appendChild(label);
             });
         }
 
@@ -2823,10 +2936,14 @@ function handleReportUI() {
             subFilters.classList.add('hidden'); 
         } else {
             sourceBox.classList.remove('hidden'); 
+            subFilters.classList.remove('hidden');
+            
             if (source === 'para') { 
-                subFilters.classList.remove('hidden'); 
+                paraListBox.classList.remove('hidden'); 
+                statusBox.className = "w-full"; 
             } else { 
-                subFilters.classList.add('hidden'); 
+                paraListBox.classList.add('hidden'); 
+                statusBox.className = "w-full md:col-span-2"; 
             }
         }
     }
@@ -2876,7 +2993,7 @@ function handleReportUI() {
         }
 
         // ==========================================
-        // ২. Expense (খরচের) Report (NEW GROUPING LOGIC)
+        // ২. Expense (খরচের) Report
         // ==========================================
         if (type === 'expense') {
             document.getElementById('repResultTitle').innerText = "খরচের রিপোর্ট (Expense Report)"; 
@@ -2888,7 +3005,6 @@ function handleReportUI() {
             let headerRow = '<tr>'; columns.forEach(c => headerRow += `<th class="border p-2 text-left bg-gray-100">${c}</th>`); headerRow += '</tr>'; thead.innerHTML = headerRow;
             results.sort((a,b) => new Date(a.date) - new Date(b.date));
 
-            // গ্রুপ বাই ডেট (Date Grouping)
             let groupedExp = {};
             results.forEach(r => {
                 if (!groupedExp[r.date]) groupedExp[r.date] = [];
@@ -2900,7 +3016,6 @@ function handleReportUI() {
                 let dailyTotal = 0;
                 let displayDate = formatDisplayDate(dateKey);
                 
-                // ডেট হেডার
                 tbody.innerHTML += `<tr><td colspan="${columns.length}" class="border p-2 bg-red-100 text-red-900 font-bold text-base">তারিখ: ${displayDate}</td></tr>`;
 
                 dailyItems.forEach(r => {
@@ -2908,7 +3023,6 @@ function handleReportUI() {
                     dailyTotal += amount;
                     totalAmount += amount;
                     
-                    // Attachment Link Logic
                     let proofHtml = '<span class="text-gray-400 text-xs">নাই</span>';
                     if (r.images && r.images.length > 0) {
                         proofHtml = `<a href="${r.images[0]}" download="Bill_${r.date}_${r.reason.substring(0,10)}.jpg" class="text-blue-600 underline font-bold cursor-pointer hover:text-blue-800" title="ক্লিক করে ডাউনলোড করুন">খরচের বিল <i data-lucide="download" class="w-3 h-3 inline"></i></a>`;
@@ -2922,14 +3036,12 @@ function handleReportUI() {
                     </tr>`;
                 });
 
-                // ঐ দিনের মোট খরচ
                 tbody.innerHTML += `<tr>
                     <td colspan="${columns.length - 2}" class="border p-2 text-right font-bold text-gray-700">ঐ দিনের মোট খরচ:</td>
                     <td colspan="2" class="border p-2 text-left font-bold text-red-700 bg-red-50">${dailyTotal}/- টাকা</td>
                 </tr>`;
             }
 
-            // একদম শেষে গ্র্যান্ড টোটাল
             if (Object.keys(groupedExp).length > 0) {
                 tbody.innerHTML += `<tr>
                     <td colspan="${columns.length - 2}" class="border p-3 text-right font-bold text-lg text-red-800 bg-red-100">শেষে সর্বমোট খরচ :-</td>
@@ -2937,13 +3049,14 @@ function handleReportUI() {
                 </tr>`;
             }
             
-            if(window.lucide) window.lucide.createIcons(); // আইকন রেন্ডার করার জন্য
+            if(window.lucide) window.lucide.createIcons();
         } 
         // ==========================================
         // ৩. Income (আয়ের) Report 
         // ==========================================
         else {
             const source = document.getElementById('repSource').value; 
+            const statusFilter = document.getElementById('repActiveStatus').value; 
             
             // Get Multiple Selected Paras
             const selectedParas = Array.from(document.querySelectorAll('.para-filter-checkbox:checked')).map(cb => cb.value);
@@ -2956,7 +3069,7 @@ function handleReportUI() {
             if (isCarOnly) {
                 columns = ["গাড়ীর নং", "ধরন (কয়লা/লোকাল)", "মোট চাঁদা দান", "বাকী", "Remarks"];
             } else {
-                columns = ["নাম/গাড়ী", "জমার তারিখ", "ধার্য", "জমা (Paid)", "বাকী (Due)", "Remarks"]; // 'উৎস' এর বদলে 'তারিখ' দেখানো হবে
+                columns = ["নাম/গাড়ী", "জমার তারিখ", "ধার্য", "জমা (Paid)", "বাকী (Due)", "Remarks"]; 
             }
             
             let rawData = []; 
@@ -2971,23 +3084,33 @@ function handleReportUI() {
                 if(start && item.date < start) return false; 
                 if(end && item.date > end) return false;
                 
-                // Multi-Para Filter Logic
                 if (source === 'para' && selectedParas.length > 0) {
                     if (!selectedParas.includes(item.para)) return false;
                 }
 
                 const projected = Number(item.projected) || 0; 
+                const paid = Number(item.paid) || 0;
                 const due = Number(item.due) || 0;
+
                 if(type === 'due_list') {
                     if (projected <= 0 || due <= 0) return false;
                 }
+
+                // Status Filter Logic (Paid, Due, Partial Due, All)
+                if (statusFilter === 'paid') {
+                    if (due > 0 || paid === 0) return false; 
+                } else if (statusFilter === 'due') {
+                    if (paid > 0) return false; 
+                } else if (statusFilter === 'partial_due') {
+                    if (paid === 0 || due <= 0) return false; 
+                }
+
                 return true;
             });
 
             let headerRow = '<tr>'; columns.forEach(c => headerRow += `<th class="border p-2 text-left bg-gray-100">${c}</th>`); headerRow += '</tr>'; thead.innerHTML = headerRow;
             results.sort((a,b) => new Date(a.date) - new Date(b.date));
 
-            // গ্রুপ বাই পাড়া (Para Grouping)
             let groupedData = {};
             results.forEach(r => {
                 let groupKey = isCarOnly ? (r.type || 'Unknown Car Type') : (r.para || 'অন্যান্য উৎস');
@@ -3007,7 +3130,7 @@ function handleReportUI() {
                     let dueAmt = Number(r.due) || 0; 
                     let projectedAmt = Number(r.projected) || (paidAmt + dueAmt);
                     let remarks = r.remarks || '-';
-                    let displayDate = new Date(r.date).toLocaleDateString('en-GB');
+                    let displayDate = formatDisplayDate(r.date);
                     
                     groupTotal += paidAmt;
                     groupDueTotal += dueAmt;
@@ -3037,7 +3160,6 @@ function handleReportUI() {
                     }
                 });
 
-                // ঐ গ্রুপের (পাড়ার) মোট আয় বা বাকী
                 let sumLabel = type === 'due_list' ? 'মোট বাকী' : 'মোট আয়';
                 let sumValue = type === 'due_list' ? groupDueTotal : groupTotal;
                 tbody.innerHTML += `<tr>
@@ -3046,7 +3168,6 @@ function handleReportUI() {
                 </tr>`;
             }
 
-            // একদম শেষে গ্র্যান্ড টোটাল
             if (Object.keys(groupedData).length > 0) {
                 let grandSumLabel = type === 'due_list' ? 'শেষে সর্বোমোট বাকী :-' : 'শেষে সর্বোমোট আয় :-';
                 tbody.innerHTML += `<tr>

@@ -11,8 +11,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root { --primary-color: #00695c; --secondary-color: #004d40; --accent-color: #ff8f00; --bg-color: #eceff1; --text-color: #263238; --white: #ffffff; }
-        * { box-sizing: border-box; }
-        body { font-family: 'Hind Siliguri', sans-serif; background-color: var(--bg-color); margin: 0; padding: 5px; color: var(--text-color); }
+        * { 
+    box-sizing: border-box; 
+    font-family: 'Shonar Bangla', sans-serif !important; 
+    font-weight: bold !important; 
+}
         .container { max-width: 100%; margin: 0 auto; background: var(--white); border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); min-height: 95vh; padding-bottom: 60px; }
         .tabs { display: flex; background: #b2dfdb; position: sticky; top: 0; z-index: 10; overflow-x: auto; white-space: nowrap; border-bottom: 2px solid var(--primary-color); }
         .tab-btn { flex: 1; min-width: 90px; padding: 12px 5px; border: none; background: transparent; font-size: 14px; font-weight: 600; font-family: 'Hind Siliguri', sans-serif; color: #444; }
@@ -490,7 +493,7 @@
 
 <script>
     // ******************************************************
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzemcbN-bUKYjMWnYCs6WLavKsJIWsWIX9ZCSo3viSgELp14favmttcfNyhk1KNdeNhcg/exec";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyDuw2tbr7wTBFmLZjgDjjxHs2WW2tFwSrf9CMWpFfX_z11e2zSdGx-aGkfwGg722so1w/exec;"
     // ******************************************************
 
     const SafeStorage = (function() {
@@ -788,7 +791,12 @@
              }
         }
         
-        else if(action === 'rejectNYKS') { let p = participants.find(x => x.id == payload.id); if(p && p.nyksApproved) { delete p.nyksApproved[payload.gameCode]; } }
+        else if(action === 'rejectNYKS') { 
+    let p = participants.find(x => x.id == payload.id); 
+    if(p && p.nyksApproved) { 
+        p.nyksApproved[payload.gameCode] = false; 
+    } 
+}
         // pushData ফাংশনের ভিতরে if-else ব্লকে এটি যোগ করুন:
 else if(action === 'editFullPlayer') {
      let p = participants.find(x => x.id == payload.id);
@@ -1473,17 +1481,20 @@ async function approveByNyks(id, game) {
     }
 }
 
-function rejectByNyks(id, game) { 
+// ==========================================
+// NYKS REJECT FUNCTION (UPDATED)
+// ==========================================
+async function rejectByNyks(id, game) { 
     if(confirm("আপনি কি এই অ্যাপ্রুভালটি বাতিল (Reject) করতে চান?")) { 
-        // ১. সাথে সাথে লোকাল ডাটা মুছে ফেলা 
+        // ১. লোকাল ডাটা আপডেট করা (delete এর বদলে false করা হলো)
         let p = participants.find(x => x.id == id); 
         if(p && p.nyksApproved) { 
-            delete p.nyksApproved[game]; 
+            p.nyksApproved[game] = false; 
         } 
-        // ২. চোখের পলকে টেবিল আপডেট করে সার্টিফিকেট গায়েব করে দেওয়া 
+        // ২. টেবিল আপডেট করে সার্টিফিকেট গায়েব করে দেওয়া 
         renderResults(); 
-        // ৩. ব্যাকগ্রাউন্ডে ডাটাবেজ থেকে ডিলিট হতে থাকবে 
-        pushData('rejectNYKS', { id: id, gameCode: game }); 
+        // ৩. ব্যাকগ্রাউন্ডে ডাটাবেজ আপডেট করার জন্য সার্ভারে পাঠানো 
+        await pushData('rejectNYKS', { id: id, gameCode: game }); 
     } 
 }
 

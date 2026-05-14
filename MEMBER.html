@@ -6,11 +6,17 @@
     <title>Itinda Road Dhaltitha Modern Sporting Club - Member Log</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
     <!-- html2pdf for PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
+    <!-- Cropper.js for Image Cropping -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+    <!-- Imgly AI Background Removal -->
+    <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.2.0/dist/browser/imglyRemoveBackground.umd.js"></script>
+
     <style>
         /* Custom scrollbar for modal */
         .modal-scroll::-webkit-scrollbar { width: 8px; }
@@ -19,7 +25,9 @@
         .modal-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         .required-asterisk::after { content: " *"; color: red; }
         .loader-spinner { border-top-color: #3498db; animation: spinner 1.5s linear infinite; }
+        .ai-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
     </style>
 </head>
 <body class="bg-gray-50 font-sans text-gray-800">
@@ -52,7 +60,8 @@
         </div>
     </div>
 
-    <div class="max-w-[95%] mx-auto px-4 py-8 relative">
+    <!-- Main Content Application -->
+    <div class="max-w-[95%] mx-auto px-4 py-8 relative" id="mainAppContainer">
         
         <!-- Header -->
         <button onclick="logout()" id="logoutBtn" class="hidden absolute top-0 right-4 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 px-4 py-2 rounded-md text-sm font-semibold transition-colors shadow-sm z-10"><i class="fas fa-sign-out-alt mr-2"></i>Logout</button>
@@ -247,7 +256,7 @@
                                 <button type="button" onclick="addIdProofRow()" class="mb-4 text-sm text-blue-600 hover:text-blue-800 font-medium inline-flex items-center"><i class="fas fa-plus-circle mr-1"></i> Add Another ID Proof</button>
 
                                 <div class="border-t pt-4">
-                                    <label class="block text-sm font-medium text-gray-700">Upload Member's Signature</label>
+                                    <label class="block text-sm font-medium text-gray-700">Upload Member's Signature (Auto Removes Background)</label>
                                     <div id="signatureImagePreviewContainer" class="hidden mt-2 flex items-center space-x-4 bg-gray-50 p-2 rounded border w-fit">
                                         <img id="signatureImagePreview" src="" class="h-10 object-contain bg-white px-2 border">
                                         <button type="button" onclick="removeSignatureImage()" class="text-xs text-red-600 hover:text-red-800 font-semibold"><i class="fas fa-trash"></i> Remove</button>
@@ -273,13 +282,8 @@
         </div>
     </div>
 
-    <!-- Alert Toast -->
-    <div id="toast" class="fixed bottom-5 right-5 transform translate-y-20 opacity-0 transition-all duration-300 bg-gray-800 text-white px-6 py-3 rounded shadow-lg z-50 flex items-center hidden">
-        <i id="toastIcon" class="fas fa-check-circle text-green-400 mr-3"></i>
-        <span id="toastMsg">Action successful</span>
-    </div>
-
-<div id="cropperModal" class="fixed inset-0 z-[110] bg-gray-900 bg-opacity-90 flex items-center justify-center hidden">
+    <!-- Image Cropper Modal -->
+    <div id="cropperModal" class="fixed inset-0 z-[110] bg-gray-900 bg-opacity-90 flex items-center justify-center hidden">
         <div class="bg-white p-4 rounded-xl shadow-2xl w-full max-w-lg transform transition-all">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-bold text-gray-900">Crop Profile Photo</h3>
@@ -287,18 +291,33 @@
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
-            <div class="w-full h-80 bg-gray-100 flex justify-center items-center overflow-hidden">
+            <div class="w-full h-80 bg-gray-100 flex justify-center items-center overflow-hidden rounded-lg">
                 <img id="imageToCrop" src="" class="max-w-full max-h-full">
             </div>
             <div class="mt-4 flex justify-end space-x-3">
                 <button type="button" onclick="closeCropper()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md font-semibold hover:bg-gray-300">Cancel</button>
-                <button type="button" onclick="applyCrop()" class="px-4 py-2 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700">
-                    <i class="fas fa-crop-alt mr-2"></i> Crop & Save
+                <button type="button" onclick="applyCropAndRemoveBg()" class="px-4 py-2 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-magic mr-2"></i> Crop & Apply AI
                 </button>
             </div>
         </div>
     </div>
 
+    <!-- AI Processing Loader Modal -->
+    <div id="aiLoaderModal" class="fixed inset-0 z-[120] bg-gray-900 bg-opacity-95 flex items-center justify-center hidden">
+        <div class="text-center text-white ai-pulse">
+            <div class="text-5xl mb-4 text-blue-400"><i class="fas fa-brain fa-spin"></i></div>
+            <h3 class="text-2xl font-bold mb-2">AI is processing image...</h3>
+            <p class="text-gray-300 text-sm">Removing background perfectly without losing hair/edges.</p>
+            <p class="text-gray-400 text-xs mt-2">(First time might take slightly longer to load the AI model)</p>
+        </div>
+    </div>
+
+    <!-- Alert Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 transform translate-y-20 opacity-0 transition-all duration-300 bg-gray-800 text-white px-6 py-3 rounded shadow-lg z-50 flex items-center hidden">
+        <i id="toastIcon" class="fas fa-check-circle text-green-400 mr-3"></i>
+        <span id="toastMsg">Action successful</span>
+    </div>
 
     <script>
         // ✅ YOUR GOOGLE APPS SCRIPT URL HAS BEEN PASTED HERE
@@ -313,7 +332,6 @@
             if (url.includes('drive.google.com/uc')) {
                 const match = url.match(/[?&]id=([^&]+)/);
                 if (match && match[1]) {
-                    // Transforms Google Drive uc?id URL into reliable embedded URL to bypass CORS and view restrictions
                     return `https://lh3.googleusercontent.com/d/${match[1]}`;
                 }
             }
@@ -322,21 +340,28 @@
 
         // Login Methods
         function checkLogin() {
+            const loginModal = document.getElementById('loginModal');
+            const logoutBtn = document.getElementById('logoutBtn');
+            
             if (!userRole) {
-                document.getElementById('loginModal').classList.remove('hidden');
+                if (loginModal) loginModal.classList.remove('hidden');
                 document.body.style.overflow = 'hidden';
-                document.getElementById('logoutBtn').classList.add('hidden');
+                if (logoutBtn) logoutBtn.classList.add('hidden');
             } else {
-                document.getElementById('loginModal').classList.add('hidden');
+                if (loginModal) loginModal.classList.add('hidden');
                 document.body.style.overflow = 'auto';
-                document.getElementById('logoutBtn').classList.remove('hidden');
+                if (logoutBtn) logoutBtn.classList.remove('hidden');
                 applyRoleState();
             }
         }
 
         function toggleLoginPassword() {
-            const role = document.getElementById('loginRole').value;
-            document.getElementById('passwordContainer').style.display = role === 'admin' ? 'block' : 'none';
+            const loginRoleElement = document.getElementById('loginRole');
+            const passwordContainer = document.getElementById('passwordContainer');
+            if (loginRoleElement && passwordContainer) {
+                const role = loginRoleElement.value;
+                passwordContainer.style.display = role === 'admin' ? 'block' : 'none';
+            }
         }
 
         function handleLogin(e) {
@@ -353,15 +378,17 @@
             userRole = role;
             checkLogin();
             if(membersData && membersData.length > 0) {
-                renderTable(); // Re-render if data already fetched
+                renderTable(); 
             }
         }
 
         function logout() {
             localStorage.removeItem('clubUserRole');
             userRole = null;
-            document.getElementById('loginPassword').value = '';
-            document.getElementById('loginRole').value = 'member';
+            const loginPasswordEl = document.getElementById('loginPassword');
+            const loginRoleEl = document.getElementById('loginRole');
+            if(loginPasswordEl) loginPasswordEl.value = '';
+            if(loginRoleEl) loginRoleEl.value = 'member';
             toggleLoginPassword();
             checkLogin();
         }
@@ -382,7 +409,6 @@
             }
         }
 
-        // Global Signatures retrieval
         function getGlobalSignatures() {
             if(!membersData) return { presidentSig: null, secretarySig: null };
             
@@ -400,21 +426,22 @@
         let isEditMode = false;
         let editingMemberId = null;
         let existingProfilePic = null;
-        let croppedProfileBase64 = null; 
         let existingSignature = null;
+        
+        // NEW Image Variables for processed images
+        let croppedProfileBase64 = null;
+        let processedSignatureBase64 = null;
 
         const idPrefixes = { 'GB': 'MSC/GB/', 'OM': 'MSC/OM/', 'HM': 'MSC/HM/' };
         const tabNames = { 'GB': 'GOVERNING BODY', 'OM': 'ORDINARY MEMBER', 'HM': 'HONORARY MEMBER' };
         
         let membersData = []; 
 
-        // App Initialization: Fetch Data from Database on Load
         document.addEventListener('DOMContentLoaded', () => { 
             checkLogin();
             fetchDatabaseData();
         });
 
-        // 🟢 Fetch logic: GET data from Apps Script
         async function fetchDatabaseData() {
             try {
                 const response = await fetch(SCRIPT_URL);
@@ -428,38 +455,37 @@
                         if (typeof m.idProofs === 'string') {
                             try { m.idProofs = JSON.parse(m.idProofs); } catch(e) { m.idProofs = []; }
                         }
-                        
-                        // ✅ DOB থেকে Time Zone এবং Time ছাঁটাই করার নিরাপদ লজিক
                         if (m.dob) {
-                            let dobStr = m.dob.toString(); // ডেটা সংখ্যা হলেও আগে টেক্সটে রূপান্তর করবে
+                            let dobStr = m.dob.toString();
                             if (dobStr.includes('T') || dobStr.includes('Z') || dobStr.includes('GMT')) {
                                 const dateObj = new Date(m.dob);
                                 if (!isNaN(dateObj)) {
-                                    // DD/MM/YYYY ফরম্যাটে কনভার্ট করা হচ্ছে
                                     m.dob = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
                                 }
                             }
                         }
-
                         return m;
                     });
-                    document.getElementById('loadingState').classList.add('hidden');
-                    document.getElementById('tableContainer').classList.remove('hidden');
+                    const loadingState = document.getElementById('loadingState');
+                    const tableContainer = document.getElementById('tableContainer');
+                    if (loadingState) loadingState.classList.add('hidden');
+                    if (tableContainer) tableContainer.classList.remove('hidden');
                     renderTable();
                 } else {
                     throw new Error("Failed to load data");
                 }
             } catch (error) {
-                console.error("Database Connection/Processing Error:", error);
-                document.getElementById('loadingState').innerHTML = `<p class="text-red-500"><i class="fas fa-exclamation-triangle"></i> Failed to connect or process database data. Check console for details.</p>`;
+                console.error("Database Error:", error);
+                const loadingState = document.getElementById('loadingState');
+                if (loadingState) {
+                    loadingState.innerHTML = `<p class="text-red-500"><i class="fas fa-exclamation-triangle"></i> Failed to connect or process database data.</p>`;
+                }
                 showToast("Connection or Data Error", true);
             }
         }
         
-        // 🟢 Fetch logic: POST data to Apps Script (Save, Update, Delete)
         async function apiSyncAction(action, dataObj) {
             const payload = { action: action, data: dataObj };
-            
             try {
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
@@ -473,38 +499,42 @@
             }
         }
 
-        // Tab Logic - ট্যাব লজিক
         function switchTab(tab) {
             currentTab = tab;
             ['GB', 'OM', 'HM'].forEach(t => {
                 const el = document.getElementById(`tab-${t}`);
-                if (t === tab) {
-                    el.className = 'px-4 py-2 text-sm font-medium rounded-md bg-blue-100 text-blue-700 transition-colors uppercase';
-                } else {
-                    el.className = 'px-4 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors uppercase';
+                if (el) {
+                    if (t === tab) {
+                        el.className = 'px-4 py-2 text-sm font-medium rounded-md bg-blue-100 text-blue-700 transition-colors uppercase';
+                    } else {
+                        el.className = 'px-4 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors uppercase';
+                    }
                 }
             });
 
-            document.getElementById('idPrefixDisplay').innerText = idPrefixes[currentTab];
-            document.getElementById('downloadBtnText').innerText = `${tabNames[currentTab]} Data`;
+            const idPrefixDisplay = document.getElementById('idPrefixDisplay');
+            const downloadBtnText = document.getElementById('downloadBtnText');
+            if (idPrefixDisplay) idPrefixDisplay.innerText = idPrefixes[currentTab];
+            if (downloadBtnText) downloadBtnText.innerText = `${tabNames[currentTab]} Data`;
             renderTable();
         }
 
-        // Render Data Table - টেবিল রেন্ডার করা
         function renderTable() {
             const tbody = document.getElementById('memberTableBody');
             const emptyState = document.getElementById('emptyState');
+            if(!tbody || !emptyState) return;
+
             tbody.innerHTML = '';
             
             const filteredMembers = membersData.filter(m => m.tabCategory === currentTab);
 
             if (filteredMembers.length === 0) {
-                tbody.parentElement.classList.add('hidden');
+                if (tbody.parentElement) tbody.parentElement.classList.add('hidden');
                 emptyState.classList.remove('hidden');
                 return;
             }
 
-            tbody.parentElement.classList.remove('hidden');
+            if (tbody.parentElement) tbody.parentElement.classList.remove('hidden');
             emptyState.classList.add('hidden');
 
             filteredMembers.forEach((member, index) => {
@@ -512,7 +542,6 @@
                 tr.className = "hover:bg-gray-50 transition-colors";
 
                 const slCell = `<td class="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-500">${index + 1}</td>`;
-
                 const safeProfile = getValidImageUrl(member.profilePicBase64);
                 const safeSig = getValidImageUrl(member.signatureBase64);
 
@@ -599,16 +628,238 @@
                 if (userRole === 'admin') {
                     tr.innerHTML = slCell + cell1 + cell2 + cell3 + cell4 + sigCell + cell5;
                 } else {
-                    tr.innerHTML = slCell + cell1 + cell2 + cell3 + cell4 + cell5; // Skips sigCell for members
+                    tr.innerHTML = slCell + cell1 + cell2 + cell3 + cell4 + cell5;
                 }
-                
                 tbody.appendChild(tr);
             });
         }
 
-        // Dynamic ID Proof Row Handlers - ডায়নামিক আইডি প্রুফ
+        // ==========================================
+        // ✨ NEW: AI BACKGROUND REMOVAL & CROP LOGIC 
+        // ==========================================
+        let cropper = null;
+
+        const profileImageInput = document.getElementById('profileImage');
+        if (profileImageInput) {
+            profileImageInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const cropperModal = document.getElementById('cropperModal');
+                        if (cropperModal) cropperModal.classList.remove('hidden');
+                        
+                        const image = document.getElementById('imageToCrop');
+                        if (image) {
+                            image.src = event.target.result;
+                            if(cropper) { cropper.destroy(); }
+                            cropper = new Cropper(image, {
+                                aspectRatio: 3.5 / 4.5,
+                                viewMode: 1,
+                                autoCropArea: 1,
+                            });
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        function closeCropper() {
+            const cropperModal = document.getElementById('cropperModal');
+            if (cropperModal) cropperModal.classList.add('hidden');
+            if(cropper) { cropper.destroy(); cropper = null; }
+            if(!croppedProfileBase64 && !existingProfilePic) {
+                const profileImgInput = document.getElementById('profileImage');
+                if (profileImgInput) profileImgInput.value = ''; 
+            }
+        }
+
+        async function applyCropAndRemoveBg() {
+            if(!cropper) return;
+            
+            // Show AI processing loader
+            const aiLoaderModal = document.getElementById('aiLoaderModal');
+            const cropperModal = document.getElementById('cropperModal');
+            if (aiLoaderModal) aiLoaderModal.classList.remove('hidden');
+            if (cropperModal) cropperModal.classList.add('hidden');
+
+            try {
+                // Get Cropped image
+                const canvas = cropper.getCroppedCanvas({ width: 350, height: 450 });
+                
+                canvas.toBlob(async (blob) => {
+                    try {
+                        // 🟢 @imgly/background-removal AI Magic
+                        // This removes the background perfectly keeping hair/ears intact.
+                        const transparentBlob = await imglyRemoveBackground(blob);
+                        
+                        // Draw the AI result onto a WHITE canvas
+                        const imgUrl = URL.createObjectURL(transparentBlob);
+                        const img = new Image();
+                        img.onload = () => {
+                            const finalCanvas = document.createElement('canvas');
+                            finalCanvas.width = 350;
+                            finalCanvas.height = 450;
+                            const ctx = finalCanvas.getContext('2d');
+                            
+                            // Fill background with perfect white
+                            ctx.fillStyle = '#FFFFFF';
+                            ctx.fillRect(0, 0, 350, 450);
+                            
+                            // Draw the transparent AI image over white
+                            ctx.drawImage(img, 0, 0, 350, 450);
+                            
+                            // Convert to Base64 (JPEG)
+                            croppedProfileBase64 = finalCanvas.toDataURL('image/jpeg', 0.9);
+                            
+                            // Update UI
+                            const profileImgPreview = document.getElementById('profileImagePreview');
+                            const profileImgPreviewContainer = document.getElementById('profileImagePreviewContainer');
+                            const fileInput = document.getElementById('profileImage');
+                            
+                            if (profileImgPreview) profileImgPreview.src = croppedProfileBase64;
+                            if (profileImgPreviewContainer) profileImgPreviewContainer.classList.remove('hidden');
+                            if (fileInput) {
+                                fileInput.classList.add('hidden');
+                                fileInput.removeAttribute('required');
+                                fileInput.value = ''; // Clean input
+                            }
+                            
+                            closeCropper();
+                            if (aiLoaderModal) aiLoaderModal.classList.add('hidden');
+                            showToast("AI Background Removed & Cropped Successfully!");
+                        };
+                        img.src = imgUrl;
+
+                    } catch (error) {
+                        console.error("AI Error:", error);
+                        // Fallback: If AI fails, just use the cropped image with white background
+                        fallbackCrop(canvas);
+                    }
+                }, 'image/png');
+            } catch(e) {
+                console.error(e);
+                if (aiLoaderModal) aiLoaderModal.classList.add('hidden');
+                showToast("Image Processing Error", true);
+            }
+        }
+
+        function fallbackCrop(canvas) {
+            const finalCanvas = document.createElement('canvas');
+            finalCanvas.width = 350;
+            finalCanvas.height = 450;
+            const ctx = finalCanvas.getContext('2d');
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, 350, 450);
+            ctx.drawImage(canvas, 0, 0);
+            croppedProfileBase64 = finalCanvas.toDataURL('image/jpeg', 0.9);
+            
+            const profileImgPreview = document.getElementById('profileImagePreview');
+            const profileImgPreviewContainer = document.getElementById('profileImagePreviewContainer');
+            const fileInput = document.getElementById('profileImage');
+            
+            if (profileImgPreview) profileImgPreview.src = croppedProfileBase64;
+            if (profileImgPreviewContainer) profileImgPreviewContainer.classList.remove('hidden');
+            if (fileInput) {
+                fileInput.classList.add('hidden');
+                fileInput.removeAttribute('required');
+                fileInput.value = ''; // Clean input
+            }
+            
+            closeCropper();
+            const aiLoaderModal = document.getElementById('aiLoaderModal');
+            if (aiLoaderModal) aiLoaderModal.classList.add('hidden');
+            showToast("Cropped successfully (AI feature skipped)");
+        }
+
+        // ==========================================
+        // ✨ NEW: SIGNATURE BACKGROUND REMOVAL LOGIC 
+        // ==========================================
+        const signatureImageInput = document.getElementById('signatureImage');
+        if (signatureImageInput) {
+            signatureImageInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const img = new Image();
+                        img.onload = function() {
+                            processSignatureAndRemoveBackground(img, function(base64) {
+                                processedSignatureBase64 = base64;
+                                const sigImgPreview = document.getElementById('signatureImagePreview');
+                                const sigImgPreviewContainer = document.getElementById('signatureImagePreviewContainer');
+                                const fileInput = document.getElementById('signatureImage');
+                                
+                                if (sigImgPreview) sigImgPreview.src = base64;
+                                if (sigImgPreviewContainer) sigImgPreviewContainer.classList.remove('hidden');
+                                if (fileInput) {
+                                    fileInput.classList.add('hidden');
+                                    fileInput.value = ''; // Clean input
+                                }
+                                showToast("Signature Extracted Successfully!");
+                            });
+                        };
+                        img.src = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        function processSignatureAndRemoveBackground(imgElement, callback) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const MAX_WIDTH = 400;
+            const MAX_HEIGHT = 150;
+            let width = imgElement.width, height = imgElement.height;
+
+            if (width > height) {
+                if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+            } else {
+                if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+            }
+
+            canvas.width = width; canvas.height = height;
+            
+            // Fill white initially
+            ctx.fillStyle = "#FFFFFF";
+            ctx.fillRect(0, 0, width, height);
+            ctx.drawImage(imgElement, 0, 0, width, height);
+
+            // Magic Thresholding to isolate Ink from Paper
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i+1];
+                const b = data[i+2];
+                // Calculate pixel brightness
+                const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+                
+                // If it is light (paper, shadows), convert to pure WHITE
+                if (luminance > 140) { 
+                    data[i] = 255;
+                    data[i+1] = 255;
+                    data[i+2] = 255;
+                } else {
+                    // It is dark (ink), let's make it more prominent (black/dark-blue)
+                    data[i] = Math.max(0, r - 50);
+                    data[i+1] = Math.max(0, g - 50);
+                    data[i+2] = Math.max(0, b - 50);
+                }
+            }
+            ctx.putImageData(imageData, 0, 0);
+            callback(canvas.toDataURL('image/jpeg', 0.9));
+        }
+
+        // ------------------------------------------
+
         function addIdProofRow(type = '', num = '', existingBase64 = null) {
             const container = document.getElementById('idProofsContainer');
+            if(!container) return;
+            
             const rowCount = container.children.length;
             const row = document.createElement('div');
             row.className = 'id-proof-row grid grid-cols-1 md:grid-cols-4 gap-4 mb-3 pb-3 border-b border-gray-200 last:border-0';
@@ -660,17 +911,22 @@
             const parent = container.parentElement;
             const fileInput = parent.querySelector('.idImage');
             container.remove();
-            fileInput.classList.remove('hidden'); 
+            if(fileInput) fileInput.classList.remove('hidden'); 
         }
 
         function clearIdProofRows() {
-            document.getElementById('idProofsContainer').innerHTML = '';
+            const container = document.getElementById('idProofsContainer');
+            if(container) container.innerHTML = '';
         }
 
         function handleLocalityChange() {
-            const locType = document.getElementById('localityType').value;
+            const locTypeEl = document.getElementById('localityType');
+            if(!locTypeEl) return;
+            const locType = locTypeEl.value;
             const wC = document.getElementById('wardContainer'), pC = document.getElementById('panchayetContainer');
             const wN = document.getElementById('wardNo'), pN = document.getElementById('panchayetName');
+
+            if(!wC || !pC || !wN || !pN) return;
 
             if (locType === 'Municipality') {
                 wC.classList.remove('hidden'); pC.classList.add('hidden');
@@ -684,42 +940,6 @@
             }
         }
 
-        // Image Compression Utility - ইমেজ ছোট করা
-     function compressImage(file, callback, isSignature = false) {
-            if (!file) { callback(null); return; }
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = event => {
-                const img = new Image();
-                img.src = event.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    
-                    const MAX_WIDTH = isSignature ? 400 : 250;
-                    const MAX_HEIGHT = isSignature ? 150 : 250;
-                    let width = img.width, height = img.height;
-
-                    if (width > height) {
-                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-                    } else {
-                        if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
-                    }
-
-                    canvas.width = width; canvas.height = height;
-                    
-                    // FIXED: ছবি আঁকার আগে ক্যানভাসে সাদা রং ভরে দেওয়া হলো
-                    ctx.fillStyle = "#FFFFFF";
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                    // এবার ছবিটি সাদা ব্যাকগ্রাউন্ডের ওপর বসবে
-                    ctx.drawImage(img, 0, 0, width, height);
-                    
-                    callback(canvas.toDataURL('image/jpeg', isSignature ? 0.8 : 0.6)); 
-                }
-            }
-        }
-
         function getFileBase64(file, callback) {
             if (!file) { callback(null); return; }
             const reader = new FileReader();
@@ -728,73 +948,102 @@
         }
 
         function openModal() {
-            if (userRole !== 'admin') return; // Extra check to ensure members can't trigger it via console
+            if (userRole !== 'admin') return; 
             isEditMode = false;
             editingMemberId = null;
             existingProfilePic = null;
             existingSignature = null;
-           croppedProfileBase64 = null; document.getElementById('modal-title').innerText = 'Add New Member';
-            document.getElementById('saveBtn').innerHTML = '<i class="fas fa-save mr-2 mt-1"></i> Save Profile';
-            
-            document.getElementById('addMemberForm').reset();
-            document.getElementById('idPrefixDisplay').innerText = idPrefixes[currentTab];
-            
-            document.getElementById('profileImagePreviewContainer').classList.add('hidden');
-            document.getElementById('profileImage').classList.remove('hidden');
-            document.getElementById('profileImage').setAttribute('required', 'true');
+            croppedProfileBase64 = null;
+            processedSignatureBase64 = null;
 
-            document.getElementById('signatureImagePreviewContainer').classList.add('hidden');
-            document.getElementById('signatureImage').classList.remove('hidden');
+            const modalTitle = document.getElementById('modal-title');
+            const saveBtn = document.getElementById('saveBtn');
+            const addMemberForm = document.getElementById('addMemberForm');
+            const idPrefixDisplay = document.getElementById('idPrefixDisplay');
+            const profileImagePreviewContainer = document.getElementById('profileImagePreviewContainer');
+            const profileImage = document.getElementById('profileImage');
+            const signatureImagePreviewContainer = document.getElementById('signatureImagePreviewContainer');
+            const signatureImage = document.getElementById('signatureImage');
+            const addMemberModal = document.getElementById('addMemberModal');
+
+            if(modalTitle) modalTitle.innerText = 'Add New Member';
+            if(saveBtn) saveBtn.innerHTML = '<i class="fas fa-save mr-2 mt-1"></i> Save Profile';
+            if(addMemberForm) addMemberForm.reset();
+            if(idPrefixDisplay) idPrefixDisplay.innerText = idPrefixes[currentTab];
+            
+            if(profileImagePreviewContainer) profileImagePreviewContainer.classList.add('hidden');
+            if(profileImage) {
+                profileImage.classList.remove('hidden');
+                profileImage.setAttribute('required', 'true');
+            }
+
+            if(signatureImagePreviewContainer) signatureImagePreviewContainer.classList.add('hidden');
+            if(signatureImage) signatureImage.classList.remove('hidden');
             
             clearIdProofRows();
             addIdProofRow(); 
             
             handleLocalityChange();
-            document.getElementById('addMemberModal').classList.remove('hidden');
+            if(addMemberModal) addMemberModal.classList.remove('hidden');
         }
 
         function removeProfileImage() {
             existingProfilePic = null;
-           croppedProfileBase64 = null; document.getElementById('profileImagePreviewContainer').classList.add('hidden');
+            croppedProfileBase64 = null;
+            const profileImagePreviewContainer = document.getElementById('profileImagePreviewContainer');
             const fileInput = document.getElementById('profileImage');
-            fileInput.value = ''; 
-            fileInput.classList.remove('hidden');
-            fileInput.setAttribute('required', 'true');
+            
+            if(profileImagePreviewContainer) profileImagePreviewContainer.classList.add('hidden');
+            if(fileInput) {
+                fileInput.value = ''; 
+                fileInput.classList.remove('hidden');
+                fileInput.setAttribute('required', 'true');
+            }
         }
 
         function removeSignatureImage() {
             existingSignature = null;
-            document.getElementById('signatureImagePreviewContainer').classList.add('hidden');
+            processedSignatureBase64 = null;
+            const signatureImagePreviewContainer = document.getElementById('signatureImagePreviewContainer');
             const fileInput = document.getElementById('signatureImage');
-            fileInput.value = ''; 
-            fileInput.classList.remove('hidden');
+            
+            if(signatureImagePreviewContainer) signatureImagePreviewContainer.classList.add('hidden');
+            if(fileInput) {
+                fileInput.value = ''; 
+                fileInput.classList.remove('hidden');
+            }
         }
 
-        function closeModal() { document.getElementById('addMemberModal').classList.add('hidden'); }
+        function closeModal() { 
+            const addMemberModal = document.getElementById('addMemberModal');
+            if(addMemberModal) addMemberModal.classList.add('hidden'); 
+        }
 
         async function handleFormSubmit(e) {
             e.preventDefault();
             if (userRole !== 'admin') return;
 
             const saveBtn = document.getElementById('saveBtn');
-            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving to Database...';
-            saveBtn.disabled = true;
+            if(saveBtn) {
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving to Database...';
+                saveBtn.disabled = true;
+            }
 
             try {
-                const prefix = document.getElementById('idPrefixDisplay').innerText;
-                const fullId = prefix + document.getElementById('idNumber').value;
-                const locType = document.getElementById('localityType').value;
+                const prefix = document.getElementById('idPrefixDisplay') ? document.getElementById('idPrefixDisplay').innerText : '';
+                const fullId = prefix + (document.getElementById('idNumber') ? document.getElementById('idNumber').value : '');
+                const locType = document.getElementById('localityType') ? document.getElementById('localityType').value : '';
                 
                 const addrObj = {
-                    road: document.getElementById('road').value,
-                    vill: document.getElementById('vill').value,
-                    po: document.getElementById('po').value,
-                    ps: document.getElementById('ps').value,
-                    district: document.getElementById('district').value,
-                    pincode: document.getElementById('pincode').value,
+                    road: document.getElementById('road') ? document.getElementById('road').value : '',
+                    vill: document.getElementById('vill') ? document.getElementById('vill').value : '',
+                    po: document.getElementById('po') ? document.getElementById('po').value : '',
+                    ps: document.getElementById('ps') ? document.getElementById('ps').value : '',
+                    district: document.getElementById('district') ? document.getElementById('district').value : '',
+                    pincode: document.getElementById('pincode') ? document.getElementById('pincode').value : '',
                     localityType: locType,
-                    wardNo: locType === 'Municipality' ? document.getElementById('wardNo').value : '',
-                    panchayetName: locType === 'Panchayet' ? document.getElementById('panchayetName').value : ''
+                    wardNo: (locType === 'Municipality' && document.getElementById('wardNo')) ? document.getElementById('wardNo').value : '',
+                    panchayetName: (locType === 'Panchayet' && document.getElementById('panchayetName')) ? document.getElementById('panchayetName').value : ''
                 };
 
                 let localityStr = '';
@@ -802,21 +1051,23 @@
                 if(locType === 'Panchayet') localityStr = `(Panchayet: ${addrObj.panchayetName})`;
                 const fullAddress = `${addrObj.road}, ${addrObj.vill}, P.O. ${addrObj.po}, P.S. ${addrObj.ps}, ${addrObj.district}, ${addrObj.pincode} ${localityStr}`;
 
-                const profileImgFile = document.getElementById('profileImage').files[0];
-                const sigFile = document.getElementById('signatureImage').files[0];
-               let profileBase64 = croppedProfileBase64 ? croppedProfileBase64 : existingProfilePic;
-                let sigBase64 = sigFile ? await new Promise(resolve => compressImage(sigFile, resolve, true)) : existingSignature;
+                // Use the directly processed variables instead of compressing on submit
+                let profileBase64 = croppedProfileBase64 ? croppedProfileBase64 : (existingProfilePic || '');
+                let sigBase64 = processedSignatureBase64 ? processedSignatureBase64 : (existingSignature || '');
 
                 const idProofRows = document.querySelectorAll('.id-proof-row');
                 const idProofsArray = [];
                 for (let row of idProofRows) {
-                    const type = row.querySelector('.idType').value;
-                    const num = row.querySelector('.idProofNumber').value;
+                    const typeEl = row.querySelector('.idType');
+                    const numEl = row.querySelector('.idProofNumber');
                     const fileInput = row.querySelector('.idImage');
                     const existingInput = row.querySelector('.existingBase64');
                     
+                    const type = typeEl ? typeEl.value : '';
+                    const num = numEl ? numEl.value : '';
+
                     let docBase64 = null;
-                    if (fileInput.files && fileInput.files[0]) {
+                    if (fileInput && fileInput.files && fileInput.files[0]) {
                         docBase64 = await new Promise(resolve => getFileBase64(fileInput.files[0], resolve));
                     } else if (existingInput) {
                         docBase64 = existingInput.value;
@@ -833,17 +1084,17 @@
                     id: isEditMode ? editingMemberId : Date.now().toString(),
                     tabCategory: currentTab,
                     fullId: fullId,
-                    resolutionNo: document.getElementById('resolutionNo').value,
-                    resolutionDate: document.getElementById('resolutionDate').value,
-                    joinDate: document.getElementById('joinDate').value,
-                    designation: document.getElementById('designation').value.toUpperCase(),
-                    fullName: document.getElementById('fullName').value.toUpperCase(),
-                    gender: document.getElementById('gender').value,
-                    dob: document.getElementById('dob').value,
-                    guardianName: document.getElementById('guardianName').value,
-                    profession: document.getElementById('profession').value.toUpperCase(),
-                    mobile: document.getElementById('mobile').value,
-                    email: document.getElementById('email').value,
+                    resolutionNo: document.getElementById('resolutionNo') ? document.getElementById('resolutionNo').value : '',
+                    resolutionDate: document.getElementById('resolutionDate') ? document.getElementById('resolutionDate').value : '',
+                    joinDate: document.getElementById('joinDate') ? document.getElementById('joinDate').value : '',
+                    designation: document.getElementById('designation') ? document.getElementById('designation').value.toUpperCase() : '',
+                    fullName: document.getElementById('fullName') ? document.getElementById('fullName').value.toUpperCase() : '',
+                    gender: document.getElementById('gender') ? document.getElementById('gender').value : '',
+                    dob: document.getElementById('dob') ? document.getElementById('dob').value : '',
+                    guardianName: document.getElementById('guardianName') ? document.getElementById('guardianName').value : '',
+                    profession: document.getElementById('profession') ? document.getElementById('profession').value.toUpperCase() : '',
+                    mobile: document.getElementById('mobile') ? document.getElementById('mobile').value : '',
+                    email: document.getElementById('email') ? document.getElementById('email').value : '',
                     address: fullAddress,
                     addressObj: addrObj,
                     idProofs: idProofsArray,
@@ -853,7 +1104,6 @@
                     resignReason: ''
                 };
 
-                // REAL API SYNC
                 const result = await apiSyncAction(syncAction, memberDataPayload);
                 
                 if (result.status === "success") {
@@ -874,12 +1124,13 @@
                 console.error(err);
                 showToast('Database Error: Check connection.', true);
             } finally {
-                saveBtn.innerHTML = isEditMode ? '<i class="fas fa-save mr-2 mt-1"></i> Update Profile' : '<i class="fas fa-save mr-2 mt-1"></i> Save Profile';
-                saveBtn.disabled = false;
+                if(saveBtn) {
+                    saveBtn.innerHTML = isEditMode ? '<i class="fas fa-save mr-2 mt-1"></i> Update Profile' : '<i class="fas fa-save mr-2 mt-1"></i> Save Profile';
+                    saveBtn.disabled = false;
+                }
             }
         }
 
-        // DB Delete Integration
         async function deleteMember(id) {
             if (userRole !== 'admin') return;
             if(!confirm("Are you sure you want to completely delete this member from the database?")) return;
@@ -900,7 +1151,6 @@
             }
         }
 
-        // Edit function - মেম্বার এডিট করার ফাংশন
         function editMember(id) {
             if (userRole !== 'admin') return;
             const member = membersData.find(m => m.id.toString() === id.toString());
@@ -908,69 +1158,85 @@
             
             isEditMode = true;
             editingMemberId = id;
+            croppedProfileBase64 = null;
+            processedSignatureBase64 = null;
             
-            document.getElementById('modal-title').innerText = 'Edit Member Profile';
-            document.getElementById('saveBtn').innerHTML = '<i class="fas fa-save mr-2 mt-1"></i> Update Profile';
+            const modalTitle = document.getElementById('modal-title');
+            const saveBtn = document.getElementById('saveBtn');
+            if(modalTitle) modalTitle.innerText = 'Edit Member Profile';
+            if(saveBtn) saveBtn.innerHTML = '<i class="fas fa-save mr-2 mt-1"></i> Update Profile';
             
             existingProfilePic = member.profilePicBase64 || null;
+            const profileImagePreviewContainer = document.getElementById('profileImagePreviewContainer');
+            const profileImageInputEl = document.getElementById('profileImage');
+            
             if (existingProfilePic) {
                 const profileImgEl = document.getElementById('profileImagePreview');
-                profileImgEl.src = getValidImageUrl(existingProfilePic);
-                profileImgEl.onerror = function() { this.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22150%22%20height%3D%22150%22%3E%3Crect%20width%3D%22150%22%20height%3D%22150%22%20fill%3D%22%23e5e7eb%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%22.1em%22%20fill%3D%22%239ca3af%22%20font-size%3D%2220%22%20font-family%3D%22Arial%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%3EError%3C%2Ftext%3E%3C%2Fsvg%3E'; };
-                
-                document.getElementById('profileImagePreviewContainer').classList.remove('hidden');
-                document.getElementById('profileImage').classList.add('hidden');
-                document.getElementById('profileImage').removeAttribute('required');
+                if(profileImgEl) {
+                    profileImgEl.src = getValidImageUrl(existingProfilePic);
+                    profileImgEl.onerror = function() { this.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22150%22%20height%3D%22150%22%3E%3Crect%20width%3D%22150%22%20height%3D%22150%22%20fill%3D%22%23e5e7eb%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%22.1em%22%20fill%3D%22%239ca3af%22%20font-size%3D%2220%22%20font-family%3D%22Arial%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%3EError%3C%2Ftext%3E%3C%2Fsvg%3E'; };
+                }
+                if(profileImagePreviewContainer) profileImagePreviewContainer.classList.remove('hidden');
+                if(profileImageInputEl) {
+                    profileImageInputEl.classList.add('hidden');
+                    profileImageInputEl.removeAttribute('required');
+                }
             } else {
-                document.getElementById('profileImagePreviewContainer').classList.add('hidden');
-                document.getElementById('profileImage').classList.remove('hidden');
-                document.getElementById('profileImage').setAttribute('required', 'true');
+                if(profileImagePreviewContainer) profileImagePreviewContainer.classList.add('hidden');
+                if(profileImageInputEl) {
+                    profileImageInputEl.classList.remove('hidden');
+                    profileImageInputEl.setAttribute('required', 'true');
+                }
             }
 
             existingSignature = member.signatureBase64 || null;
+            const signatureImagePreviewContainer = document.getElementById('signatureImagePreviewContainer');
+            const signatureImageInputEl = document.getElementById('signatureImage');
+            
             if (existingSignature) {
                 const sigImgEl = document.getElementById('signatureImagePreview');
-                sigImgEl.src = getValidImageUrl(existingSignature);
-                sigImgEl.onerror = function() { this.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22150%22%20height%3D%22150%22%3E%3Crect%20width%3D%22150%22%20height%3D%22150%22%20fill%3D%22%23e5e7eb%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%22.1em%22%20fill%3D%22%239ca3af%22%20font-size%3D%2220%22%20font-family%3D%22Arial%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%3EError%3C%2Ftext%3E%3C%2Fsvg%3E'; };
-                
-                document.getElementById('signatureImagePreviewContainer').classList.remove('hidden');
-                document.getElementById('signatureImage').classList.add('hidden');
+                if(sigImgEl) {
+                    sigImgEl.src = getValidImageUrl(existingSignature);
+                    sigImgEl.onerror = function() { this.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22150%22%20height%3D%22150%22%3E%3Crect%20width%3D%22150%22%20height%3D%22150%22%20fill%3D%22%23e5e7eb%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%22.1em%22%20fill%3D%22%239ca3af%22%20font-size%3D%2220%22%20font-family%3D%22Arial%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%3EError%3C%2Ftext%3E%3C%2Fsvg%3E'; };
+                }
+                if(signatureImagePreviewContainer) signatureImagePreviewContainer.classList.remove('hidden');
+                if(signatureImageInputEl) signatureImageInputEl.classList.add('hidden');
             } else {
-                document.getElementById('signatureImagePreviewContainer').classList.add('hidden');
-                document.getElementById('signatureImage').classList.remove('hidden');
+                if(signatureImagePreviewContainer) signatureImagePreviewContainer.classList.add('hidden');
+                if(signatureImageInputEl) signatureImageInputEl.classList.remove('hidden');
             }
 
             const prefix = idPrefixes[member.tabCategory];
-            document.getElementById('idPrefixDisplay').innerText = prefix;
-            document.getElementById('idNumber').value = member.fullId.replace(prefix, '');
+            if(document.getElementById('idPrefixDisplay')) document.getElementById('idPrefixDisplay').innerText = prefix;
+            if(document.getElementById('idNumber')) document.getElementById('idNumber').value = member.fullId.replace(prefix, '');
             
-            document.getElementById('resolutionNo').value = member.resolutionNo || '';
-            document.getElementById('resolutionDate').value = member.resolutionDate || '';
-            document.getElementById('joinDate').value = member.joinDate || '';
-            document.getElementById('designation').value = member.designation || '';
+            if(document.getElementById('resolutionNo')) document.getElementById('resolutionNo').value = member.resolutionNo || '';
+            if(document.getElementById('resolutionDate')) document.getElementById('resolutionDate').value = member.resolutionDate || '';
+            if(document.getElementById('joinDate')) document.getElementById('joinDate').value = member.joinDate || '';
+            if(document.getElementById('designation')) document.getElementById('designation').value = member.designation || '';
             
-            document.getElementById('fullName').value = member.fullName || '';
-            document.getElementById('gender').value = member.gender || '';
-            document.getElementById('dob').value = member.dob || '';
-            document.getElementById('guardianName').value = member.guardianName || '';
-            document.getElementById('profession').value = member.profession || '';
+            if(document.getElementById('fullName')) document.getElementById('fullName').value = member.fullName || '';
+            if(document.getElementById('gender')) document.getElementById('gender').value = member.gender || '';
+            if(document.getElementById('dob')) document.getElementById('dob').value = member.dob || '';
+            if(document.getElementById('guardianName')) document.getElementById('guardianName').value = member.guardianName || '';
+            if(document.getElementById('profession')) document.getElementById('profession').value = member.profession || '';
             
-            document.getElementById('mobile').value = member.mobile || '';
-            document.getElementById('email').value = member.email || '';
+            if(document.getElementById('mobile')) document.getElementById('mobile').value = member.mobile || '';
+            if(document.getElementById('email')) document.getElementById('email').value = member.email || '';
             
             if (member.addressObj) {
-                document.getElementById('road').value = member.addressObj.road || '';
-                document.getElementById('vill').value = member.addressObj.vill || '';
-                document.getElementById('po').value = member.addressObj.po || '';
-                document.getElementById('ps').value = member.addressObj.ps || '';
-                document.getElementById('localityType').value = member.addressObj.localityType || '';
-                document.getElementById('district').value = member.addressObj.district || '';
-                document.getElementById('pincode').value = member.addressObj.pincode || '';
+                if(document.getElementById('road')) document.getElementById('road').value = member.addressObj.road || '';
+                if(document.getElementById('vill')) document.getElementById('vill').value = member.addressObj.vill || '';
+                if(document.getElementById('po')) document.getElementById('po').value = member.addressObj.po || '';
+                if(document.getElementById('ps')) document.getElementById('ps').value = member.addressObj.ps || '';
+                if(document.getElementById('localityType')) document.getElementById('localityType').value = member.addressObj.localityType || '';
+                if(document.getElementById('district')) document.getElementById('district').value = member.addressObj.district || '';
+                if(document.getElementById('pincode')) document.getElementById('pincode').value = member.addressObj.pincode || '';
                 
                 handleLocalityChange();
                 
-                if(member.addressObj.localityType === 'Municipality') document.getElementById('wardNo').value = member.addressObj.wardNo || '';
-                if(member.addressObj.localityType === 'Panchayet') document.getElementById('panchayetName').value = member.addressObj.panchayetName || '';
+                if(member.addressObj.localityType === 'Municipality' && document.getElementById('wardNo')) document.getElementById('wardNo').value = member.addressObj.wardNo || '';
+                if(member.addressObj.localityType === 'Panchayet' && document.getElementById('panchayetName')) document.getElementById('panchayetName').value = member.addressObj.panchayetName || '';
             }
             
             clearIdProofRows();
@@ -982,7 +1248,8 @@
                 addIdProofRow();
             }
 
-            document.getElementById('addMemberModal').classList.remove('hidden');
+            const addMemberModal = document.getElementById('addMemberModal');
+            if(addMemberModal) addMemberModal.classList.remove('hidden');
         }
 
         function formatDate(dateStr) {
@@ -992,6 +1259,8 @@
 
         function showToast(message, isError = false) {
             const toast = document.getElementById('toast'), msg = document.getElementById('toastMsg'), icon = document.getElementById('toastIcon');
+            if(!toast || !msg || !icon) return;
+
             toast.classList.remove('hidden');
             setTimeout(() => { toast.classList.remove('translate-y-20', 'opacity-0'); }, 10);
             msg.innerText = message;
@@ -1002,7 +1271,6 @@
             }, 3000);
         }
 
-        // View Doc - ভিউ ডকুমেন্টস
         function viewDoc(urlOrBase64) {
             if (!urlOrBase64) return;
             if (urlOrBase64.startsWith('http')) {
@@ -1013,7 +1281,6 @@
             }
         }
 
-        // Download Category Data PDF - লিস্ট পিডিএফ জেনারেট করা (A4 Landscape)
         function downloadCategoryPDF() {
             showToast('Generating Landscape Category Data PDF...');
             const filteredMembers = membersData.filter(m => m.tabCategory === currentTab);
@@ -1061,7 +1328,6 @@
                 `;
             });
 
-            // Adjust width for landscape format (~1060px inner width works well for html2pdf A4 Landscape scale 2)
             const htmlContent = `
             <div style="width: 1060px; padding: 15px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1f2937; background-color: #ffffff; box-sizing: border-box;">
                     <div style="text-align: center; margin-bottom: 20px;">
@@ -1114,7 +1380,6 @@
             });
         }
 
-        // Single Profile Download Function - প্রোফাইল পিডিএফ জেনারেট করা
         function downloadProfilePDF(id) {
             const member = membersData.find(m => m.id.toString() === id.toString());
             if(!member) return;
@@ -1202,69 +1467,6 @@
                 showToast('Error generating PDF', true);
             });
         }
-        
-          // --- Cropper.js Logic ---
-        let cropper = null;
-
-        // যখন ছবি সিলেক্ট করা হবে তখন ক্রপার খুলবে
-        document.getElementById('profileImage').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    document.getElementById('cropperModal').classList.remove('hidden');
-                    const image = document.getElementById('imageToCrop');
-                    image.src = event.target.result;
-                    
-                    if(cropper) { cropper.destroy(); }
-                    
-                    cropper = new Cropper(image, {
-                        aspectRatio: 3.5 / 4.5, // পাসপোর্ট সাইজ
-                        viewMode: 1,
-                        autoCropArea: 1,
-                    });
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        function closeCropper() {
-            document.getElementById('cropperModal').classList.add('hidden');
-            if(cropper) { cropper.destroy(); cropper = null; }
-            if(!croppedProfileBase64 && !existingProfilePic) {
-                document.getElementById('profileImage').value = ''; // ক্যানসেল করলে ইনপুট রিসেট
-            }
-        }
-
-        function applyCrop() {
-            if(!cropper) return;
-            
-            const canvas = cropper.getCroppedCanvas({ width: 350, height: 450 });
-            
-            // নতুন ক্যানভাস তৈরি করে সাদা ব্যাকগ্রাউন্ড দেওয়া
-            const whiteCanvas = document.createElement('canvas');
-            whiteCanvas.width = canvas.width;
-            whiteCanvas.height = canvas.height;
-            const ctx = whiteCanvas.getContext('2d');
-            
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(0, 0, whiteCanvas.width, whiteCanvas.height);
-            ctx.drawImage(canvas, 0, 0);
-            
-            // JPEG তে কনভার্ট (সাদা ব্যাকগ্রাউন্ড পার্মানেন্ট হয়ে যাবে)
-            croppedProfileBase64 = whiteCanvas.toDataURL('image/jpeg', 0.8);
-            
-            // প্রিভিউ দেখানো
-            document.getElementById('profileImagePreview').src = croppedProfileBase64;
-            document.getElementById('profileImagePreviewContainer').classList.remove('hidden');
-            
-            const fileInput = document.getElementById('profileImage');
-            fileInput.classList.add('hidden');
-            fileInput.removeAttribute('required');
-            
-            closeCropper();
-        }
-        
     </script>
 </body>
-</html>
+    </html>

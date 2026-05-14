@@ -282,11 +282,11 @@
         </div>
     </div>
 
-    <!-- Image & Signature Cropper Modal -->
+    <!-- Image Cropper Modal -->
     <div id="cropperModal" class="fixed inset-0 z-[110] bg-gray-900 bg-opacity-90 flex items-center justify-center hidden">
         <div class="bg-white p-4 rounded-xl shadow-2xl w-full max-w-lg transform transition-all">
             <div class="flex justify-between items-center mb-4">
-                <h3 id="cropperModalTitle" class="text-lg font-bold text-gray-900">Crop Photo</h3>
+                <h3 class="text-lg font-bold text-gray-900">Crop Profile Photo</h3>
                 <button type="button" onclick="closeCropper()" class="text-gray-400 hover:text-red-500">
                     <i class="fas fa-times text-xl"></i>
                 </button>
@@ -296,8 +296,8 @@
             </div>
             <div class="mt-4 flex justify-end space-x-3">
                 <button type="button" onclick="closeCropper()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md font-semibold hover:bg-gray-300">Cancel</button>
-                <button type="button" onclick="handleCropApply()" id="cropperApplyBtnText" class="px-4 py-2 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700 flex items-center">
-                    <i class="fas fa-check mr-2"></i> Apply Crop
+                <button type="button" onclick="applyCropAndRemoveBg()" class="px-4 py-2 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-magic mr-2"></i> Crop & Apply AI
                 </button>
             </div>
         </div>
@@ -635,101 +635,66 @@
         }
 
         // ==========================================
-        // ✨ DYNAMIC CROPPER FOR BOTH PROFILE & SIGNATURE 
+        // ✨ NEW: AI BACKGROUND REMOVAL & CROP LOGIC 
         // ==========================================
         let cropper = null;
-        let cropTarget = ''; // Will be 'profile' or 'signature'
 
         const profileImageInput = document.getElementById('profileImage');
         if (profileImageInput) {
             profileImageInput.addEventListener('change', function(e) {
-                handleImageSelection(e, 'profile');
-            });
-        }
-
-        const signatureImageInput = document.getElementById('signatureImage');
-        if (signatureImageInput) {
-            signatureImageInput.addEventListener('change', function(e) {
-                handleImageSelection(e, 'signature');
-            });
-        }
-
-        function handleImageSelection(e, target) {
-            const file = e.target.files[0];
-            if (file) {
-                cropTarget = target;
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const cropperModal = document.getElementById('cropperModal');
-                    if (cropperModal) cropperModal.classList.remove('hidden');
-                    
-                    // Update Modal Details dynamically
-                    document.getElementById('cropperModalTitle').innerText = target === 'profile' ? 'Crop Profile Photo' : 'Crop Signature';
-                    document.getElementById('cropperApplyBtnText').innerHTML = target === 'profile' ? '<i class="fas fa-magic mr-2"></i> Crop & Apply AI' : '<i class="fas fa-crop mr-2"></i> Crop & Clean Background';
-                    
-                    const image = document.getElementById('imageToCrop');
-                    if (image) {
-                        image.src = event.target.result;
-                        if(cropper) { cropper.destroy(); }
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const cropperModal = document.getElementById('cropperModal');
+                        if (cropperModal) cropperModal.classList.remove('hidden');
                         
-                        // Signature has Free ratio (NaN), Profile has 3.5/4.5
-                        const ratio = target === 'profile' ? (3.5 / 4.5) : NaN;
-                        cropper = new Cropper(image, {
-                            aspectRatio: ratio,
-                            viewMode: 1,
-                            autoCropArea: 1,
-                        });
-                    }
-                };
-                reader.readAsDataURL(file);
-            }
+                        const image = document.getElementById('imageToCrop');
+                        if (image) {
+                            image.src = event.target.result;
+                            if(cropper) { cropper.destroy(); }
+                            cropper = new Cropper(image, {
+                                aspectRatio: 3.5 / 4.5,
+                                viewMode: 1,
+                                autoCropArea: 1,
+                            });
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
         }
 
         function closeCropper() {
             const cropperModal = document.getElementById('cropperModal');
             if (cropperModal) cropperModal.classList.add('hidden');
             if(cropper) { cropper.destroy(); cropper = null; }
-            
-            // Clean specific inputs if canceled
-            if(cropTarget === 'profile' && !croppedProfileBase64 && !existingProfilePic) {
+            if(!croppedProfileBase64 && !existingProfilePic) {
                 const profileImgInput = document.getElementById('profileImage');
                 if (profileImgInput) profileImgInput.value = ''; 
-            } else if (cropTarget === 'signature' && !processedSignatureBase64 && !existingSignature) {
-                const sigInput = document.getElementById('signatureImage');
-                if (sigInput) sigInput.value = '';
-            }
-            cropTarget = ''; // Reset target
-        }
-
-        function handleCropApply() {
-            if (!cropper) return;
-            if (cropTarget === 'profile') {
-                applyProfileCropAndRemoveBg();
-            } else if (cropTarget === 'signature') {
-                applySignatureCropAndEnhance();
             }
         }
 
-        // ==========================================
-        // 🟢 PROFILE IMAGE: AI BACKGROUND REMOVAL
-        // ==========================================
-        async function applyProfileCropAndRemoveBg() {
+        async function applyCropAndRemoveBg() {
+            if(!cropper) return;
+            
+            // Show AI processing loader
             const aiLoaderModal = document.getElementById('aiLoaderModal');
             const cropperModal = document.getElementById('cropperModal');
             if (aiLoaderModal) aiLoaderModal.classList.remove('hidden');
             if (cropperModal) cropperModal.classList.add('hidden');
 
             try {
+                // Get Cropped image
                 const canvas = cropper.getCroppedCanvas({ width: 350, height: 450 });
                 
                 canvas.toBlob(async (blob) => {
                     try {
-                        // FIXED: Added public CDN path so hosting providers won't block the AI files
-                        const aiConfig = {
-                            publicPath: "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.2.0/dist/assets/"
-                        };
-                        const transparentBlob = await imglyRemoveBackground(blob, aiConfig);
+                        // 🟢 @imgly/background-removal AI Magic
+                        // This removes the background perfectly keeping hair/ears intact.
+                        const transparentBlob = await imglyRemoveBackground(blob);
                         
+                        // Draw the AI result onto a WHITE canvas
                         const imgUrl = URL.createObjectURL(transparentBlob);
                         const img = new Image();
                         img.onload = () => {
@@ -741,8 +706,11 @@
                             // Fill background with perfect white
                             ctx.fillStyle = '#FFFFFF';
                             ctx.fillRect(0, 0, 350, 450);
+                            
+                            // Draw the transparent AI image over white
                             ctx.drawImage(img, 0, 0, 350, 450);
                             
+                            // Convert to Base64 (JPEG)
                             croppedProfileBase64 = finalCanvas.toDataURL('image/jpeg', 0.9);
                             
                             // Update UI
@@ -755,7 +723,7 @@
                             if (fileInput) {
                                 fileInput.classList.add('hidden');
                                 fileInput.removeAttribute('required');
-                                fileInput.value = '';
+                                fileInput.value = ''; // Clean input
                             }
                             
                             closeCropper();
@@ -766,8 +734,8 @@
 
                     } catch (error) {
                         console.error("AI Error:", error);
-                        showToast("AI Error: Check console. Falling back to normal crop.", true);
-                        fallbackProfileCrop(canvas);
+                        // Fallback: If AI fails, just use the cropped image with white background
+                        fallbackCrop(canvas);
                     }
                 }, 'image/png');
             } catch(e) {
@@ -777,7 +745,7 @@
             }
         }
 
-        function fallbackProfileCrop(canvas) {
+        function fallbackCrop(canvas) {
             const finalCanvas = document.createElement('canvas');
             finalCanvas.width = 350;
             finalCanvas.height = 450;
@@ -796,7 +764,7 @@
             if (fileInput) {
                 fileInput.classList.add('hidden');
                 fileInput.removeAttribute('required');
-                fileInput.value = ''; 
+                fileInput.value = ''; // Clean input
             }
             
             closeCropper();
@@ -806,15 +774,45 @@
         }
 
         // ==========================================
-        // 🔵 SIGNATURE IMAGE: CROP & CLEAN PAPER BACKGROUND
+        // ✨ NEW: SIGNATURE BACKGROUND REMOVAL LOGIC 
         // ==========================================
-        function applySignatureCropAndEnhance() {
-            // Get cropped signature area
-            const sourceCanvas = cropper.getCroppedCanvas();
-            
+        const signatureImageInput = document.getElementById('signatureImage');
+        if (signatureImageInput) {
+            signatureImageInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const img = new Image();
+                        img.onload = function() {
+                            processSignatureAndRemoveBackground(img, function(base64) {
+                                processedSignatureBase64 = base64;
+                                const sigImgPreview = document.getElementById('signatureImagePreview');
+                                const sigImgPreviewContainer = document.getElementById('signatureImagePreviewContainer');
+                                const fileInput = document.getElementById('signatureImage');
+                                
+                                if (sigImgPreview) sigImgPreview.src = base64;
+                                if (sigImgPreviewContainer) sigImgPreviewContainer.classList.remove('hidden');
+                                if (fileInput) {
+                                    fileInput.classList.add('hidden');
+                                    fileInput.value = ''; // Clean input
+                                }
+                                showToast("Signature Extracted Successfully!");
+                            });
+                        };
+                        img.src = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        function processSignatureAndRemoveBackground(imgElement, callback) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
             const MAX_WIDTH = 400;
             const MAX_HEIGHT = 150;
-            let width = sourceCanvas.width, height = sourceCanvas.height;
+            let width = imgElement.width, height = imgElement.height;
 
             if (width > height) {
                 if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
@@ -822,49 +820,38 @@
                 if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
             }
 
-            const finalCanvas = document.createElement('canvas');
-            finalCanvas.width = width;
-            finalCanvas.height = height;
-            const ctx = finalCanvas.getContext('2d');
+            canvas.width = width; canvas.height = height;
             
-            // Draw on white
+            // Fill white initially
             ctx.fillStyle = "#FFFFFF";
             ctx.fillRect(0, 0, width, height);
-            ctx.drawImage(sourceCanvas, 0, 0, width, height);
+            ctx.drawImage(imgElement, 0, 0, width, height);
 
-            // Clean paper shadows and keep dark ink
+            // Magic Thresholding to isolate Ink from Paper
             const imageData = ctx.getImageData(0, 0, width, height);
             const data = imageData.data;
             
             for (let i = 0; i < data.length; i += 4) {
-                const r = data[i]; const g = data[i+1]; const b = data[i+2];
+                const r = data[i];
+                const g = data[i+1];
+                const b = data[i+2];
+                // Calculate pixel brightness
                 const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
                 
                 // If it is light (paper, shadows), convert to pure WHITE
                 if (luminance > 140) { 
-                    data[i] = 255; data[i+1] = 255; data[i+2] = 255;
+                    data[i] = 255;
+                    data[i+1] = 255;
+                    data[i+2] = 255;
                 } else {
-                    // It is dark (ink), make it deeper
+                    // It is dark (ink), let's make it more prominent (black/dark-blue)
                     data[i] = Math.max(0, r - 50);
                     data[i+1] = Math.max(0, g - 50);
                     data[i+2] = Math.max(0, b - 50);
                 }
             }
             ctx.putImageData(imageData, 0, 0);
-            
-            processedSignatureBase64 = finalCanvas.toDataURL('image/jpeg', 0.9);
-            
-            // Update UI
-            const sigImgPreview = document.getElementById('signatureImagePreview');
-            const sigImgPreviewContainer = document.getElementById('signatureImagePreviewContainer');
-            const fileInput = document.getElementById('signatureImage');
-            
-            if (sigImgPreview) sigImgPreview.src = processedSignatureBase64;
-            if (sigImgPreviewContainer) sigImgPreviewContainer.classList.remove('hidden');
-            if (fileInput) { fileInput.classList.add('hidden'); fileInput.value = ''; }
-            
-            closeCropper();
-            showToast("Signature Cropped & Cleaned Successfully!");
+            callback(canvas.toDataURL('image/jpeg', 0.9));
         }
 
         // ------------------------------------------
@@ -1342,7 +1329,7 @@
             });
 
             const htmlContent = `
-            <div style="width: 1060px; padding: 15px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1f2937; background-color: #ffffff; box-sizing: border-box;">
+            <div style="width: 100%; padding: 15px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1f2937; background-color: #ffffff; box-sizing: border-box;">
                     <div style="text-align: center; margin-bottom: 20px;">
                         <h2 style="margin: 0; font-size: 24px; color: #1e3a8a; font-weight: bold; text-transform: uppercase;">ITINDA ROAD DHALTITHA MODERN SPORTING CLUB</h2>
                         <p style="margin: 5px 0 0 0; font-size: 12px; color: #4b5563;">Itinda Road, Dhaltitha, Basirhat, North 24 Parganas, West Bengal 743412</p>
@@ -1378,12 +1365,13 @@
             `;
 
             const opt = {
-                margin:       [0.3, 0.3, 0.3, 0.3],
-                filename:     `Club_Data_${currentTab}_List.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true },
-                jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
-            };
+    margin:       [0.3, 0.3, 0.3, 0.3],
+    filename:     `Club_Data_${currentTab}_List.pdf`,
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2, useCORS: true, scrollY: 0 }, // scrollY: 0 নিশ্চিত করবে PDF যেন একদম TOP থেকে জেনারেট হয়
+    jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' },
+    pagebreak:    { mode: ['css', 'legacy'] } // এটি টেবিলের ডেটা কেটে না গিয়ে পরের পেজে সুন্দরভাবে পাঠাবে
+};
 
             html2pdf().set(opt).from(htmlContent).save().then(() => {
                 showToast('Landscape List PDF Downloaded!');
@@ -1466,12 +1454,12 @@
             `;
             
             const opt = {
-                margin:       [0.4, 0.4, 0.4, 0.4],
-                filename:     `${member.fullId.replace(/\//g, '_')}_Profile.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true },
-                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
-            };
+    margin:       [0.4, 0.4, 0.4, 0.4],
+    filename:     `${member.fullId.replace(/\//g, '_')}_Profile.pdf`, // মেম্বারের ID অনুযায়ী ফাইলের নাম হবে
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2, useCORS: true, scrollY: 0 }, // টপ থেকে শুরু করার জন্য
+    jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' } // Portrait সেট করা হলো
+};
 
             html2pdf().set(opt).from(htmlContent).save().then(() => {
                 showToast('Profile PDF Downloaded!');

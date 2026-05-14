@@ -8,6 +8,9 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <!-- html2pdf for PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <style>
         /* Custom scrollbar for modal */
         .modal-scroll::-webkit-scrollbar { width: 8px; }
@@ -276,6 +279,27 @@
         <span id="toastMsg">Action successful</span>
     </div>
 
+<div id="cropperModal" class="fixed inset-0 z-[110] bg-gray-900 bg-opacity-90 flex items-center justify-center hidden">
+        <div class="bg-white p-4 rounded-xl shadow-2xl w-full max-w-lg transform transition-all">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-900">Crop Profile Photo</h3>
+                <button type="button" onclick="closeCropper()" class="text-gray-400 hover:text-red-500">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="w-full h-80 bg-gray-100 flex justify-center items-center overflow-hidden">
+                <img id="imageToCrop" src="" class="max-w-full max-h-full">
+            </div>
+            <div class="mt-4 flex justify-end space-x-3">
+                <button type="button" onclick="closeCropper()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md font-semibold hover:bg-gray-300">Cancel</button>
+                <button type="button" onclick="applyCrop()" class="px-4 py-2 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700">
+                    <i class="fas fa-crop-alt mr-2"></i> Crop & Save
+                </button>
+            </div>
+        </div>
+    </div>
+
+
     <script>
         // ✅ YOUR GOOGLE APPS SCRIPT URL HAS BEEN PASTED HERE
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwmLRiq5DIzKkzBpiE-js8AiZTxZRSacemJQmDcAHwJ7tIBaDbloSt2n4XDFv4wCfC6AQ/exec";
@@ -376,6 +400,7 @@
         let isEditMode = false;
         let editingMemberId = null;
         let existingProfilePic = null;
+        let croppedProfileBase64 = null; 
         let existingSignature = null;
 
         const idPrefixes = { 'GB': 'MSC/GB/', 'OM': 'MSC/OM/', 'HM': 'MSC/HM/' };
@@ -660,7 +685,7 @@
         }
 
         // Image Compression Utility - ইমেজ ছোট করা
-        function compressImage(file, callback, isSignature = false) {
+     function compressImage(file, callback, isSignature = false) {
             if (!file) { callback(null); return; }
             const reader = new FileReader();
             reader.readAsDataURL(file);
@@ -682,6 +707,12 @@
                     }
 
                     canvas.width = width; canvas.height = height;
+                    
+                    // FIXED: ছবি আঁকার আগে ক্যানভাসে সাদা রং ভরে দেওয়া হলো
+                    ctx.fillStyle = "#FFFFFF";
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    // এবার ছবিটি সাদা ব্যাকগ্রাউন্ডের ওপর বসবে
                     ctx.drawImage(img, 0, 0, width, height);
                     
                     callback(canvas.toDataURL('image/jpeg', isSignature ? 0.8 : 0.6)); 
@@ -702,7 +733,7 @@
             editingMemberId = null;
             existingProfilePic = null;
             existingSignature = null;
-            document.getElementById('modal-title').innerText = 'Add New Member';
+           croppedProfileBase64 = null; document.getElementById('modal-title').innerText = 'Add New Member';
             document.getElementById('saveBtn').innerHTML = '<i class="fas fa-save mr-2 mt-1"></i> Save Profile';
             
             document.getElementById('addMemberForm').reset();
@@ -724,7 +755,7 @@
 
         function removeProfileImage() {
             existingProfilePic = null;
-            document.getElementById('profileImagePreviewContainer').classList.add('hidden');
+           croppedProfileBase64 = null; document.getElementById('profileImagePreviewContainer').classList.add('hidden');
             const fileInput = document.getElementById('profileImage');
             fileInput.value = ''; 
             fileInput.classList.remove('hidden');
@@ -773,7 +804,7 @@
 
                 const profileImgFile = document.getElementById('profileImage').files[0];
                 const sigFile = document.getElementById('signatureImage').files[0];
-                let profileBase64 = profileImgFile ? await new Promise(resolve => compressImage(profileImgFile, resolve)) : existingProfilePic;
+               let profileBase64 = croppedProfileBase64 ? croppedProfileBase64 : existingProfilePic;
                 let sigBase64 = sigFile ? await new Promise(resolve => compressImage(sigFile, resolve, true)) : existingSignature;
 
                 const idProofRows = document.querySelectorAll('.id-proof-row');
@@ -1171,6 +1202,69 @@
                 showToast('Error generating PDF', true);
             });
         }
+        
+          // --- Cropper.js Logic ---
+        let cropper = null;
+
+        // যখন ছবি সিলেক্ট করা হবে তখন ক্রপার খুলবে
+        document.getElementById('profileImage').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    document.getElementById('cropperModal').classList.remove('hidden');
+                    const image = document.getElementById('imageToCrop');
+                    image.src = event.target.result;
+                    
+                    if(cropper) { cropper.destroy(); }
+                    
+                    cropper = new Cropper(image, {
+                        aspectRatio: 3.5 / 4.5, // পাসপোর্ট সাইজ
+                        viewMode: 1,
+                        autoCropArea: 1,
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function closeCropper() {
+            document.getElementById('cropperModal').classList.add('hidden');
+            if(cropper) { cropper.destroy(); cropper = null; }
+            if(!croppedProfileBase64 && !existingProfilePic) {
+                document.getElementById('profileImage').value = ''; // ক্যানসেল করলে ইনপুট রিসেট
+            }
+        }
+
+        function applyCrop() {
+            if(!cropper) return;
+            
+            const canvas = cropper.getCroppedCanvas({ width: 350, height: 450 });
+            
+            // নতুন ক্যানভাস তৈরি করে সাদা ব্যাকগ্রাউন্ড দেওয়া
+            const whiteCanvas = document.createElement('canvas');
+            whiteCanvas.width = canvas.width;
+            whiteCanvas.height = canvas.height;
+            const ctx = whiteCanvas.getContext('2d');
+            
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, whiteCanvas.width, whiteCanvas.height);
+            ctx.drawImage(canvas, 0, 0);
+            
+            // JPEG তে কনভার্ট (সাদা ব্যাকগ্রাউন্ড পার্মানেন্ট হয়ে যাবে)
+            croppedProfileBase64 = whiteCanvas.toDataURL('image/jpeg', 0.8);
+            
+            // প্রিভিউ দেখানো
+            document.getElementById('profileImagePreview').src = croppedProfileBase64;
+            document.getElementById('profileImagePreviewContainer').classList.remove('hidden');
+            
+            const fileInput = document.getElementById('profileImage');
+            fileInput.classList.add('hidden');
+            fileInput.removeAttribute('required');
+            
+            closeCropper();
+        }
+        
     </script>
 </body>
 </html>

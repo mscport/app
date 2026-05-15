@@ -10,6 +10,10 @@
     <!-- html2pdf for PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
+    <!-- jsPDF and AutoTable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
     <!-- Cropper.js for Image Cropping -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
@@ -28,6 +32,9 @@
         .ai-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        
+        /* Fallback image style */
+        .img-fallback { background-color: #f3f4f6; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 10px; text-align: center; border: 1px solid #e5e7eb; }
     </style>
 </head>
 <body class="bg-gray-50 font-sans text-gray-800">
@@ -69,6 +76,7 @@
         <div class="mb-8 text-center pt-4">
             <h1 class="text-2xl md:text-4xl font-extrabold text-blue-900 tracking-tight uppercase">ITINDA ROAD DHALTITHA MODERN SPORTING CLUB</h1>
             <p class="text-gray-600 mt-2 font-medium">Itinda Road, Dhaltitha, Basirhat, North 24 Parganas, West Bengal 743412</p>
+            <p class="text-blue-600 mt-2 font-small">Estd.-1985 | Govt. Regd. No.- S0035658 of 2023-24 | PAN No.- AACAI6060M | NGO ID- WB/2023/0359221 | M.S.M.E. Regd. No.-UDYAM-WB-14-0149488 </p>
         </div>
 
         <!-- Navigation Tabs & Action Bar -->
@@ -161,8 +169,34 @@
                                         <input type="date" id="resolutionDate" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                                     </div>
                                     <div class="md:col-span-4">
-                                        <label class="block text-sm font-medium text-gray-700">Designation (If any)</label>
-                                        <input type="text" id="designation" placeholder="e.g. PRESIDENT, MEMBER" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm uppercase">
+                                        <label class="block text-sm font-medium text-gray-700">Designation (Governing Body)</label>
+                                        <select id="designation" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm uppercase">
+                                            <option value="">-- Select Designation --</option>
+                                            <option value="MANAGING DIRECTOR">MANAGING DIRECTOR</option>
+                                            <option value="DIRECTOR">DIRECTOR</option>
+                                            <option value="CHAIRMAN">CHAIRMAN</option>
+                                            <option value="VICE-CHAIRMAN">VICE-CHAIRMAN</option>
+                                            <option value="PRESIDENT">PRESIDENT</option>
+                                            <option value="VICE-PRESIDENT">VICE-PRESIDENT</option>
+                                            <option value="SECRETARY">SECRETARY</option>
+                                            <option value="ASSISTANT SECRETARY">ASSISTANT SECRETARY</option>
+                                            <option value="TREASURER">TREASURER</option>
+                                            <option value="ASSISTANT TREASURER">ASSISTANT TREASURER</option>
+                                            <option value="CASHIER">CASHIER</option>
+                                            <option value="ASSISTANT CASHIER">ASSISTANT CASHIER</option>
+                                            <option value="ACCOUNTANT">ACCOUNTANT</option>
+                                            <option value="ASSISTANT ACCOUNTANT">ASSISTANT ACCOUNTANT</option>
+                                            <option value="EXECUTIVE MEMBER">EXECUTIVE MEMBER</option>
+                                            <option value="GOVERNING BODY MEMBER">GOVERNING BODY MEMBER</option>
+                                            <option value="SPORTS SECRETARY">SPORTS SECRETARY</option>
+                                            <option value="ASSISTANT SPORTS SECRETARY">ASSISTANT SPORTS SECRETARY</option>
+                                            <option value="CULTURAL SECRETARY">CULTURAL SECRETARY</option>
+                                            <option value="ASSISTANT CULTURAL SECRETARY">ASSISTANT CULTURAL SECRETARY</option>
+                                            <option value="IT ASSOCIATE">IT ASSOCIATE</option>
+                                            <option value="ASSOCIATE">ASSOCIATE</option>
+                                            <option value="ELECTRICIAN">ELECTRICIAN</option>
+                                            <option value="MEMBER">MEMBER</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>
@@ -194,7 +228,12 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 required-asterisk">Date of Birth / Age</label>
-                                        <input type="text" id="dob" required placeholder="DD/MM/YYYY or Age (e.g. 45)" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                        <input type="text" id="dob" required placeholder="DD/MM/YYYY or Age (e.g. 45)" 
+                                            inputmode="numeric" 
+                                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm uppercase"
+                                            oninput="formatDOB(this)" 
+                                            onblur="checkAgeFormat(this)" 
+                                            onfocus="clearAgeFormat(this)">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 required-asterisk">Father's / Husband's Name</label>
@@ -220,8 +259,41 @@
                                         <input type="email" id="email" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                                     </div>
                                     <div class="md:col-span-3 grid grid-cols-1 md:grid-cols-4 gap-4">
-                                        <div><label class="block text-sm font-medium text-gray-700 required-asterisk">Road / Street</label><input type="text" id="road" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div>
-                                        <div><label class="block text-sm font-medium text-gray-700 required-asterisk">Vill / Town</label><input type="text" id="vill" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 required-asterisk">Road / Street</label>
+                                            <input type="text" id="road" list="roadSuggestions" required autocomplete="off" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm uppercase">
+                                            
+                                            <datalist id="roadSuggestions">
+                                                <option value="ITINDA ROAD"></option>
+                                                <option value="SANA COMPLEX LANE"></option>
+                                                <option value="JELEPARA TO GOLAMBARI LANE"></option>
+                                                <option value="GHOSHPARA LANE"></option>
+                                                <option value="MSC PARA LANE"></option>
+                                                <option value="TENTULTALA LANE"></option>
+                                                <option value="JELEPARA BAJAR TO RUCHI ICREAM KAL LANE"></option>
+                                                <option value="JAYASHRI BHATA LANE"></option>
+                                                <option value="SABUJ PALLY LANE"></option>
+                                                <option value="BADARTALA-SARALA LANE"></option>
+                                                <option value="RABINDRAPALLY LANE"></option>
+                                            </datalist>
+                                        </div>      
+                                        
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 required-asterisk">Vill / Town</label>
+                                            <input type="text" id="vill" list="villSuggestions" required autocomplete="off" oninput="autoFillLocationDetails(this)" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm uppercase">
+                                            
+                                            <datalist id="villSuggestions">
+                                                <option value="DHALTITHA"></option>
+                                                <option value="NAIHATI"></option>
+                                                <option value="NALKORA"></option>
+                                                <option value="DANDIRHAT"></option>
+                                                <option value="AASHRAM PARA"></option>
+                                                <option value="MUNSEFPARA"></option>
+                                                <option value="GANAPATIPUR"></option>
+                                                <option value="SANKCHURA"></option>
+                                            </datalist>
+                                        </div>
+                                        
                                         <div><label class="block text-sm font-medium text-gray-700 required-asterisk">P.O.</label><input type="text" id="po" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div>
                                         <div><label class="block text-sm font-medium text-gray-700 required-asterisk">P.S.</label><input type="text" id="ps" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div>
                                     </div>
@@ -242,7 +314,12 @@
                                             <option value="Alipurduar">Alipurduar</option><option value="Bankura">Bankura</option><option value="Birbhum">Birbhum</option><option value="Cooch Behar">Cooch Behar</option><option value="Dakshin Dinajpur">Dakshin Dinajpur</option><option value="Darjeeling">Darjeeling</option><option value="Hooghly">Hooghly</option><option value="Howrah">Howrah</option><option value="Jalpaiguri">Jalpaiguri</option><option value="Jhargram">Jhargram</option><option value="Kalimpong">Kalimpong</option><option value="Kolkata">Kolkata</option><option value="Malda">Malda</option><option value="Murshidabad">Murshidabad</option><option value="Nadia">Nadia</option><option value="North 24 Parganas">North 24 Parganas</option><option value="Paschim Bardhaman">Paschim Bardhaman</option><option value="Paschim Medinipur">Paschim Medinipur</option><option value="Purba Bardhaman">Purba Bardhaman</option><option value="Purba Medinipur">Purba Medinipur</option><option value="Purulia">Purulia</option><option value="South 24 Parganas">South 24 Parganas</option><option value="Uttar Dinajpur">Uttar Dinajpur</option>
                                         </select>
                                     </div>
-                                    <div><label class="block text-sm font-medium text-gray-700 required-asterisk">Pincode</label><input type="text" id="pincode" required pattern="[0-9]{6}" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 required-asterisk">Pincode</label>
+                                        <input type="text" id="pincode" required pattern="[0-9]{6}" inputmode="numeric" maxlength="6" 
+                                            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    </div>
                                 </div>
                             </div>
 
@@ -282,11 +359,11 @@
         </div>
     </div>
 
-    <!-- Image Cropper Modal -->
+    <!-- Image & Signature Cropper Modal -->
     <div id="cropperModal" class="fixed inset-0 z-[110] bg-gray-900 bg-opacity-90 flex items-center justify-center hidden">
         <div class="bg-white p-4 rounded-xl shadow-2xl w-full max-w-lg transform transition-all">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-gray-900">Crop Profile Photo</h3>
+                <h3 id="cropperModalTitle" class="text-lg font-bold text-gray-900">Crop Photo</h3>
                 <button type="button" onclick="closeCropper()" class="text-gray-400 hover:text-red-500">
                     <i class="fas fa-times text-xl"></i>
                 </button>
@@ -296,8 +373,8 @@
             </div>
             <div class="mt-4 flex justify-end space-x-3">
                 <button type="button" onclick="closeCropper()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md font-semibold hover:bg-gray-300">Cancel</button>
-                <button type="button" onclick="applyCropAndRemoveBg()" class="px-4 py-2 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700 flex items-center">
-                    <i class="fas fa-magic mr-2"></i> Crop & Apply AI
+                <button type="button" onclick="handleCropApply()" id="cropperApplyBtnText" class="px-4 py-2 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-check mr-2"></i> Apply Crop
                 </button>
             </div>
         </div>
@@ -326,16 +403,65 @@
         // Global User Role Management
         let userRole = localStorage.getItem('clubUserRole') || null;
 
-        // Helper to fix Google Drive Image CORS and display issues globally
+        // Helper to extract clean Google Drive URL
         function getValidImageUrl(url) {
             if (!url) return '';
             if (url.includes('drive.google.com/uc')) {
                 const match = url.match(/[?&]id=([^&]+)/);
                 if (match && match[1]) {
-                    return `https://lh3.googleusercontent.com/d/${match[1]}`;
+                    return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
                 }
             }
             return url;
+        }
+
+        // ✨ PRO FIX: The Ultimate Safe Image Loader for PDF.
+        // It bypasses ALL Browser CORS blocks using a reliable proxy, 
+        // converts everything to a 100% pure JPEG via Canvas, and prevents jsPDF crashes.
+        async function getSafePdfImage(sourceUrl) {
+            if (!sourceUrl) return null;
+            
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = "Anonymous"; // Always use anonymous to try safe load
+                
+                img.onload = () => {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        
+                        // Fill white background for transparent PNGs before converting to JPEG
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        
+                        // Guarantee output is JPEG so jsPDF never complains
+                        resolve(canvas.toDataURL('image/jpeg', 0.95)); 
+                    } catch (e) {
+                        console.warn("Canvas export failed:", e);
+                        resolve(null);
+                    }
+                };
+                
+                img.onerror = () => {
+                    console.warn("Direct Image load failed (CORS block). Fallback to Proxy URL:", sourceUrl);
+                    resolve(null); // Return null gracefully so PDF completes without missing page
+                };
+                
+                if (sourceUrl.startsWith('data:image/')) {
+                    // Already a Base64 string, just load it into Image object to normalize format
+                    img.src = sourceUrl;
+                } else if (sourceUrl.includes('drive.google.com')) {
+                    // Google drive MUST use a proxy to bypass CORS for canvas extraction
+                    const cleanUrl = getValidImageUrl(sourceUrl);
+                    img.src = `https://api.allorigins.win/raw?url=${encodeURIComponent(cleanUrl)}`;
+                } else {
+                    // Other http URLs also go through proxy to guarantee CORS safety
+                    img.src = `https://api.allorigins.win/raw?url=${encodeURIComponent(sourceUrl)}`;
+                }
+            });
         }
 
         // Login Methods
@@ -416,8 +542,8 @@
             const secretary = membersData.find(m => m.designation && m.designation.toUpperCase() === 'SECRETARY');
             
             return {
-                presidentSig: president ? getValidImageUrl(president.signatureBase64) : null,
-                secretarySig: secretary ? getValidImageUrl(secretary.signatureBase64) : null
+                presidentSig: president ? president.signatureBase64 : null,
+                secretarySig: secretary ? secretary.signatureBase64 : null
             };
         }
 
@@ -428,7 +554,6 @@
         let existingProfilePic = null;
         let existingSignature = null;
         
-        // NEW Image Variables for processed images
         let croppedProfileBase64 = null;
         let processedSignatureBase64 = null;
 
@@ -545,10 +670,13 @@
                 const safeProfile = getValidImageUrl(member.profilePicBase64);
                 const safeSig = getValidImageUrl(member.signatureBase64);
 
+                const fallbackProfileHTML = `<div class='h-14 w-14 rounded-full border border-gray-200 shadow-sm img-fallback'>No Photo</div>`;
+                const fallbackSigHTML = `<span class='text-xs text-gray-400 italic'>No Sig.</span>`;
+
                 const cell1 = `
                     <td class="px-4 py-4 whitespace-nowrap">
                         <div class="flex flex-col items-center">
-                            ${safeProfile ? `<img class="h-14 w-14 rounded-full object-cover border border-gray-200 shadow-sm" src="${safeProfile}" alt="Photo" onerror="this.outerHTML='<div class=\\'h-14 w-14 rounded-full border border-gray-200 shadow-sm bg-gray-100 flex items-center justify-center text-gray-400 text-[10px]\\'>No Photo</div>'">` : `<div class="h-14 w-14 rounded-full border border-gray-200 shadow-sm bg-gray-100 flex items-center justify-center text-gray-400 text-[10px]">No Photo</div>`}
+                            ${safeProfile ? `<img class="h-14 w-14 rounded-full object-cover border border-gray-200 shadow-sm" src="${safeProfile}" alt="Photo" onerror="this.onerror=null; this.outerHTML=\`${fallbackProfileHTML}\`;">` : fallbackProfileHTML}
                             <div class="mt-2 text-[10px] font-bold text-blue-800 bg-blue-50 px-2 py-1 rounded border border-blue-100">${member.fullId}</div>
                         </div>
                     </td>
@@ -583,7 +711,7 @@
 
                 const sigCell = `
                     <td class="px-4 py-4 whitespace-nowrap text-center">
-                        ${safeSig ? `<img src="${safeSig}" class="h-10 mx-auto object-contain bg-white border border-gray-100 rounded px-1" alt="Sig" onerror="this.outerHTML='<span class=\\'text-[10px] text-red-400 italic\\'>Img Error</span>'"/>` : `<span class="text-xs text-gray-400 italic">No Sig.</span>`}
+                        ${safeSig ? `<img src="${safeSig}" class="h-10 mx-auto object-contain bg-white border border-gray-100 rounded px-1" alt="Sig" onerror="this.onerror=null; this.outerHTML=\`${fallbackSigHTML}\`;"/>` : fallbackSigHTML}
                     </td>
                 `;
 
@@ -634,67 +762,145 @@
             });
         }
 
-        // ==========================================
-        // ✨ NEW: AI BACKGROUND REMOVAL & CROP LOGIC 
-        // ==========================================
         let cropper = null;
+        let cropTarget = '';
 
         const profileImageInput = document.getElementById('profileImage');
         if (profileImageInput) {
             profileImageInput.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(event) {
-                        const cropperModal = document.getElementById('cropperModal');
-                        if (cropperModal) cropperModal.classList.remove('hidden');
-                        
-                        const image = document.getElementById('imageToCrop');
-                        if (image) {
-                            image.src = event.target.result;
-                            if(cropper) { cropper.destroy(); }
-                            cropper = new Cropper(image, {
-                                aspectRatio: 3.5 / 4.5,
-                                viewMode: 1,
-                                autoCropArea: 1,
-                            });
-                        }
-                    };
-                    reader.readAsDataURL(file);
-                }
+                handleImageSelection(e, 'profile');
             });
+        }
+
+        const signatureImageInput = document.getElementById('signatureImage');
+        if (signatureImageInput) {
+            signatureImageInput.addEventListener('change', function(e) {
+                handleImageSelection(e, 'signature');
+            });
+        }
+
+        function handleImageSelection(e, target) {
+            const file = e.target.files[0];
+            if (file) {
+                cropTarget = target;
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const cropperModal = document.getElementById('cropperModal');
+                    if (cropperModal) cropperModal.classList.remove('hidden');
+                    
+                    document.getElementById('cropperModalTitle').innerText = target === 'profile' ? 'Crop Profile Photo' : 'Crop Signature';
+                    document.getElementById('cropperApplyBtnText').innerHTML = target === 'profile' ? '<i class="fas fa-magic mr-2"></i> Crop & Apply AI' : '<i class="fas fa-crop mr-2"></i> Crop & Clean Background';
+                    
+                    const image = document.getElementById('imageToCrop');
+                    if (image) {
+                        image.src = event.target.result;
+                        if(cropper) { cropper.destroy(); }
+                        
+                        const ratio = target === 'profile' ? (3.5 / 4.5) : NaN;
+                        cropper = new Cropper(image, {
+                            aspectRatio: ratio,
+                            viewMode: 1,
+                            autoCropArea: 1,
+                        });
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
         }
 
         function closeCropper() {
             const cropperModal = document.getElementById('cropperModal');
             if (cropperModal) cropperModal.classList.add('hidden');
             if(cropper) { cropper.destroy(); cropper = null; }
-            if(!croppedProfileBase64 && !existingProfilePic) {
+            
+            if(cropTarget === 'profile' && !croppedProfileBase64 && !existingProfilePic) {
                 const profileImgInput = document.getElementById('profileImage');
                 if (profileImgInput) profileImgInput.value = ''; 
+            } else if (cropTarget === 'signature' && !processedSignatureBase64 && !existingSignature) {
+                const sigInput = document.getElementById('signatureImage');
+                if (sigInput) sigInput.value = '';
+            }
+            cropTarget = '';
+        }
+
+        function handleCropApply() {
+            if (!cropper) return;
+            if (cropTarget === 'profile') {
+                applyProfileCropAndRemoveBg();
+            } else if (cropTarget === 'signature') {
+                applySignatureCropAndEnhance();
             }
         }
 
-        async function applyCropAndRemoveBg() {
-            if(!cropper) return;
+        function applySignatureCropAndEnhance() {
+            const sourceCanvas = cropper.getCroppedCanvas();
             
-            // Show AI processing loader
+            const MAX_WIDTH = 1200; 
+            const MAX_HEIGHT = 600;
+            let width = sourceCanvas.width, height = sourceCanvas.height;
+
+            if (width > height) {
+                if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+            } else {
+                if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+            }
+
+            const finalCanvas = document.createElement('canvas');
+            finalCanvas.width = width;
+            finalCanvas.height = height;
+            const ctx = finalCanvas.getContext('2d');
+            
+            ctx.fillStyle = "#FFFFFF";
+            ctx.fillRect(0, 0, width, height);
+            ctx.drawImage(sourceCanvas, 0, 0, width, height);
+
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i]; const g = data[i+1]; const b = data[i+2];
+                const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+                
+                if (luminance > 140) { 
+                    data[i] = 255; data[i+1] = 255; data[i+2] = 255;
+                } else {
+                    data[i] = Math.max(0, r - 50);
+                    data[i+1] = Math.max(0, g - 50);
+                    data[i+2] = Math.max(0, b - 50);
+                }
+            }
+            ctx.putImageData(imageData, 0, 0);
+            
+            processedSignatureBase64 = finalCanvas.toDataURL('image/jpeg', 1.0);
+            
+            const sigImgPreview = document.getElementById('signatureImagePreview');
+            const sigImgPreviewContainer = document.getElementById('signatureImagePreviewContainer');
+            const fileInput = document.getElementById('signatureImage');
+            
+            if (sigImgPreview) sigImgPreview.src = processedSignatureBase64;
+            if (sigImgPreviewContainer) sigImgPreviewContainer.classList.remove('hidden');
+            if (fileInput) { fileInput.classList.add('hidden'); fileInput.value = ''; }
+            
+            closeCropper();
+            showToast("Signature Cropped & Cleaned in High Quality!");
+        }
+
+        async function applyProfileCropAndRemoveBg() {
             const aiLoaderModal = document.getElementById('aiLoaderModal');
             const cropperModal = document.getElementById('cropperModal');
             if (aiLoaderModal) aiLoaderModal.classList.remove('hidden');
             if (cropperModal) cropperModal.classList.add('hidden');
 
             try {
-                // Get Cropped image
                 const canvas = cropper.getCroppedCanvas({ width: 350, height: 450 });
                 
                 canvas.toBlob(async (blob) => {
                     try {
-                        // 🟢 @imgly/background-removal AI Magic
-                        // This removes the background perfectly keeping hair/ears intact.
-                        const transparentBlob = await imglyRemoveBackground(blob);
+                        const aiConfig = {
+                            publicPath: "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.2.0/dist/assets/"
+                        };
+                        const transparentBlob = await imglyRemoveBackground(blob, aiConfig);
                         
-                        // Draw the AI result onto a WHITE canvas
                         const imgUrl = URL.createObjectURL(transparentBlob);
                         const img = new Image();
                         img.onload = () => {
@@ -703,17 +909,12 @@
                             finalCanvas.height = 450;
                             const ctx = finalCanvas.getContext('2d');
                             
-                            // Fill background with perfect white
                             ctx.fillStyle = '#FFFFFF';
                             ctx.fillRect(0, 0, 350, 450);
-                            
-                            // Draw the transparent AI image over white
                             ctx.drawImage(img, 0, 0, 350, 450);
                             
-                            // Convert to Base64 (JPEG)
-                            croppedProfileBase64 = finalCanvas.toDataURL('image/jpeg', 0.9);
+                            croppedProfileBase64 = finalCanvas.toDataURL('image/jpeg', 1.0);
                             
-                            // Update UI
                             const profileImgPreview = document.getElementById('profileImagePreview');
                             const profileImgPreviewContainer = document.getElementById('profileImagePreviewContainer');
                             const fileInput = document.getElementById('profileImage');
@@ -723,7 +924,7 @@
                             if (fileInput) {
                                 fileInput.classList.add('hidden');
                                 fileInput.removeAttribute('required');
-                                fileInput.value = ''; // Clean input
+                                fileInput.value = '';
                             }
                             
                             closeCropper();
@@ -734,8 +935,8 @@
 
                     } catch (error) {
                         console.error("AI Error:", error);
-                        // Fallback: If AI fails, just use the cropped image with white background
-                        fallbackCrop(canvas);
+                        showToast("AI Error: Check console. Falling back to normal crop.", true);
+                        fallbackProfileCrop(canvas);
                     }
                 }, 'image/png');
             } catch(e) {
@@ -745,7 +946,7 @@
             }
         }
 
-        function fallbackCrop(canvas) {
+        function fallbackProfileCrop(canvas) {
             const finalCanvas = document.createElement('canvas');
             finalCanvas.width = 350;
             finalCanvas.height = 450;
@@ -753,7 +954,7 @@
             ctx.fillStyle = '#FFFFFF';
             ctx.fillRect(0, 0, 350, 450);
             ctx.drawImage(canvas, 0, 0);
-            croppedProfileBase64 = finalCanvas.toDataURL('image/jpeg', 0.9);
+            croppedProfileBase64 = finalCanvas.toDataURL('image/jpeg', 1.0);
             
             const profileImgPreview = document.getElementById('profileImagePreview');
             const profileImgPreviewContainer = document.getElementById('profileImagePreviewContainer');
@@ -764,7 +965,7 @@
             if (fileInput) {
                 fileInput.classList.add('hidden');
                 fileInput.removeAttribute('required');
-                fileInput.value = ''; // Clean input
+                fileInput.value = ''; 
             }
             
             closeCropper();
@@ -772,89 +973,6 @@
             if (aiLoaderModal) aiLoaderModal.classList.add('hidden');
             showToast("Cropped successfully (AI feature skipped)");
         }
-
-        // ==========================================
-        // ✨ NEW: SIGNATURE BACKGROUND REMOVAL LOGIC 
-        // ==========================================
-        const signatureImageInput = document.getElementById('signatureImage');
-        if (signatureImageInput) {
-            signatureImageInput.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(event) {
-                        const img = new Image();
-                        img.onload = function() {
-                            processSignatureAndRemoveBackground(img, function(base64) {
-                                processedSignatureBase64 = base64;
-                                const sigImgPreview = document.getElementById('signatureImagePreview');
-                                const sigImgPreviewContainer = document.getElementById('signatureImagePreviewContainer');
-                                const fileInput = document.getElementById('signatureImage');
-                                
-                                if (sigImgPreview) sigImgPreview.src = base64;
-                                if (sigImgPreviewContainer) sigImgPreviewContainer.classList.remove('hidden');
-                                if (fileInput) {
-                                    fileInput.classList.add('hidden');
-                                    fileInput.value = ''; // Clean input
-                                }
-                                showToast("Signature Extracted Successfully!");
-                            });
-                        };
-                        img.src = event.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-        }
-
-        function processSignatureAndRemoveBackground(imgElement, callback) {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const MAX_WIDTH = 400;
-            const MAX_HEIGHT = 150;
-            let width = imgElement.width, height = imgElement.height;
-
-            if (width > height) {
-                if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-            } else {
-                if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
-            }
-
-            canvas.width = width; canvas.height = height;
-            
-            // Fill white initially
-            ctx.fillStyle = "#FFFFFF";
-            ctx.fillRect(0, 0, width, height);
-            ctx.drawImage(imgElement, 0, 0, width, height);
-
-            // Magic Thresholding to isolate Ink from Paper
-            const imageData = ctx.getImageData(0, 0, width, height);
-            const data = imageData.data;
-            
-            for (let i = 0; i < data.length; i += 4) {
-                const r = data[i];
-                const g = data[i+1];
-                const b = data[i+2];
-                // Calculate pixel brightness
-                const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-                
-                // If it is light (paper, shadows), convert to pure WHITE
-                if (luminance > 140) { 
-                    data[i] = 255;
-                    data[i+1] = 255;
-                    data[i+2] = 255;
-                } else {
-                    // It is dark (ink), let's make it more prominent (black/dark-blue)
-                    data[i] = Math.max(0, r - 50);
-                    data[i+1] = Math.max(0, g - 50);
-                    data[i+2] = Math.max(0, b - 50);
-                }
-            }
-            ctx.putImageData(imageData, 0, 0);
-            callback(canvas.toDataURL('image/jpeg', 0.9));
-        }
-
-        // ------------------------------------------
 
         function addIdProofRow(type = '', num = '', existingBase64 = null) {
             const container = document.getElementById('idProofsContainer');
@@ -1051,7 +1169,6 @@
                 if(locType === 'Panchayet') localityStr = `(Panchayet: ${addrObj.panchayetName})`;
                 const fullAddress = `${addrObj.road}, ${addrObj.vill}, P.O. ${addrObj.po}, P.S. ${addrObj.ps}, ${addrObj.district}, ${addrObj.pincode} ${localityStr}`;
 
-                // Use the directly processed variables instead of compressing on submit
                 let profileBase64 = croppedProfileBase64 ? croppedProfileBase64 : (existingProfilePic || '');
                 let sigBase64 = processedSignatureBase64 ? processedSignatureBase64 : (existingSignature || '');
 
@@ -1211,8 +1328,12 @@
             if(document.getElementById('idNumber')) document.getElementById('idNumber').value = member.fullId.replace(prefix, '');
             
             if(document.getElementById('resolutionNo')) document.getElementById('resolutionNo').value = member.resolutionNo || '';
-            if(document.getElementById('resolutionDate')) document.getElementById('resolutionDate').value = member.resolutionDate || '';
-            if(document.getElementById('joinDate')) document.getElementById('joinDate').value = member.joinDate || '';
+            if(document.getElementById('resolutionDate')) {
+                document.getElementById('resolutionDate').value = member.resolutionDate ? member.resolutionDate.split('T')[0] : '';
+            }
+            if(document.getElementById('joinDate')) {
+                document.getElementById('joinDate').value = member.joinDate ? member.joinDate.split('T')[0] : '';
+            }
             if(document.getElementById('designation')) document.getElementById('designation').value = member.designation || '';
             
             if(document.getElementById('fullName')) document.getElementById('fullName').value = member.fullName || '';
@@ -1281,192 +1402,323 @@
             }
         }
 
-        function downloadCategoryPDF() {
-            showToast('Generating Landscape Category Data PDF...');
+        // ✨ PRO FIX: Category PDF Generation. Safe AddImage with 100% JPEG enforcement.
+        async function downloadCategoryPDF() {
+            showToast('Processing Images & Generating PDF...');
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('landscape', 'pt', 'a4');
+
             const filteredMembers = membersData.filter(m => m.tabCategory === currentTab);
             const categoryName = tabNames[currentTab];
             const { presidentSig, secretarySig } = getGlobalSignatures();
 
-            let tableRows = '';
-            filteredMembers.forEach((member, index) => {
-                let idsString = member.idProofs && member.idProofs.length > 0 
-                                ? member.idProofs.map(p => `<strong>${p.type}:</strong> ${p.number}`).join('<br>') 
-                                : 'N/A';
-                                
-                const safeProfile = getValidImageUrl(member.profilePicBase64);
-                const safeSig = getValidImageUrl(member.signatureBase64);
+            const processedMembers = await Promise.all(filteredMembers.map(async (member) => {
+                return {
+                    ...member,
+                    pdfProfile: await getSafePdfImage(member.profilePicBase64),
+                    pdfSig: await getSafePdfImage(member.signatureBase64)
+                };
+            }));
 
-                tableRows += `
-                    <tr style="page-break-inside: avoid;">
-                        <td style="border: 1px solid #d1d5db; padding: 4px; text-align: center;">${index + 1}</td>
-                        <td style="border: 1px solid #d1d5db; padding: 4px; text-align: center;">
-                            ${safeProfile ? `<img src="${safeProfile}" crossorigin="anonymous" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border:1px solid #ccc;">` : ''}
-                        </td>
-                        <td style="border: 1px solid #d1d5db; padding: 4px; font-weight: bold; color: #1e3a8a; font-size: 10px; word-break: break-all;">${member.fullId}</td>
-                        <td style="border: 1px solid #d1d5db; padding: 4px;">
-                            <strong style="font-size: 11px;">${member.fullName}</strong><br>
-                            <span style="font-size: 9px; color:#4b5563;">C/o: ${member.guardianName} | Age: ${member.dob} | ${member.gender}</span>
-                        </td>
-                        <td style="border: 1px solid #d1d5db; padding: 4px; font-size: 9px; word-break: break-word;">
-                            ${member.address}<br>
-                            <strong>Ph:</strong> ${member.mobile}
-                            ${member.email ? `<br><strong>Email:</strong> ${member.email}` : ''}
-                        </td>
-                        <td style="border: 1px solid #d1d5db; padding: 4px; font-size: 9px;">
-                            <strong style="font-size: 10px;">${member.designation || 'MEMBER'}</strong><br>
-                            <span style="color:#4b5563;">Prof: ${member.profession || 'N/A'}</span><br>
-                            <span style="color:#4b5563;">Join: ${formatDate(member.joinDate)}</span><br>
-                            ${member.resolutionNo ? `<span style="color:#4b5563;">Res: ${member.resolutionNo} ${member.resolutionDate ? '('+formatDate(member.resolutionDate)+')' : ''}</span>` : ''}
-                        </td>
-                        <td style="border: 1px solid #d1d5db; padding: 4px; font-size: 9px; font-family: monospace; word-break: break-all;">
-                            ${idsString}
-                        </td>
-                        <td style="border: 1px solid #d1d5db; padding: 4px; text-align: center;">
-                            ${safeSig ? `<img src="${safeSig}" crossorigin="anonymous" style="max-width: 50px; max-height: 25px; object-fit: contain;">` : '<span style="color:#9ca3af; font-size:9px;">N/A</span>'}
-                        </td>
-                    </tr>
-                `;
+            const pdfPresidentSig = await getSafePdfImage(presidentSig);
+            const pdfSecretarySig = await getSafePdfImage(secretarySig);
+
+            // ১. Header Section 
+            doc.setFontSize(18);
+            doc.setTextColor(30, 58, 138); 
+            doc.setFont("helvetica", "bold");
+            doc.text("ITINDA ROAD DHALTITHA MODERN SPORTING CLUB", doc.internal.pageSize.getWidth() / 2, 40, { align: "center" });
+
+            doc.setFontSize(10);
+            doc.setTextColor(75, 85, 99); 
+            doc.setFont("helvetica", "normal");
+            doc.text("Itinda Road, Dhaltitha, Basirhat, North 24 Parganas, West Bengal 743412", doc.internal.pageSize.getWidth() / 2, 55, { align: "center" });
+
+            doc.setFontSize(8);
+            doc.setTextColor(0, 0, 255); 
+            doc.text("ESTD-1985 • GOVT. REGD. NO.- S0035658 OF 2023-24 • PAN NO.- AACAI6060M • NGO ID-WB/2023/0359221 • M.S.M.E. REGD. NO.-UDYAM-WB-14-0149488", doc.internal.pageSize.getWidth() / 2, 68, { align: "center" });
+
+            doc.setFontSize(14);
+            doc.setTextColor(0, 0, 0); 
+            doc.setFont("helvetica", "bold");
+            doc.text(`${categoryName} DATA SHEET`, doc.internal.pageSize.getWidth() / 2, 90, { align: "center" });
+
+            // ২. Table Data
+            const tableBody = processedMembers.map((member, index) => {
+                let idsString = member.idProofs && member.idProofs.length > 0
+                    ? member.idProofs.map(p => `${p.type}: ${p.number}`).join('\n')
+                    : 'N/A';
+
+                return [
+                    index + 1,
+                    '', 
+                    member.fullId,
+                    `${member.fullName}\nC/o: ${member.guardianName}\nAge: ${member.dob} | ${member.gender}`,
+                    `${member.address}\nPh: ${member.mobile}` + (member.email ? `\nEmail: ${member.email}` : ''),
+                    `Desig: ${member.designation || 'MEMBER'}\nProf: ${member.profession || 'N/A'}\nJoin: ${formatDate(member.joinDate)}` + (member.resolutionNo ? `\nRes: ${member.resolutionNo}` : ''),
+                    idsString,
+                    '' 
+                ];
             });
 
-            const htmlContent = `
-            <div style="width: 100%; padding: 15px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1f2937; background-color: #ffffff; box-sizing: border-box;">
-                    <div style="text-align: center; margin-bottom: 20px;">
-                        <h2 style="margin: 0; font-size: 24px; color: #1e3a8a; font-weight: bold; text-transform: uppercase;">ITINDA ROAD DHALTITHA MODERN SPORTING CLUB</h2>
-                        <p style="margin: 5px 0 0 0; font-size: 12px; color: #4b5563;">Itinda Road, Dhaltitha, Basirhat, North 24 Parganas, West Bengal 743412</p>
-                        <h3 style="margin: 15px 0 0 0; font-size: 18px; text-decoration: underline; text-transform: uppercase;">${categoryName} DATA SHEET</h3>
-                    </div>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 40px; background-color: #ffffff; table-layout: fixed;">
-                        <thead style="background-color: #f3f4f6; display: table-header-group;">
-                            <tr>
-                                <th style="border: 1px solid #d1d5db; padding: 8px; width: 4%;">Sl.</th>
-                                <th style="border: 1px solid #d1d5db; padding: 8px; width: 5%;">Photo</th>
-                                <th style="border: 1px solid #d1d5db; padding: 8px; width: 9%;">Member ID</th>
-                                <th style="border: 1px solid #d1d5db; padding: 8px; width: 18%;">Name & Personal Info</th>
-                                <th style="border: 1px solid #d1d5db; padding: 8px; width: 22%;">Address & Contact</th>
-                                <th style="border: 1px solid #d1d5db; padding: 8px; width: 18%;">Membership Details</th>
-                                <th style="border: 1px solid #d1d5db; padding: 8px; width: 14%;">Attached IDs</th>
-                                <th style="border: 1px solid #d1d5db; padding: 8px; width: 10%;">Signature</th>
-                            </tr>
-                        </thead>
-                        <tbody>${tableRows}</tbody>
-                    </table>
-                    
-                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 30px; padding: 0 40px; page-break-inside: avoid;">
-                        <div style="text-align: center;">
-                            ${presidentSig ? `<img src="${presidentSig}" crossorigin="anonymous" style="height: 40px; object-fit: contain; margin-bottom: 5px; display: block; margin-left: auto; margin-right: auto;">` : `<div style="height: 40px;"></div>`}
-                            <div style="border-top: 1px solid #1f2937; width: 200px; padding-top: 8px; font-weight: bold; font-size: 13px;">President Signature</div>
-                        </div>
-                        <div style="text-align: center;">
-                            ${secretarySig ? `<img src="${secretarySig}" crossorigin="anonymous" style="height: 40px; object-fit: contain; margin-bottom: 5px; display: block; margin-left: auto; margin-right: auto;">` : `<div style="height: 40px;"></div>`}
-                            <div style="border-top: 1px solid #1f2937; width: 200px; padding-top: 8px; font-weight: bold; font-size: 13px;">Secretary Signature</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            const opt = {
-    margin:       [0.3, 0.3, 0.3, 0.3],
-    filename:     `Club_Data_${currentTab}_List.pdf`,
-    image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { scale: 2, useCORS: true, scrollY: 0 }, // scrollY: 0 নিশ্চিত করবে PDF যেন একদম TOP থেকে জেনারেট হয়
-    jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' },
-    pagebreak:    { mode: ['css', 'legacy'] } // এটি টেবিলের ডেটা কেটে না গিয়ে পরের পেজে সুন্দরভাবে পাঠাবে
-};
-
-            html2pdf().set(opt).from(htmlContent).save().then(() => {
-                showToast('Landscape List PDF Downloaded!');
-            }).catch(err => {
-                console.error(err);
-                showToast('Error generating PDF', true);
+            // ৩. AutoTable তৈরি করা 
+            doc.autoTable({
+                startY: 105,
+                head: [['Sl.', 'Photo', 'Member ID', 'Name & Personal Info', 'Address & Contact', 'Membership Details', 'Attached IDs', 'Signature']],
+                body: tableBody,
+                theme: 'grid',
+                styles: { fontSize: 8, cellPadding: 4, valign: 'middle', font: 'helvetica', minCellHeight: 45 }, 
+                headStyles: { fillColor: [243, 244, 246], textColor: 20, fontStyle: 'bold', halign: 'center' },
+                columnStyles: {
+                    0: { cellWidth: 25, halign: 'center' },
+                    1: { cellWidth: 45, halign: 'center' }, // Photo
+                    2: { cellWidth: 80 },
+                    3: { cellWidth: 130 },
+                    4: { cellWidth: 155 },
+                    5: { cellWidth: 120 },
+                    6: { cellWidth: 100 },
+                    7: { cellWidth: 80, halign: 'center' }  // Signature
+                },
+                
+                didDrawCell: function(data) {
+                    if (data.section === 'body') {
+                        const member = processedMembers[data.row.index];
+                        
+                        // Profile Photo Insert - Always JPEG now safely converted
+                        if (data.column.index === 1 && member.pdfProfile) {
+                            try {
+                                const dim = 35;
+                                const x = data.cell.x + (data.cell.width - dim) / 2;
+                                const y = data.cell.y + (data.cell.height - dim) / 2;
+                                doc.addImage(member.pdfProfile, 'JPEG', x, y, dim, dim);
+                            } catch(e) {
+                                console.warn(`Profile Image rendering failed for ID: ${member.fullId}`, e);
+                            }
+                        }
+                        
+                        // Signature Insert
+                        if (data.column.index === 7 && member.pdfSig) {
+                            try {
+                                const padX = 3; 
+                                const padY = 4;
+                                const sigW = data.cell.width - (padX * 2); 
+                                const sigH = data.cell.height - (padY * 2); 
+                                doc.addImage(member.pdfSig, 'JPEG', data.cell.x + padX, data.cell.y + padY, sigW, sigH);
+                            } catch(e) {
+                                console.warn(`Signature rendering failed for ID: ${member.fullId}`, e);
+                            }
+                        }
+                    }
+                }
             });
+
+            // ৪. Global Signatures
+            let finalY = doc.lastAutoTable.finalY + 40;
+            if (finalY > doc.internal.pageSize.getHeight() - 70) {
+                doc.addPage();
+                finalY = 60;
+            }
+
+            const pageWidth = doc.internal.pageSize.getWidth();
+
+            if (pdfPresidentSig) {
+                try { doc.addImage(pdfPresidentSig, 'JPEG', 80, finalY - 35, 120, 35); } catch(e) { console.warn('President sig failed'); }
+            }
+            doc.setLineWidth(1);
+            doc.line(70, finalY, 230, finalY);
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.text("President Signature", 150, finalY + 12, { align: "center" });
+
+            if (pdfSecretarySig) {
+                try { doc.addImage(pdfSecretarySig, 'JPEG', pageWidth - 230, finalY - 35, 120, 35); } catch(e) { console.warn('Secretary sig failed'); }
+            }
+            doc.line(pageWidth - 240, finalY, pageWidth - 80, finalY);
+            doc.text("Secretary Signature", pageWidth - 160, finalY + 12, { align: "center" });
+
+            doc.save(`Club_Data_${currentTab}_List.pdf`);
+            showToast('High-Quality PDF Downloaded Successfully!');
         }
 
-        function downloadProfilePDF(id) {
+        // ✨ PRO FIX: Profile PDF Generation
+        async function downloadProfilePDF(id) {
             const member = membersData.find(m => m.id.toString() === id.toString());
             if(!member) return;
-            showToast('Generating Profile PDF...');
             
-            const { presidentSig, secretarySig } = getGlobalSignatures();
-
-            let idsString = member.idProofs && member.idProofs.length > 0 
-                ? member.idProofs.map(p => `<li><strong>${p.type}:</strong> ${p.number}</li>`).join('') 
-                : '<li>N/A</li>';
-
-            const safeProfile = getValidImageUrl(member.profilePicBase64);
-            const safeSig = getValidImageUrl(member.signatureBase64);
-
-            const htmlContent = `
-            <div style="width: 730px; padding: 20px; font-family: Arial, sans-serif; color: #1f2937; background-color: #ffffff; box-sizing: border-box;">
-                    <div style="text-align: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 20px; margin-bottom: 30px;">
-                        <h1 style="color: #1e3a8a; margin: 0; font-size: 24px; font-weight: bold;">ITINDA ROAD DHALTITHA MODERN SPORTING CLUB</h1>
-                        <p style="margin: 5px 0 10px 0; font-size: 12px;">Itinda Road, Dhaltitha, Basirhat, North 24 Parganas, West Bengal 743412</p>
-                        <div style="display: inline-block; background-color: #eff6ff; padding: 5px 15px; border-radius: 20px; color: #1d4ed8; font-weight: bold;">Membership ID: ${member.fullId}</div>
-                    </div>
-                    
-                    <div style="display: flex; gap: 30px; margin-bottom: 35px;">
-                        <div style="flex-shrink: 0; text-align: center; width: 150px;">
-                            ${safeProfile ? `<img src="${safeProfile}" crossorigin="anonymous" style="width: 150px; height: 150px; border-radius: 8px; object-fit: cover; border: 2px solid #e5e7eb;" />` : `<div style="width: 150px; height: 150px; border-radius: 8px; border: 2px solid #e5e7eb; background: #f3f4f6; display: flex; align-items: center; justify-content: center; color: #9ca3af;">No Photo</div>`}
-                            
-                            <div style="margin-top: 15px;">
-                                ${safeSig ? `<img src="${safeSig}" crossorigin="anonymous" style="height: 40px; object-fit: contain; margin: 0 auto; display: block;">` : `<div style="height: 40px; color: #9ca3af; font-size: 10px; display: flex; align-items: center; justify-content: center; font-style: italic;">No Signature</div>`}
-                                <div style="border-top: 1px solid #9ca3af; width: 120px; margin: 5px auto 0; padding-top: 3px; font-size: 11px; font-weight: bold; color: #4b5563;">Member's Signature</div>
-                            </div>
-                        </div>
-                        <div style="flex-grow: 1;">
-                            <h2 style="margin: 0 0 12px 0; font-size: 26px; text-transform: uppercase;">${member.fullName}</h2>
-                            <p style="margin: 0 0 8px 0;"><strong>Designation:</strong> ${member.designation || 'MEMBER'}</p>
-                            <p style="margin: 0 0 8px 0;"><strong>Profession:</strong> ${member.profession || 'N/A'}</p>
-                            <p style="margin: 0 0 8px 0;"><strong>C/o:</strong> ${member.guardianName}</p>
-                            <p style="margin: 0;"><strong>DOB/Age:</strong> ${member.dob} &nbsp;|&nbsp; <strong>Gender:</strong> ${member.gender}</p>
-                        </div>
-                    </div>
-                    
-                    <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #f3f4f6;">
-                        <h3 style="margin: 0 0 15px 0; font-size: 18px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Contact Information</h3>
-                        <p style="margin: 0 0 10px 0;"><strong>Address:</strong><br/> ${member.address}</p>
-                        <p style="margin: 0;"><strong>Phone:</strong> ${member.mobile} &nbsp;|&nbsp; <strong>Email:</strong> ${member.email || 'N/A'}</p>
-                    </div>
-
-                    <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #f3f4f6;">
-                        <h3 style="margin: 0 0 15px 0; font-size: 18px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Membership & Official Records</h3>
-                        <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
-                            <div style="width: 48%; margin-bottom: 10px;"><p style="margin: 0;"><strong>Date of Joining:</strong> ${formatDate(member.joinDate)}</p></div>
-                            <div style="width: 48%; margin-bottom: 10px;"><p style="margin: 0;"><strong>Resolution No:</strong> ${member.resolutionNo || 'N/A'}</p></div>
-                            <div style="width: 48%; margin-bottom: 10px;"><p style="margin: 0;"><strong>Resolution Date:</strong> ${member.resolutionDate ? formatDate(member.resolutionDate) : 'N/A'}</p></div>
-                            <div style="width: 48%; margin-bottom: 10px;">
-                                <p style="margin: 0 0 5px 0;"><strong>Attached ID Proofs:</strong></p>
-                                <ul style="margin:0; padding-left: 15px; font-family: monospace; font-size: 14px;">${idsString}</ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style="margin-top: 50px; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 20px;">
-                        <div style="text-align: center;">
-                            ${presidentSig ? `<img src="${presidentSig}" crossorigin="anonymous" style="height: 50px; object-fit: contain; margin-bottom: 5px; display: block; margin-left: auto; margin-right: auto;">` : `<div style="height: 50px;"></div>`}
-                            <div style="border-top: 1px solid #9ca3af; width: 200px; padding-top: 5px; font-size: 14px; font-weight: bold;">President Signature</div>
-                        </div>
-                        <div style="text-align: center;">
-                            ${secretarySig ? `<img src="${secretarySig}" crossorigin="anonymous" style="height: 50px; object-fit: contain; margin-bottom: 5px; display: block; margin-left: auto; margin-right: auto;">` : `<div style="height: 50px;"></div>`}
-                            <div style="border-top: 1px solid #9ca3af; width: 200px; padding-top: 5px; font-size: 14px; font-weight: bold;">Secretary Signature</div>
-                        </div>
-                    </div>
-                </div>
-            `;
+            showToast('Processing Images & Generating Profile PDF...');
             
-            const opt = {
-    margin:       [0.4, 0.4, 0.4, 0.4],
-    filename:     `${member.fullId.replace(/\//g, '_')}_Profile.pdf`, // মেম্বারের ID অনুযায়ী ফাইলের নাম হবে
-    image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { scale: 2, useCORS: true, scrollY: 0 }, // টপ থেকে শুরু করার জন্য
-    jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' } // Portrait সেট করা হলো
-};
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('portrait', 'pt', 'a4');
+            const { presidentSig, secretarySig } = getGlobalSignatures(); 
+            const pageWidth = doc.internal.pageSize.getWidth();
 
-            html2pdf().set(opt).from(htmlContent).save().then(() => {
-                showToast('Profile PDF Downloaded!');
-            }).catch(err => {
-                console.error(err);
-                showToast('Error generating PDF', true);
+            const pdfProfile = await getSafePdfImage(member.profilePicBase64);
+            const pdfSig = await getSafePdfImage(member.signatureBase64);
+            const pdfPresidentSig = await getSafePdfImage(presidentSig);
+            const pdfSecretarySig = await getSafePdfImage(secretarySig);
+
+            // ১. Header Section 
+            doc.setFontSize(18);
+            doc.setTextColor(30, 58, 138); 
+            doc.setFont("helvetica", "bold");
+            doc.text("ITINDA ROAD DHALTITHA MODERN SPORTING CLUB", pageWidth / 2, 50, { align: "center" });
+
+            doc.setFontSize(9);
+            doc.setTextColor(75, 85, 99);
+            doc.setFont("helvetica", "normal");
+            doc.text("Itinda Road, Dhaltitha, Basirhat, North 24 Parganas, West Bengal 743412", pageWidth / 2, 65, { align: "center" });
+
+            doc.setFontSize(7);
+            doc.setTextColor(0, 0, 255);
+            const estdInfo = "Estd.-1985 | Govt. Regd. No.- S0035658 of 2023-24 | PAN No.- AACAI6060M | NGO ID- WB/2023/0359221 | M.S.M.E. Regd. No.-UDYAM-WB-14-0149488";
+            doc.text(estdInfo, pageWidth / 2, 78, { align: "center" });
+
+            doc.setDrawColor(29, 78, 216);
+            doc.setLineWidth(1.5);
+            doc.line(40, 90, pageWidth - 40, 90);
+
+            // ২. Profile Title & Photo
+            doc.setFontSize(12);
+            doc.setTextColor(29, 78, 216);
+            doc.setFont("helvetica", "bold");
+            doc.text(`MEMBER PROFILE: ${member.fullId}`, 40, 115);
+
+            if (pdfProfile) {
+                try { doc.addImage(pdfProfile, 'JPEG', pageWidth - 160, 105, 120, 140); } catch(e) { console.warn('Profile image failed'); }
+            } else {
+                doc.setDrawColor(200); doc.rect(pageWidth - 160, 105, 120, 140);
+                doc.setFontSize(10); doc.setTextColor(150); doc.text("No Photo", pageWidth - 100, 175, { align: "center" });
+            }
+
+            // ৩. Personal Details Table 
+            doc.autoTable({
+                startY: 135,
+                margin: { left: 40 },
+                tableWidth: 380,
+                body: [
+                    ['Full Name', member.fullName.toUpperCase()],
+                    ['Designation', member.designation || 'MEMBER'],
+                    ['Profession', member.profession || 'N/A'],
+                    ['Guardian Name', member.guardianName],
+                    ['DOB / Age', member.dob],
+                    ['Gender', member.gender],
+                    ['Mobile No.', member.mobile],
+                    ['Email ID', member.email || 'N/A']
+                ],
+                theme: 'plain',
+                styles: { fontSize: 10, cellPadding: 5, font: 'helvetica' },
+                columnStyles: { 0: { fontStyle: 'bold', cellWidth: 100 } }
             });
+
+            // ৪. Address & Membership Details
+            let currentY = doc.lastAutoTable.finalY + 20;
+            
+            doc.setFontSize(11);
+            doc.setTextColor(0, 0, 0);
+            doc.text("ADDRESS & CONTACT", 40, currentY);
+            doc.setLineWidth(0.5);
+            doc.line(40, currentY + 3, 160, currentY + 3);
+
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const addressLines = doc.splitTextToSize(member.address, pageWidth - 80);
+            doc.text(addressLines, 40, currentY + 20);
+
+            currentY += (addressLines.length * 12) + 40;
+
+            doc.autoTable({
+                startY: currentY,
+                head: [['Membership Details', 'Official Records']],
+                body: [
+                    ['Date of Joining', formatDate(member.joinDate)], 
+                    ['Resolution No.', member.resolutionNo || 'N/A'],
+                    ['Resolution Date', member.resolutionDate ? formatDate(member.resolutionDate) : 'N/A']
+                ],
+                theme: 'grid',
+                styles: { fontSize: 9, font: 'helvetica' },
+                headStyles: { fillColor: [243, 244, 246], textColor: 20 },
+                margin: { left: 40, right: 40 }
+            });
+
+            // ৫. Member's Signature Cell
+            currentY = doc.lastAutoTable.finalY + 30;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.text("Member's Signature:", 40, currentY + 20);
+
+            doc.setDrawColor(200, 200, 200);
+            doc.rect(150, currentY, 150, 50); 
+            
+            if (pdfSig) {
+                try { doc.addImage(pdfSig, 'JPEG', 155, currentY + 5, 140, 40); } catch(e) { console.warn('Signature image failed'); }
+            } else {
+                doc.setFontSize(8); doc.setTextColor(150); doc.text("No Signature", 225, currentY + 30, { align: "center" });
+            }
+
+            // ৬. Bottom Signatures 
+            let footerY = doc.internal.pageSize.getHeight() - 80;
+
+            if (pdfPresidentSig) {
+                try { doc.addImage(pdfPresidentSig, 'JPEG', 60, footerY - 40, 110, 35); } catch(e) {}
+            }
+            doc.line(40, footerY, 180, footerY);
+            doc.text("President Signature", 110, footerY + 15, { align: "center" });
+
+            if (pdfSecretarySig) {
+                try { doc.addImage(pdfSecretarySig, 'JPEG', pageWidth - 190, footerY - 40, 110, 35); } catch(e) {}
+            }
+            doc.line(pageWidth - 210, footerY, pageWidth - 70, footerY);
+            doc.text("Secretary Signature", pageWidth - 140, footerY + 15, { align: "center" });
+
+            doc.save(`${member.fullId.replace(/\//g, '_')}_Profile.pdf`); 
+            showToast('High-Quality Profile PDF Downloaded!');
+        }
+        
+        function formatDOB(input) {
+            let val = input.value.replace(/\D/g, '');
+            if (val.length > 8) {
+                val = val.substring(0, 8);
+            }
+            if (val.length > 4) {
+                input.value = val.substring(0, 2) + '/' + val.substring(2, 4) + '/' + val.substring(4, 8);
+            } else if (val.length > 2) {
+                input.value = val.substring(0, 2) + '/' + val.substring(2, 4);
+            } else {
+                input.value = val;
+            }
+        }
+
+        function checkAgeFormat(input) {
+            let val = input.value.trim();
+            if (/^\d{1,2}$/.test(val)) {
+                input.value = val + ' Years';
+            }
+        }
+
+        function clearAgeFormat(input) {
+            input.value = input.value.replace(' Years', '');
+        }
+        
+        function autoFillLocationDetails(input) {
+            const selectedVill = input.value.trim().toUpperCase();
+            const locationData = {
+                "DHALTITHA": { po: "DHALTITHA", ps: "BASIRHAT", dist: "North 24 Parganas", pin: "743412" },
+                "NAIHATI": { po: "BADARTALA", ps: "BASIRHAT", dist: "North 24 Parganas", pin: "743292" },
+                "NALKORA": { po: "NALKORA", ps: "BASIRHAT", dist: "North 24 Parganas", pin: "743412" },
+                "DANDIRHAT": { po: "DANDIRHAT", ps: "BASIRHAT", dist: "North 24 Parganas", pin: "743412" },
+                "AASHRAM PARA": { po: "BASIRHAT", ps: "BASIRHAT", dist: "North 24 Parganas", pin: "743411" },
+                "MUNSEFPARA": { po: "BASIRHAT", ps: "BASIRHAT", dist: "North 24 Parganas", pin: "743411" },
+                "GANAPATIPUR": { po: "BASIRHAT", ps: "BASIRHAT", dist: "North 24 Parganas", pin: "743411" },
+                "SANKCHURA": { po: "SANKCHURA BAGUNDI", ps: "BASIRHAT", dist: "North 24 Parganas", pin: "743429" }
+            };
+
+            if (locationData[selectedVill]) {
+                document.getElementById('po').value = locationData[selectedVill].po;
+                document.getElementById('ps').value = locationData[selectedVill].ps;
+                document.getElementById('district').value = locationData[selectedVill].dist;
+                document.getElementById('pincode').value = locationData[selectedVill].pin;
+            }
         }
     </script>
 </body>

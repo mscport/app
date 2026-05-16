@@ -18,11 +18,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
-    <!-- Imgly AI Background Removal -->
-    <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.2.0/dist/browser/imglyRemoveBackground.umd.js"></script>
-
     <style>
-        /* Custom scrollbar for modal */
+        /* মডালের জন্য কাস্টম স্ক্রলবার */
         .modal-scroll::-webkit-scrollbar { width: 8px; }
         .modal-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
         .modal-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -33,13 +30,13 @@
         @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
         
-        /* Fallback image style */
+        /* ছবি না থাকলে ফলব্যাক স্টাইল */
         .img-fallback { background-color: #f3f4f6; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 10px; text-align: center; border: 1px solid #e5e7eb; }
     </style>
 </head>
 <body class="bg-gray-50 font-sans text-gray-800">
 
-    <!-- Login Modal Override -->
+    <!-- লগইন মডাল -->
     <div id="loginModal" class="fixed inset-0 z-[100] bg-gray-900 bg-opacity-90 flex items-center justify-center hidden">
         <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md transform transition-all">
             <div class="text-center mb-6">
@@ -67,10 +64,10 @@
         </div>
     </div>
 
-    <!-- Main Content Application -->
+    <!-- মূল অ্যাপ্লিকেশন কন্টেন্ট -->
     <div class="max-w-[95%] mx-auto px-4 py-8 relative" id="mainAppContainer">
         
-        <!-- Header -->
+        <!-- হেডার -->
         <button onclick="logout()" id="logoutBtn" class="hidden absolute top-0 right-4 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 px-4 py-2 rounded-md text-sm font-semibold transition-colors shadow-sm z-10"><i class="fas fa-sign-out-alt mr-2"></i>Logout</button>
         
         <div class="mb-8 text-center pt-4">
@@ -79,7 +76,7 @@
             <p class="text-blue-600 mt-2 font-small">Estd.-1985 | Govt. Regd. No.- S0035658 of 2023-24 | PAN No.- AACAI6060M | NGO ID- WB/2023/0359221 | M.S.M.E. Regd. No.-UDYAM-WB-14-0149488 </p>
         </div>
 
-        <!-- Navigation Tabs & Action Bar -->
+        <!-- নেভিগেশন ট্যাব এবং অ্যাকশন বার -->
         <div class="bg-white rounded-t-lg shadow-sm border-b border-gray-200">
             <div class="flex flex-col lg:flex-row justify-between items-center px-6 py-4">
                 <nav class="flex flex-wrap gap-2 mb-4 lg:mb-0" id="tabs">
@@ -98,13 +95,13 @@
             </div>
         </div>
 
-        <!-- Loading State -->
+        <!-- লোডিং স্টেট -->
         <div id="loadingState" class="bg-white rounded-b-lg shadow-sm py-12 text-center">
             <div class="w-12 h-12 border-4 border-gray-200 border-solid rounded-full loader-spinner mx-auto mb-4"></div>
             <p class="text-gray-500 font-medium">ডেটা লোড হচ্ছে...</p>
         </div>
 
-        <!-- Data Table -->
+        <!-- ডেটা টেবিল -->
         <div id="tableContainer" class="bg-white rounded-b-lg shadow-sm overflow-x-auto hidden">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
@@ -119,7 +116,7 @@
                     </tr>
                 </thead>
                 <tbody id="memberTableBody" class="bg-white divide-y divide-gray-200">
-                    <!-- Rows injected by JS -->
+                    <!-- JS এর মাধ্যমে রো যুক্ত হবে -->
                 </tbody>
             </table>
             <div id="emptyState" class="hidden text-center py-12">
@@ -129,7 +126,7 @@
         </div>
     </div>
 
-    <!-- Add Member Modal -->
+    <!-- মেম্বার যুক্ত করার মডাল -->
     <div id="addMemberModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity"></div>
         <div class="fixed inset-0 z-10 overflow-y-auto">
@@ -145,7 +142,7 @@
                         </div>
 
                         <form id="addMemberForm" onsubmit="handleFormSubmit(event)">
-                            <!-- Section 1: Official Details -->
+                            <!-- সেকশন ১: অফিসিয়াল ডিটেইলস -->
                             <div class="mb-6 p-4 bg-blue-50 rounded-lg">
                                 <h4 class="text-sm font-semibold text-blue-800 mb-3 uppercase tracking-wide">Official Record</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -201,7 +198,7 @@
                                 </div>
                             </div>
 
-                            <!-- Section 2: Personal Details -->
+                            <!-- সেকশন ২: পার্সোনাল ডিটেইলস -->
                             <div class="mb-6">
                                 <h4 class="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wide border-b pb-2">Personal Details</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -210,12 +207,12 @@
                                         <input type="text" id="fullName" required pattern="[A-Za-z\s.]+" title="Only letters, spaces, and dots allowed" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm uppercase">
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 required-asterisk">Upload Image (Passport Size)</label>
+                                        <label class="block text-sm font-medium text-gray-700 required-asterisk">Upload Image (Passport Size - Max 60MB)</label>
                                         <div id="profileImagePreviewContainer" class="hidden mt-2 flex items-center space-x-4 bg-gray-50 p-2 rounded border">
                                             <img id="profileImagePreview" src="" class="h-12 w-12 object-cover rounded border">
                                             <button type="button" onclick="removeProfileImage()" class="text-xs text-red-600 hover:text-red-800 font-semibold"><i class="fas fa-trash"></i> Remove</button>
                                         </div>
-                                        <input type="file" id="profileImage" accept="image/*" required class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                        <input type="file" id="profileImage" accept="image/jpeg, image/png, image/gif" required class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" onchange="validateFileSize(this, 60)">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 required-asterisk">Gender</label>
@@ -246,7 +243,7 @@
                                 </div>
                             </div>
 
-                            <!-- Section 3: Address & Contact -->
+                            <!-- সেকশন ৩: অ্যাড্রেস এবং কন্টাক্ট -->
                             <div class="mb-6">
                                 <h4 class="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wide border-b pb-2">Address & Contact Info</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -323,22 +320,22 @@
                                 </div>
                             </div>
 
-                            <!-- Section 4: Identity & Attachments -->
+                            <!-- সেকশন ৪: আইডেন্টিটি এবং অ্যাটাচমেন্টস -->
                             <div class="mb-2">
                                 <h4 class="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wide border-b pb-2">Documents & Identity</h4>
                                 
                                 <div id="idProofsContainer" class="bg-gray-50 p-3 rounded border border-gray-200 mb-4">
-                                    <!-- Dynamic ID Proof Rows go here -->
+                                    <!-- ডায়নামিক ID Proof রো এখানে যুক্ত হবে -->
                                 </div>
                                 <button type="button" onclick="addIdProofRow()" class="mb-4 text-sm text-blue-600 hover:text-blue-800 font-medium inline-flex items-center"><i class="fas fa-plus-circle mr-1"></i> Add Another ID Proof</button>
 
                                 <div class="border-t pt-4">
-                                    <label class="block text-sm font-medium text-gray-700">Upload Member's Signature (Auto Removes Background)</label>
+                                    <label class="block text-sm font-medium text-gray-700">Upload Member's Signature (Max 30MB)</label>
                                     <div id="signatureImagePreviewContainer" class="hidden mt-2 flex items-center space-x-4 bg-gray-50 p-2 rounded border w-fit">
                                         <img id="signatureImagePreview" src="" class="h-10 object-contain bg-white px-2 border">
                                         <button type="button" onclick="removeSignatureImage()" class="text-xs text-red-600 hover:text-red-800 font-semibold"><i class="fas fa-trash"></i> Remove</button>
                                     </div>
-                                    <input type="file" id="signatureImage" accept="image/*" class="mt-1 block w-full md:w-1/3 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200">
+                                    <input type="file" id="signatureImage" accept="image/jpeg, image/png, image/gif" class="mt-1 block w-full md:w-1/3 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200" onchange="validateFileSize(this, 30)">
                                 </div>
                             </div>
 
@@ -359,7 +356,7 @@
         </div>
     </div>
 
-    <!-- Image & Signature Cropper Modal -->
+    <!-- ইমেজ ও সিগনেচার ক্রপার মডাল -->
     <div id="cropperModal" class="fixed inset-0 z-[110] bg-gray-900 bg-opacity-90 flex items-center justify-center hidden">
         <div class="bg-white p-4 rounded-xl shadow-2xl w-full max-w-lg transform transition-all">
             <div class="flex justify-between items-center mb-4">
@@ -374,39 +371,86 @@
             <div class="mt-4 flex justify-end space-x-3">
                 <button type="button" onclick="closeCropper()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md font-semibold hover:bg-gray-300">Cancel</button>
                 <button type="button" onclick="handleCropApply()" id="cropperApplyBtnText" class="px-4 py-2 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700 flex items-center">
-                    <i class="fas fa-check mr-2"></i> Apply Crop
+                    <i class="fas fa-crop mr-2"></i> Apply Crop
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- AI Processing Loader Modal -->
-    <div id="aiLoaderModal" class="fixed inset-0 z-[120] bg-gray-900 bg-opacity-95 flex items-center justify-center hidden">
-        <div class="text-center text-white ai-pulse">
-            <div class="text-5xl mb-4 text-blue-400"><i class="fas fa-brain fa-spin"></i></div>
-            <h3 class="text-2xl font-bold mb-2">AI is processing image...</h3>
-            <p class="text-gray-300 text-sm">Removing background perfectly without losing hair/edges.</p>
-            <p class="text-gray-400 text-xs mt-2">(First time might take slightly longer to load the AI model)</p>
+    <!-- AI Member Assistant Modal -->
+    <div id="aiAssistantModal" class="fixed inset-0 z-[130] bg-gray-900 bg-opacity-90 flex items-center justify-center hidden">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-2xl transform transition-all flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 class="text-xl font-bold text-indigo-900 flex items-center"><i class="fas fa-sparkles text-yellow-500 mr-2"></i> AI Member Assistant</h3>
+                <button type="button" onclick="closeAIAssistant()" class="text-gray-400 hover:text-red-500">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="mb-4">
+                <p class="text-sm text-gray-600 mb-2">Select an AI action for <span id="aiMemberName" class="font-bold text-gray-800 uppercase"></span>:</p>
+                <div class="flex space-x-2">
+                    <button onclick="generateAIContent('bio')" class="flex-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 py-2 px-3 rounded-md text-sm font-semibold transition-colors">
+                        <i class="fas fa-user-tie mr-1"></i> Pro Bio
+                    </button>
+                    <button onclick="generateAIContent('welcome')" class="flex-1 bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 py-2 px-3 rounded-md text-sm font-semibold transition-colors">
+                        <i class="fas fa-envelope-open-text mr-1"></i> Welcome Email
+                    </button>
+                    <button onclick="generateAIContent('invite')" class="flex-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 py-2 px-3 rounded-md text-sm font-semibold transition-colors">
+                        <i class="fas fa-calendar-alt mr-1"></i> Meeting Invite
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-hidden flex flex-col">
+                <label class="block text-sm font-medium text-gray-700 mb-1">AI Generated Output:</label>
+                <textarea id="aiOutputText" class="w-full flex-1 p-3 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm text-gray-800 resize-none font-sans leading-relaxed" placeholder="AI result will appear here..."></textarea>
+            </div>
+
+            <div class="mt-4 flex justify-between items-center border-t pt-3">
+                <span id="aiLoadingStatus" class="text-sm font-medium text-indigo-600 hidden">
+                    <i class="fas fa-spinner fa-spin mr-1"></i> Gemini is thinking...
+                </span>
+                <div class="flex space-x-2 ml-auto">
+                    <button type="button" onclick="copyAIOutput()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm font-semibold hover:bg-gray-200 border border-gray-300"><i class="fas fa-copy mr-1"></i> Copy Text</button>
+                    <button type="button" onclick="closeAIAssistant()" class="px-4 py-2 bg-gray-800 text-white rounded-md text-sm font-semibold hover:bg-gray-900">Close</button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Alert Toast -->
+    <!-- অ্যালার্ট টোস্ট -->
     <div id="toast" class="fixed bottom-5 right-5 transform translate-y-20 opacity-0 transition-all duration-300 bg-gray-800 text-white px-6 py-3 rounded shadow-lg z-50 flex items-center hidden">
         <i id="toastIcon" class="fas fa-check-circle text-green-400 mr-3"></i>
         <span id="toastMsg">Action successful</span>
     </div>
 
     <script>
-        // ✅ YOUR GOOGLE APPS SCRIPT URL HAS BEEN PASTED HERE
+        // ✅ আপনার দেওয়া GOOGLE APPS SCRIPT URL এখানে রাখা হয়েছে
+        // এই Apps Script-টি ডাটাবেস হ্যান্ডেল করার পাশাপাশি এখন Google Drive-এ ফাইল স্টোর করার কাজ করবে।
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwmLRiq5DIzKkzBpiE-js8AiZTxZRSacemJQmDcAHwJ7tIBaDbloSt2n4XDFv4wCfC6AQ/exec";
+        
+        const geminiApiKey = "";
 
-        // Global User Role Management
         let userRole = localStorage.getItem('clubUserRole') || null;
 
-        // Helper to extract clean Google Drive URL
+        // ফাইল সাইজ ভ্যালিডেশন ফাংশন (MB তে)
+        function validateFileSize(input, maxSizeMB) {
+            if (input.files && input.files[0]) {
+                const fileSize = input.files[0].size / 1024 / 1024; // in MB
+                if (fileSize > maxSizeMB) {
+                    alert(`File size exceeds limit. Maximum allowed size is ${maxSizeMB} MB.`);
+                    input.value = ''; // ক্লিয়ার করে দেওয়া হবে
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // URL ঠিক করার হেল্পার
         function getValidImageUrl(url) {
             if (!url) return '';
-            if (url.includes('drive.google.com/uc')) {
+            if (url.includes('drive.google.com')) {
                 const match = url.match(/[?&]id=([^&]+)/);
                 if (match && match[1]) {
                     return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
@@ -415,56 +459,58 @@
             return url;
         }
 
-        // ✨ PRO FIX: The Ultimate Safe Image Loader for PDF.
-        // It bypasses ALL Browser CORS blocks using a reliable proxy, 
-        // converts everything to a 100% pure JPEG via Canvas, and prevents jsPDF crashes.
-        async function getSafePdfImage(sourceUrl) {
-            if (!sourceUrl) return null;
-            
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.crossOrigin = "Anonymous"; // Always use anonymous to try safe load
+        // ✨ PRO FIX: URL থেকে সরাসরি Image Element লোড করার ফাংশন (PDF এর জন্য)
+        // কোনো Base64 স্টোরেজ ছাড়াই সরাসরি URL থেকে ছবি প্রিন্ট হবে।
+        function loadImageElement(url) {
+            return new Promise((resolve, reject) => {
+                if (!url) { resolve(null); return; }
+                const isDrive = url.includes('drive.google.com');
                 
-                img.onload = () => {
-                    try {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        const ctx = canvas.getContext('2d');
-                        
-                        // Fill white background for transparent PNGs before converting to JPEG
-                        ctx.fillStyle = '#FFFFFF';
-                        ctx.fillRect(0, 0, canvas.width, canvas.height);
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        
-                        // Guarantee output is JPEG so jsPDF never complains
-                        resolve(canvas.toDataURL('image/jpeg', 0.95)); 
-                    } catch (e) {
-                        console.warn("Canvas export failed:", e);
-                        resolve(null);
-                    }
-                };
-                
-                img.onerror = () => {
-                    console.warn("Direct Image load failed (CORS block). Fallback to Proxy URL:", sourceUrl);
-                    resolve(null); // Return null gracefully so PDF completes without missing page
-                };
-                
-                if (sourceUrl.startsWith('data:image/')) {
-                    // Already a Base64 string, just load it into Image object to normalize format
-                    img.src = sourceUrl;
-                } else if (sourceUrl.includes('drive.google.com')) {
-                    // Google drive MUST use a proxy to bypass CORS for canvas extraction
-                    const cleanUrl = getValidImageUrl(sourceUrl);
-                    img.src = `https://api.allorigins.win/raw?url=${encodeURIComponent(cleanUrl)}`;
-                } else {
-                    // Other http URLs also go through proxy to guarantee CORS safety
-                    img.src = `https://api.allorigins.win/raw?url=${encodeURIComponent(sourceUrl)}`;
+                let driveId = null;
+                if (isDrive) {
+                    const match = url.match(/[?&]id=([^&]+)/);
+                    if (match && match[1]) driveId = match[1];
                 }
+
+                let proxies = [];
+                if (driveId) {
+                    const thumbUrl = `https://drive.google.com/thumbnail?id=${driveId}&sz=w800`;
+                    proxies = [
+                        `https://wsrv.nl/?url=${encodeURIComponent(thumbUrl)}`,
+                        `https://corsproxy.io/?${encodeURIComponent(thumbUrl)}`,
+                        `https://api.allorigins.win/raw?url=${encodeURIComponent(thumbUrl)}`
+                    ];
+                } else {
+                    proxies = [
+                        url,
+                        `https://corsproxy.io/?${encodeURIComponent(url)}`,
+                        `https://wsrv.nl/?url=${encodeURIComponent(url)}`
+                    ];
+                }
+
+                const tryLoad = (proxyIndex) => {
+                    if (proxyIndex >= proxies.length) {
+                        console.error("All image load attempts failed for PDF:", url);
+                        reject("Fail to programme");
+                        return;
+                    }
+                    
+                    const img = new Image();
+                    img.crossOrigin = 'Anonymous'; 
+                    img.onload = () => resolve(img);
+                    img.onerror = () => {
+                        console.warn(`Load failed for proxy ${proxyIndex + 1}, retrying next...`);
+                        tryLoad(proxyIndex + 1); // একটি ফেইল করলে পরের প্রক্সি ট্রাই করবে
+                    };
+                    img.src = proxies[proxyIndex];
+                };
+
+                // লোডিং সিকুয়েন্স শুরু
+                tryLoad(0);
             });
         }
 
-        // Login Methods
+        // লগইন মেথডস
         function checkLogin() {
             const loginModal = document.getElementById('loginModal');
             const logoutBtn = document.getElementById('logoutBtn');
@@ -503,9 +549,7 @@
             localStorage.setItem('clubUserRole', role);
             userRole = role;
             checkLogin();
-            if(membersData && membersData.length > 0) {
-                renderTable(); 
-            }
+            if(membersData && membersData.length > 0) { renderTable(); }
         }
 
         function logout() {
@@ -537,25 +581,26 @@
 
         function getGlobalSignatures() {
             if(!membersData) return { presidentSig: null, secretarySig: null };
-            
             const president = membersData.find(m => m.designation && m.designation.toUpperCase() === 'PRESIDENT');
             const secretary = membersData.find(m => m.designation && m.designation.toUpperCase() === 'SECRETARY');
-            
             return {
-                presidentSig: president ? president.signatureBase64 : null,
-                secretarySig: secretary ? secretary.signatureBase64 : null
+                // Backward compatible field names, but they hold Drive URLs now
+                presidentSig: president ? getValidImageUrl(president.profilePicUrl || president.signatureBase64) : null,
+                secretarySig: secretary ? getValidImageUrl(secretary.signatureUrl || secretary.signatureBase64) : null
             };
         }
 
-        // State Management
+        // স্টেট ম্যানেজমেন্ট
         let currentTab = 'GB'; 
         let isEditMode = false;
         let editingMemberId = null;
-        let existingProfilePic = null;
-        let existingSignature = null;
+        let existingProfilePic = null; // URL ধারণ করবে
+        let existingSignature = null;  // URL ধারণ করবে
         
-        let croppedProfileBase64 = null;
-        let processedSignatureBase64 = null;
+        let croppedProfileData = null; // File transmission payload
+        let processedSignatureData = null; // File transmission payload
+
+        let currentAIMemberData = null;
 
         const idPrefixes = { 'GB': 'MSC/GB/', 'OM': 'MSC/OM/', 'HM': 'MSC/HM/' };
         const tabNames = { 'GB': 'GOVERNING BODY', 'OM': 'ORDINARY MEMBER', 'HM': 'HONORARY MEMBER' };
@@ -667,8 +712,9 @@
                 tr.className = "hover:bg-gray-50 transition-colors";
 
                 const slCell = `<td class="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-500">${index + 1}</td>`;
-                const safeProfile = getValidImageUrl(member.profilePicBase64);
-                const safeSig = getValidImageUrl(member.signatureBase64);
+                // Backward compatible read
+                const safeProfile = getValidImageUrl(member.profilePicUrl || member.profilePicBase64);
+                const safeSig = getValidImageUrl(member.signatureUrl || member.signatureBase64);
 
                 const fallbackProfileHTML = `<div class='h-14 w-14 rounded-full border border-gray-200 shadow-sm img-fallback'>No Photo</div>`;
                 const fallbackSigHTML = `<span class='text-xs text-gray-400 italic'>No Sig.</span>`;
@@ -721,10 +767,12 @@
                 } else {
                     if(member.idProofs && member.idProofs.length > 0) {
                         member.idProofs.forEach(proof => {
+                            // docBase64 holds the Drive URL now, but we keep the name consistent with the backend payload structure
+                            let docUrlStr = proof.docUrl || proof.docBase64;
                             idProofsHTML += `
                                 <div class="text-[10px] font-semibold text-gray-700 bg-gray-100 p-1.5 rounded mb-1 inline-block text-left w-full">
                                     ${proof.type}: <span class="font-mono text-gray-900">${proof.number}</span>
-                                    ${proof.docBase64 ? `<a href="#" onclick="viewDoc('${proof.docBase64}'); return false;" class="text-blue-600 hover:text-blue-900 ml-2" title="View Document"><i class="fas fa-paperclip"></i> View</a>` : ''}
+                                    ${docUrlStr ? `<a href="#" onclick="viewDoc('${docUrlStr}'); return false;" class="text-blue-600 hover:text-blue-900 ml-2" title="View Document"><i class="fas fa-paperclip"></i> View</a>` : ''}
                                 </div>
                             `;
                         });
@@ -736,6 +784,7 @@
                 let actionButtons = '';
                 if (userRole === 'admin') {
                     actionButtons += `
+                        <button onclick="openAIAssistant('${member.id}')" class="text-purple-600 hover:text-purple-900 text-xs border border-purple-200 px-2 py-1 rounded bg-purple-50" title="AI Features"><i class="fas fa-sparkles text-yellow-500"></i> AI</button>
                         <button onclick="editMember('${member.id}')" class="text-indigo-600 hover:text-indigo-900 text-xs border border-indigo-200 px-2 py-1 rounded bg-indigo-50" title="Edit Profile"><i class="fas fa-edit"></i> Edit</button>
                         <button onclick="deleteMember('${member.id}')" class="text-red-600 hover:text-red-900 text-xs border border-red-200 px-2 py-1 rounded bg-red-50" title="Delete Profile"><i class="fas fa-trash"></i></button>
                     `;
@@ -762,20 +811,27 @@
             });
         }
 
+        // ==========================================
+        // ✨ ছবি ও সিগনেচার ডায়নামিক ক্রপার
+        // ==========================================
         let cropper = null;
         let cropTarget = '';
 
         const profileImageInput = document.getElementById('profileImage');
         if (profileImageInput) {
             profileImageInput.addEventListener('change', function(e) {
-                handleImageSelection(e, 'profile');
+                if(validateFileSize(this, 60)) {
+                    handleImageSelection(e, 'profile');
+                }
             });
         }
 
         const signatureImageInput = document.getElementById('signatureImage');
         if (signatureImageInput) {
             signatureImageInput.addEventListener('change', function(e) {
-                handleImageSelection(e, 'signature');
+                if(validateFileSize(this, 30)) {
+                    handleImageSelection(e, 'signature');
+                }
             });
         }
 
@@ -789,7 +845,7 @@
                     if (cropperModal) cropperModal.classList.remove('hidden');
                     
                     document.getElementById('cropperModalTitle').innerText = target === 'profile' ? 'Crop Profile Photo' : 'Crop Signature';
-                    document.getElementById('cropperApplyBtnText').innerHTML = target === 'profile' ? '<i class="fas fa-magic mr-2"></i> Crop & Apply AI' : '<i class="fas fa-crop mr-2"></i> Crop & Clean Background';
+                    document.getElementById('cropperApplyBtnText').innerHTML = target === 'profile' ? '<i class="fas fa-crop mr-2"></i> Apply Crop' : '<i class="fas fa-crop mr-2"></i> Crop & Clean Background';
                     
                     const image = document.getElementById('imageToCrop');
                     if (image) {
@@ -813,10 +869,10 @@
             if (cropperModal) cropperModal.classList.add('hidden');
             if(cropper) { cropper.destroy(); cropper = null; }
             
-            if(cropTarget === 'profile' && !croppedProfileBase64 && !existingProfilePic) {
+            if(cropTarget === 'profile' && !croppedProfileData && !existingProfilePic) {
                 const profileImgInput = document.getElementById('profileImage');
                 if (profileImgInput) profileImgInput.value = ''; 
-            } else if (cropTarget === 'signature' && !processedSignatureBase64 && !existingSignature) {
+            } else if (cropTarget === 'signature' && !processedSignatureData && !existingSignature) {
                 const sigInput = document.getElementById('signatureImage');
                 if (sigInput) sigInput.value = '';
             }
@@ -826,12 +882,44 @@
         function handleCropApply() {
             if (!cropper) return;
             if (cropTarget === 'profile') {
-                applyProfileCropAndRemoveBg();
+                applyProfileCrop();
             } else if (cropTarget === 'signature') {
                 applySignatureCropAndEnhance();
             }
         }
 
+        // ==========================================
+        // 🟢 প্রোফাইল ছবি: শুধুমাত্র ক্রপ
+        // ==========================================
+        function applyProfileCrop() {
+            try {
+                // হাই-কোয়ালিটি সাইজ রাখা হচ্ছে
+                const canvas = cropper.getCroppedCanvas({ width: 1050, height: 1350, fillColor: '#FFFFFF' });
+                // Apps script এ পাঠানোর জন্য ডাটা রেডি
+                croppedProfileData = canvas.toDataURL('image/jpeg', 0.9);
+                
+                const profileImgPreview = document.getElementById('profileImagePreview');
+                const profileImgPreviewContainer = document.getElementById('profileImagePreviewContainer');
+                const fileInput = document.getElementById('profileImage');
+                
+                if (profileImgPreview) profileImgPreview.src = croppedProfileData;
+                if (profileImgPreviewContainer) profileImgPreviewContainer.classList.remove('hidden');
+                if (fileInput) {
+                    fileInput.classList.add('hidden');
+                    fileInput.removeAttribute('required');
+                }
+                
+                closeCropper();
+                showToast("Profile Photo Cropped Successfully!");
+            } catch(e) {
+                console.error(e);
+                showToast("Image Crop Error!", true);
+            }
+        }
+
+        // ==========================================
+        // 🔵 সিগনেচার: ক্রপ ও ব্যাকগ্রাউন্ড ক্লিন
+        // ==========================================
         function applySignatureCropAndEnhance() {
             const sourceCanvas = cropper.getCroppedCanvas();
             
@@ -871,110 +959,24 @@
             }
             ctx.putImageData(imageData, 0, 0);
             
-            processedSignatureBase64 = finalCanvas.toDataURL('image/jpeg', 1.0);
+            processedSignatureData = finalCanvas.toDataURL('image/jpeg', 1.0);
             
             const sigImgPreview = document.getElementById('signatureImagePreview');
             const sigImgPreviewContainer = document.getElementById('signatureImagePreviewContainer');
             const fileInput = document.getElementById('signatureImage');
             
-            if (sigImgPreview) sigImgPreview.src = processedSignatureBase64;
+            if (sigImgPreview) sigImgPreview.src = processedSignatureData;
             if (sigImgPreviewContainer) sigImgPreviewContainer.classList.remove('hidden');
-            if (fileInput) { fileInput.classList.add('hidden'); fileInput.value = ''; }
+            if (fileInput) { fileInput.classList.add('hidden'); }
             
             closeCropper();
             showToast("Signature Cropped & Cleaned in High Quality!");
         }
 
-        async function applyProfileCropAndRemoveBg() {
-            const aiLoaderModal = document.getElementById('aiLoaderModal');
-            const cropperModal = document.getElementById('cropperModal');
-            if (aiLoaderModal) aiLoaderModal.classList.remove('hidden');
-            if (cropperModal) cropperModal.classList.add('hidden');
-
-            try {
-                const canvas = cropper.getCroppedCanvas({ width: 350, height: 450 });
-                
-                canvas.toBlob(async (blob) => {
-                    try {
-                        const aiConfig = {
-                            publicPath: "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.2.0/dist/assets/"
-                        };
-                        const transparentBlob = await imglyRemoveBackground(blob, aiConfig);
-                        
-                        const imgUrl = URL.createObjectURL(transparentBlob);
-                        const img = new Image();
-                        img.onload = () => {
-                            const finalCanvas = document.createElement('canvas');
-                            finalCanvas.width = 350;
-                            finalCanvas.height = 450;
-                            const ctx = finalCanvas.getContext('2d');
-                            
-                            ctx.fillStyle = '#FFFFFF';
-                            ctx.fillRect(0, 0, 350, 450);
-                            ctx.drawImage(img, 0, 0, 350, 450);
-                            
-                            croppedProfileBase64 = finalCanvas.toDataURL('image/jpeg', 1.0);
-                            
-                            const profileImgPreview = document.getElementById('profileImagePreview');
-                            const profileImgPreviewContainer = document.getElementById('profileImagePreviewContainer');
-                            const fileInput = document.getElementById('profileImage');
-                            
-                            if (profileImgPreview) profileImgPreview.src = croppedProfileBase64;
-                            if (profileImgPreviewContainer) profileImgPreviewContainer.classList.remove('hidden');
-                            if (fileInput) {
-                                fileInput.classList.add('hidden');
-                                fileInput.removeAttribute('required');
-                                fileInput.value = '';
-                            }
-                            
-                            closeCropper();
-                            if (aiLoaderModal) aiLoaderModal.classList.add('hidden');
-                            showToast("AI Background Removed & Cropped Successfully!");
-                        };
-                        img.src = imgUrl;
-
-                    } catch (error) {
-                        console.error("AI Error:", error);
-                        showToast("AI Error: Check console. Falling back to normal crop.", true);
-                        fallbackProfileCrop(canvas);
-                    }
-                }, 'image/png');
-            } catch(e) {
-                console.error(e);
-                if (aiLoaderModal) aiLoaderModal.classList.add('hidden');
-                showToast("Image Processing Error", true);
-            }
-        }
-
-        function fallbackProfileCrop(canvas) {
-            const finalCanvas = document.createElement('canvas');
-            finalCanvas.width = 350;
-            finalCanvas.height = 450;
-            const ctx = finalCanvas.getContext('2d');
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(0, 0, 350, 450);
-            ctx.drawImage(canvas, 0, 0);
-            croppedProfileBase64 = finalCanvas.toDataURL('image/jpeg', 1.0);
-            
-            const profileImgPreview = document.getElementById('profileImagePreview');
-            const profileImgPreviewContainer = document.getElementById('profileImagePreviewContainer');
-            const fileInput = document.getElementById('profileImage');
-            
-            if (profileImgPreview) profileImgPreview.src = croppedProfileBase64;
-            if (profileImgPreviewContainer) profileImgPreviewContainer.classList.remove('hidden');
-            if (fileInput) {
-                fileInput.classList.add('hidden');
-                fileInput.removeAttribute('required');
-                fileInput.value = ''; 
-            }
-            
-            closeCropper();
-            const aiLoaderModal = document.getElementById('aiLoaderModal');
-            if (aiLoaderModal) aiLoaderModal.classList.add('hidden');
-            showToast("Cropped successfully (AI feature skipped)");
-        }
-
-        function addIdProofRow(type = '', num = '', existingBase64 = null) {
+        // ==========================================
+        // ডায়নামিক আইডি প্রুফ রো
+        // ==========================================
+        function addIdProofRow(type = '', num = '', existingUrl = null) {
             const container = document.getElementById('idProofsContainer');
             if(!container) return;
             
@@ -985,12 +987,12 @@
             let base64InputHtml = '';
             let fileInputClass = 'idImage mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-gray-100 hover:file:bg-gray-200';
             
-            if (existingBase64) {
+            if (existingUrl) {
                 fileInputClass += ' hidden'; 
                 base64InputHtml = `
                     <div class="existing-doc-container mt-2 flex items-center justify-between bg-gray-50 p-2 rounded border w-full">
-                        <input type="hidden" class="existingBase64" value="${existingBase64}">
-                        <span class="text-[10px] text-green-600 block truncate w-3/4"><i class="fas fa-check"></i> Saved - <a href="#" onclick="viewDoc('${existingBase64}'); return false;" class="text-blue-600 underline hover:text-blue-800">View</a></span>
+                        <input type="hidden" class="existingBase64" value="${existingUrl}">
+                        <span class="text-[10px] text-green-600 block truncate w-3/4"><i class="fas fa-check"></i> Saved - <a href="#" onclick="viewDoc('${existingUrl}'); return false;" class="text-blue-600 underline hover:text-blue-800">View</a></span>
                         <button type="button" onclick="removeIdProofDoc(this)" class="text-xs text-red-600 hover:text-red-800 font-semibold" title="Remove Attachment"><i class="fas fa-trash"></i></button>
                     </div>
                 `;
@@ -1013,8 +1015,8 @@
                     <input type="text" class="idProofNumber mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" value="${num}" ${rowCount === 0 ? 'required' : ''}>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Upload ID (Optional)</label>
-                    <input type="file" class="${fileInputClass}" accept="image/*,application/pdf">
+                    <label class="block text-sm font-medium text-gray-700">Upload ID (Max 100MB)</label>
+                    <input type="file" class="${fileInputClass}" accept="image/jpeg, image/png, image/gif, application/pdf" onchange="validateFileSize(this, 100)">
                     ${base64InputHtml}
                 </div>
                 <div class="flex items-center">
@@ -1071,8 +1073,8 @@
             editingMemberId = null;
             existingProfilePic = null;
             existingSignature = null;
-            croppedProfileBase64 = null;
-            processedSignatureBase64 = null;
+            croppedProfileData = null;
+            processedSignatureData = null;
 
             const modalTitle = document.getElementById('modal-title');
             const saveBtn = document.getElementById('saveBtn');
@@ -1107,7 +1109,7 @@
 
         function removeProfileImage() {
             existingProfilePic = null;
-            croppedProfileBase64 = null;
+            croppedProfileData = null;
             const profileImagePreviewContainer = document.getElementById('profileImagePreviewContainer');
             const fileInput = document.getElementById('profileImage');
             
@@ -1121,7 +1123,7 @@
 
         function removeSignatureImage() {
             existingSignature = null;
-            processedSignatureBase64 = null;
+            processedSignatureData = null;
             const signatureImagePreviewContainer = document.getElementById('signatureImagePreviewContainer');
             const fileInput = document.getElementById('signatureImage');
             
@@ -1143,7 +1145,7 @@
 
             const saveBtn = document.getElementById('saveBtn');
             if(saveBtn) {
-                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving to Database...';
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Syncing to Google Drive & Sheet...';
                 saveBtn.disabled = true;
             }
 
@@ -1169,8 +1171,9 @@
                 if(locType === 'Panchayet') localityStr = `(Panchayet: ${addrObj.panchayetName})`;
                 const fullAddress = `${addrObj.road}, ${addrObj.vill}, P.O. ${addrObj.po}, P.S. ${addrObj.ps}, ${addrObj.district}, ${addrObj.pincode} ${localityStr}`;
 
-                let profileBase64 = croppedProfileBase64 ? croppedProfileBase64 : (existingProfilePic || '');
-                let sigBase64 = processedSignatureBase64 ? processedSignatureBase64 : (existingSignature || '');
+                // Image Data transmission directly to Apps Script
+                let finalProfileData = croppedProfileData ? croppedProfileData : (existingProfilePic || '');
+                let finalSignatureData = processedSignatureData ? processedSignatureData : (existingSignature || '');
 
                 const idProofRows = document.querySelectorAll('.id-proof-row');
                 const idProofsArray = [];
@@ -1183,15 +1186,16 @@
                     const type = typeEl ? typeEl.value : '';
                     const num = numEl ? numEl.value : '';
 
-                    let docBase64 = null;
+                    let docData = null;
                     if (fileInput && fileInput.files && fileInput.files[0]) {
-                        docBase64 = await new Promise(resolve => getFileBase64(fileInput.files[0], resolve));
+                        docData = await new Promise(resolve => getFileBase64(fileInput.files[0], resolve));
                     } else if (existingInput) {
-                        docBase64 = existingInput.value;
+                        docData = existingInput.value;
                     }
 
                     if (type && num) {
-                        idProofsArray.push({ type: type, number: num, docBase64: docBase64 });
+                        // Backend will save docData to Drive and return a URL
+                        idProofsArray.push({ type: type, number: num, docBase64: docData });
                     }
                 }
 
@@ -1215,8 +1219,9 @@
                     address: fullAddress,
                     addressObj: addrObj,
                     idProofs: idProofsArray,
-                    profilePicBase64: profileBase64,
-                    signatureBase64: sigBase64,
+                    // Sending Image Data -> Apps Script needs to save this to Drive and update Sheet with URL
+                    profilePicBase64: finalProfileData, 
+                    signatureBase64: finalSignatureData, 
                     resignDate: null,
                     resignReason: ''
                 };
@@ -1230,8 +1235,10 @@
                     } else {
                         membersData.push(memberDataPayload);
                     }
-                    showToast(`Profile ${isEditMode ? 'updated' : 'saved'} successfully to database!`);
-                    renderTable();
+                    showToast(`Profile ${isEditMode ? 'updated' : 'saved'} successfully!`);
+                    
+                    // Refresh data to get the updated URLs from Google Sheet
+                    await fetchDatabaseData();
                     closeModal();
                 } else {
                     throw new Error(result.message);
@@ -1275,15 +1282,16 @@
             
             isEditMode = true;
             editingMemberId = id;
-            croppedProfileBase64 = null;
-            processedSignatureBase64 = null;
+            croppedProfileData = null;
+            processedSignatureData = null;
             
             const modalTitle = document.getElementById('modal-title');
             const saveBtn = document.getElementById('saveBtn');
             if(modalTitle) modalTitle.innerText = 'Edit Member Profile';
             if(saveBtn) saveBtn.innerHTML = '<i class="fas fa-save mr-2 mt-1"></i> Update Profile';
             
-            existingProfilePic = member.profilePicBase64 || null;
+            // Backward compatibility checks for existing URLs
+            existingProfilePic = member.profilePicUrl || member.profilePicBase64 || null; 
             const profileImagePreviewContainer = document.getElementById('profileImagePreviewContainer');
             const profileImageInputEl = document.getElementById('profileImage');
             
@@ -1291,7 +1299,7 @@
                 const profileImgEl = document.getElementById('profileImagePreview');
                 if(profileImgEl) {
                     profileImgEl.src = getValidImageUrl(existingProfilePic);
-                    profileImgEl.onerror = function() { this.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22150%22%20height%3D%22150%22%3E%3Crect%20width%3D%22150%22%20height%3D%22150%22%20fill%3D%22%23e5e7eb%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%22.1em%22%20fill%3D%22%239ca3af%22%20font-size%3D%2220%22%20font-family%3D%22Arial%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%3EError%3C%2Ftext%3E%3C%2Fsvg%3E'; };
+                    profileImgEl.onerror = function() { this.outerHTML = '<div class="h-12 w-12 rounded border bg-gray-100 flex items-center justify-center text-gray-400 text-[10px]">Error</div>'; };
                 }
                 if(profileImagePreviewContainer) profileImagePreviewContainer.classList.remove('hidden');
                 if(profileImageInputEl) {
@@ -1306,7 +1314,7 @@
                 }
             }
 
-            existingSignature = member.signatureBase64 || null;
+            existingSignature = member.signatureUrl || member.signatureBase64 || null; 
             const signatureImagePreviewContainer = document.getElementById('signatureImagePreviewContainer');
             const signatureImageInputEl = document.getElementById('signatureImage');
             
@@ -1314,7 +1322,7 @@
                 const sigImgEl = document.getElementById('signatureImagePreview');
                 if(sigImgEl) {
                     sigImgEl.src = getValidImageUrl(existingSignature);
-                    sigImgEl.onerror = function() { this.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22150%22%20height%3D%22150%22%3E%3Crect%20width%3D%22150%22%20height%3D%22150%22%20fill%3D%22%23e5e7eb%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%22.1em%22%20fill%3D%22%239ca3af%22%20font-size%3D%2220%22%20font-family%3D%22Arial%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%3EError%3C%2Ftext%3E%3C%2Fsvg%3E'; };
+                    sigImgEl.onerror = function() { this.outerHTML = '<div class="h-10 border bg-gray-100 px-2 flex items-center justify-center text-gray-400 text-[10px]">Error</div>'; };
                 }
                 if(signatureImagePreviewContainer) signatureImagePreviewContainer.classList.remove('hidden');
                 if(signatureImageInputEl) signatureImageInputEl.classList.add('hidden');
@@ -1363,7 +1371,8 @@
             clearIdProofRows();
             if (member.idProofs && member.idProofs.length > 0) {
                 member.idProofs.forEach(proof => {
-                    addIdProofRow(proof.type, proof.number, proof.docBase64);
+                    let existingDocUrl = proof.docUrl || proof.docBase64;
+                    addIdProofRow(proof.type, proof.number, existingDocUrl); 
                 });
             } else {
                 addIdProofRow();
@@ -1402,9 +1411,108 @@
             }
         }
 
-        // ✨ PRO FIX: Category PDF Generation. Safe AddImage with 100% JPEG enforcement.
+        // ==========================================
+        // ✨ AI MEMBER ASSISTANT LOGIC (GEMINI API) 
+        // ==========================================
+        function openAIAssistant(id) {
+            const member = membersData.find(m => m.id.toString() === id.toString());
+            if (!member) return;
+
+            currentAIMemberData = member;
+            document.getElementById('aiMemberName').innerText = member.fullName;
+            document.getElementById('aiOutputText').value = '';
+            document.getElementById('aiAssistantModal').classList.remove('hidden');
+        }
+
+        function closeAIAssistant() {
+            document.getElementById('aiAssistantModal').classList.add('hidden');
+            currentAIMemberData = null;
+        }
+
+        function copyAIOutput() {
+            const text = document.getElementById('aiOutputText').value;
+            if(!text) return showToast("Nothing to copy!", true);
+            navigator.clipboard.writeText(text).then(() => {
+                showToast("Text copied to clipboard!");
+            });
+        }
+
+        async function fetchWithRetry(url, options, retries = 5, delay = 1000) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return await response.json();
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    await new Promise(res => setTimeout(res, delay));
+                    delay *= 2;
+                }
+            }
+        }
+
+        async function generateAIContent(actionType) {
+            if (!currentAIMemberData) return;
+            
+            const m = currentAIMemberData;
+            const aiOutput = document.getElementById('aiOutputText');
+            const aiLoading = document.getElementById('aiLoadingStatus');
+            
+            let prompt = "";
+            const contextText = `
+                Club Name: Itinda Road Dhaltitha Modern Sporting Club
+                Member Details:
+                - Name: ${m.fullName}
+                - Designation: ${m.designation || 'Member'}
+                - Join Date: ${formatDate(m.joinDate)}
+                - Category: ${tabNames[m.tabCategory]}
+                - Profession: ${m.profession || 'Not Specified'}
+                - Address: ${m.address}
+            `;
+
+            if (actionType === 'bio') {
+                prompt = `Write a short, engaging, and professional 3-4 sentence biography for the following member of our sports club. Make it sound prestigious and respectful. \n\n${contextText}`;
+            } else if (actionType === 'welcome') {
+                prompt = `Draft a warm, welcoming email to the following member for officially joining or being part of our sports club. Keep it enthusiastic and mention their role. \n\n${contextText}`;
+            } else if (actionType === 'invite') {
+                prompt = `Draft a formal but friendly meeting invitation email for the following club member. Invite them to the upcoming Annual General Meeting (AGM) to discuss club development. \n\n${contextText}`;
+            }
+
+            aiOutput.value = '';
+            aiLoading.classList.remove('hidden');
+
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${geminiApiKey}`;
+                const payload = {
+                    contents: [{ parts: [{ text: prompt }] }],
+                    systemInstruction: { parts: [{ text: "You are a professional assistant for 'Itinda Road Dhaltitha Modern Sporting Club'. Always provide clear, respectful, and well-formatted text without any markdown symbols." }] }
+                };
+
+                const result = await fetchWithRetry(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const textResponse = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (textResponse) {
+                    aiOutput.value = textResponse.trim();
+                } else {
+                    aiOutput.value = "Failed to generate text. Please try again later.";
+                }
+            } catch (error) {
+                console.error("Gemini API Error:", error);
+                aiOutput.value = "Error connecting to AI Server. Please ensure API key is configured correctly.";
+            } finally {
+                aiLoading.classList.add('hidden');
+            }
+        }
+
+        // ==========================================
+        // ✨ PDF Generation Logic (Strict Error Handling)
+        // ==========================================
         async function downloadCategoryPDF() {
-            showToast('Processing Images & Generating PDF...');
+            showToast('Loading Secure Images & Generating PDF...');
             
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('landscape', 'pt', 'a4');
@@ -1413,266 +1521,271 @@
             const categoryName = tabNames[currentTab];
             const { presidentSig, secretarySig } = getGlobalSignatures();
 
-            const processedMembers = await Promise.all(filteredMembers.map(async (member) => {
-                return {
-                    ...member,
-                    pdfProfile: await getSafePdfImage(member.profilePicBase64),
-                    pdfSig: await getSafePdfImage(member.signatureBase64)
-                };
-            }));
+            try {
+                const processedMembers = await Promise.all(filteredMembers.map(async (member) => {
+                    return {
+                        ...member,
+                        pdfProfileImg: await loadImageElement(member.profilePicUrl || member.profilePicBase64),
+                        pdfSigImg: await loadImageElement(member.signatureUrl || member.signatureBase64)
+                    };
+                }));
 
-            const pdfPresidentSig = await getSafePdfImage(presidentSig);
-            const pdfSecretarySig = await getSafePdfImage(secretarySig);
+                const pdfPresidentSigImg = await loadImageElement(presidentSig);
+                const pdfSecretarySigImg = await loadImageElement(secretarySig);
 
-            // ১. Header Section 
-            doc.setFontSize(18);
-            doc.setTextColor(30, 58, 138); 
-            doc.setFont("helvetica", "bold");
-            doc.text("ITINDA ROAD DHALTITHA MODERN SPORTING CLUB", doc.internal.pageSize.getWidth() / 2, 40, { align: "center" });
+                doc.setFontSize(18);
+                doc.setTextColor(30, 58, 138); 
+                doc.setFont("helvetica", "bold");
+                doc.text("ITINDA ROAD DHALTITHA MODERN SPORTING CLUB", doc.internal.pageSize.getWidth() / 2, 40, { align: "center" });
 
-            doc.setFontSize(10);
-            doc.setTextColor(75, 85, 99); 
-            doc.setFont("helvetica", "normal");
-            doc.text("Itinda Road, Dhaltitha, Basirhat, North 24 Parganas, West Bengal 743412", doc.internal.pageSize.getWidth() / 2, 55, { align: "center" });
+                doc.setFontSize(10);
+                doc.setTextColor(75, 85, 99); 
+                doc.setFont("helvetica", "normal");
+                doc.text("Itinda Road, Dhaltitha, Basirhat, North 24 Parganas, West Bengal 743412", doc.internal.pageSize.getWidth() / 2, 55, { align: "center" });
 
-            doc.setFontSize(8);
-            doc.setTextColor(0, 0, 255); 
-            doc.text("ESTD-1985 • GOVT. REGD. NO.- S0035658 OF 2023-24 • PAN NO.- AACAI6060M • NGO ID-WB/2023/0359221 • M.S.M.E. REGD. NO.-UDYAM-WB-14-0149488", doc.internal.pageSize.getWidth() / 2, 68, { align: "center" });
+                doc.setFontSize(8);
+                doc.setTextColor(0, 0, 255); 
+                doc.text("ESTD-1985 • GOVT. REGD. NO.- S0035658 OF 2023-24 • PAN NO.- AACAI6060M • NGO ID-WB/2023/0359221 • M.S.M.E. REGD. NO.-UDYAM-WB-14-0149488", doc.internal.pageSize.getWidth() / 2, 68, { align: "center" });
 
-            doc.setFontSize(14);
-            doc.setTextColor(0, 0, 0); 
-            doc.setFont("helvetica", "bold");
-            doc.text(`${categoryName} DATA SHEET`, doc.internal.pageSize.getWidth() / 2, 90, { align: "center" });
+                doc.setFontSize(14);
+                doc.setTextColor(0, 0, 0); 
+                doc.setFont("helvetica", "bold");
+                doc.text(`${categoryName} DATA SHEET`, doc.internal.pageSize.getWidth() / 2, 90, { align: "center" });
 
-            // ২. Table Data
-            const tableBody = processedMembers.map((member, index) => {
-                let idsString = member.idProofs && member.idProofs.length > 0
-                    ? member.idProofs.map(p => `${p.type}: ${p.number}`).join('\n')
-                    : 'N/A';
+                const tableBody = processedMembers.map((member, index) => {
+                    let idsString = member.idProofs && member.idProofs.length > 0
+                        ? member.idProofs.map(p => `${p.type}: ${p.number}`).join('\n')
+                        : 'N/A';
 
-                return [
-                    index + 1,
-                    '', 
-                    member.fullId,
-                    `${member.fullName}\nC/o: ${member.guardianName}\nAge: ${member.dob} | ${member.gender}`,
-                    `${member.address}\nPh: ${member.mobile}` + (member.email ? `\nEmail: ${member.email}` : ''),
-                    `Desig: ${member.designation || 'MEMBER'}\nProf: ${member.profession || 'N/A'}\nJoin: ${formatDate(member.joinDate)}` + (member.resolutionNo ? `\nRes: ${member.resolutionNo}` : ''),
-                    idsString,
-                    '' 
-                ];
-            });
+                    return [
+                        index + 1,
+                        '', 
+                        member.fullId,
+                        `${member.fullName}\nC/o: ${member.guardianName}\nAge: ${member.dob} | ${member.gender}`,
+                        `${member.address}\nPh: ${member.mobile}` + (member.email ? `\nEmail: ${member.email}` : ''),
+                        `Desig: ${member.designation || 'MEMBER'}\nProf: ${member.profession || 'N/A'}\nJoin: ${formatDate(member.joinDate)}` + (member.resolutionNo ? `\nRes: ${member.resolutionNo}` : ''),
+                        idsString,
+                        '' 
+                    ];
+                });
 
-            // ৩. AutoTable তৈরি করা 
-            doc.autoTable({
-                startY: 105,
-                head: [['Sl.', 'Photo', 'Member ID', 'Name & Personal Info', 'Address & Contact', 'Membership Details', 'Attached IDs', 'Signature']],
-                body: tableBody,
-                theme: 'grid',
-                styles: { fontSize: 8, cellPadding: 4, valign: 'middle', font: 'helvetica', minCellHeight: 45 }, 
-                headStyles: { fillColor: [243, 244, 246], textColor: 20, fontStyle: 'bold', halign: 'center' },
-                columnStyles: {
-                    0: { cellWidth: 25, halign: 'center' },
-                    1: { cellWidth: 45, halign: 'center' }, // Photo
-                    2: { cellWidth: 80 },
-                    3: { cellWidth: 130 },
-                    4: { cellWidth: 155 },
-                    5: { cellWidth: 120 },
-                    6: { cellWidth: 100 },
-                    7: { cellWidth: 80, halign: 'center' }  // Signature
-                },
-                
-                didDrawCell: function(data) {
-                    if (data.section === 'body') {
-                        const member = processedMembers[data.row.index];
-                        
-                        // Profile Photo Insert - Always JPEG now safely converted
-                        if (data.column.index === 1 && member.pdfProfile) {
-                            try {
-                                const dim = 35;
-                                const x = data.cell.x + (data.cell.width - dim) / 2;
-                                const y = data.cell.y + (data.cell.height - dim) / 2;
-                                doc.addImage(member.pdfProfile, 'JPEG', x, y, dim, dim);
-                            } catch(e) {
-                                console.warn(`Profile Image rendering failed for ID: ${member.fullId}`, e);
+                doc.autoTable({
+                    startY: 105,
+                    head: [['Sl.', 'Photo', 'Member ID', 'Name & Personal Info', 'Address & Contact', 'Membership Details', 'Attached IDs', 'Signature']],
+                    body: tableBody,
+                    theme: 'grid',
+                    styles: { fontSize: 8, cellPadding: 4, valign: 'middle', font: 'helvetica', minCellHeight: 45 }, 
+                    headStyles: { fillColor: [243, 244, 246], textColor: 20, fontStyle: 'bold', halign: 'center' },
+                    columnStyles: {
+                        0: { cellWidth: 25, halign: 'center' },
+                        1: { cellWidth: 45, halign: 'center' }, 
+                        2: { cellWidth: 80 },
+                        3: { cellWidth: 130 },
+                        4: { cellWidth: 155 },
+                        5: { cellWidth: 120 },
+                        6: { cellWidth: 100 },
+                        7: { cellWidth: 80, halign: 'center' }  
+                    },
+                    
+                    didDrawCell: function(data) {
+                        if (data.section === 'body') {
+                            const member = processedMembers[data.row.index];
+                            if (data.column.index === 1 && member.pdfProfileImg) {
+                                try {
+                                    const dim = 35;
+                                    const x = data.cell.x + (data.cell.width - dim) / 2;
+                                    const y = data.cell.y + (data.cell.height - dim) / 2;
+                                    doc.addImage(member.pdfProfileImg, 'JPEG', x, y, dim, dim);
+                                } catch(e) {}
                             }
-                        }
-                        
-                        // Signature Insert
-                        if (data.column.index === 7 && member.pdfSig) {
-                            try {
-                                const padX = 3; 
-                                const padY = 4;
-                                const sigW = data.cell.width - (padX * 2); 
-                                const sigH = data.cell.height - (padY * 2); 
-                                doc.addImage(member.pdfSig, 'JPEG', data.cell.x + padX, data.cell.y + padY, sigW, sigH);
-                            } catch(e) {
-                                console.warn(`Signature rendering failed for ID: ${member.fullId}`, e);
+                            if (data.column.index === 7 && member.pdfSigImg) {
+                                try {
+                                    const padX = 3; 
+                                    const padY = 4;
+                                    const sigW = data.cell.width - (padX * 2); 
+                                    const sigH = data.cell.height - (padY * 2); 
+                                    doc.addImage(member.pdfSigImg, 'JPEG', data.cell.x + padX, data.cell.y + padY, sigW, sigH);
+                                } catch(e) {}
                             }
                         }
                     }
+                });
+
+                let finalY = doc.lastAutoTable.finalY + 40;
+                if (finalY > doc.internal.pageSize.getHeight() - 70) {
+                    doc.addPage();
+                    finalY = 60;
                 }
-            });
 
-            // ৪. Global Signatures
-            let finalY = doc.lastAutoTable.finalY + 40;
-            if (finalY > doc.internal.pageSize.getHeight() - 70) {
-                doc.addPage();
-                finalY = 60;
+                const pageWidth = doc.internal.pageSize.getWidth();
+
+                if (pdfPresidentSigImg) {
+                    try { doc.addImage(pdfPresidentSigImg, 'JPEG', 80, finalY - 35, 120, 35); } catch(e) { }
+                }
+                doc.setLineWidth(1);
+                doc.line(70, finalY, 230, finalY);
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "bold");
+                doc.text("President Signature", 150, finalY + 12, { align: "center" });
+
+                if (pdfSecretarySigImg) {
+                    try { doc.addImage(pdfSecretarySigImg, 'JPEG', pageWidth - 230, finalY - 35, 120, 35); } catch(e) { }
+                }
+                doc.line(pageWidth - 240, finalY, pageWidth - 80, finalY);
+                doc.text("Secretary Signature", pageWidth - 160, finalY + 12, { align: "center" });
+
+                doc.save(`Club_Data_${currentTab}_List.pdf`);
+                showToast('Professional Database PDF Downloaded Successfully!');
+
+            } catch(error) {
+                if(error === "Fail to programme") {
+                    showToast("Fail to programme", true);
+                    alert("Fail to programme: Image load error.");
+                } else {
+                    console.error("PDF Error.", error);
+                    showToast("Fail to programme", true);
+                    alert("Fail to programme: Image load error.");
+                }
             }
-
-            const pageWidth = doc.internal.pageSize.getWidth();
-
-            if (pdfPresidentSig) {
-                try { doc.addImage(pdfPresidentSig, 'JPEG', 80, finalY - 35, 120, 35); } catch(e) { console.warn('President sig failed'); }
-            }
-            doc.setLineWidth(1);
-            doc.line(70, finalY, 230, finalY);
-            doc.setFontSize(10);
-            doc.setFont("helvetica", "bold");
-            doc.text("President Signature", 150, finalY + 12, { align: "center" });
-
-            if (pdfSecretarySig) {
-                try { doc.addImage(pdfSecretarySig, 'JPEG', pageWidth - 230, finalY - 35, 120, 35); } catch(e) { console.warn('Secretary sig failed'); }
-            }
-            doc.line(pageWidth - 240, finalY, pageWidth - 80, finalY);
-            doc.text("Secretary Signature", pageWidth - 160, finalY + 12, { align: "center" });
-
-            doc.save(`Club_Data_${currentTab}_List.pdf`);
-            showToast('High-Quality PDF Downloaded Successfully!');
         }
 
-        // ✨ PRO FIX: Profile PDF Generation
         async function downloadProfilePDF(id) {
             const member = membersData.find(m => m.id.toString() === id.toString());
             if(!member) return;
             
-            showToast('Processing Images & Generating Profile PDF...');
+            showToast('Loading Image Data & Generating Profile PDF...');
             
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('portrait', 'pt', 'a4');
             const { presidentSig, secretarySig } = getGlobalSignatures(); 
             const pageWidth = doc.internal.pageSize.getWidth();
 
-            const pdfProfile = await getSafePdfImage(member.profilePicBase64);
-            const pdfSig = await getSafePdfImage(member.signatureBase64);
-            const pdfPresidentSig = await getSafePdfImage(presidentSig);
-            const pdfSecretarySig = await getSafePdfImage(secretarySig);
+            try {
+                const pdfProfileImg = await loadImageElement(member.profilePicUrl || member.profilePicBase64);
+                const pdfSigImg = await loadImageElement(member.signatureUrl || member.signatureBase64);
+                const pdfPresidentSigImg = await loadImageElement(presidentSig);
+                const pdfSecretarySigImg = await loadImageElement(secretarySig);
 
-            // ১. Header Section 
-            doc.setFontSize(18);
-            doc.setTextColor(30, 58, 138); 
-            doc.setFont("helvetica", "bold");
-            doc.text("ITINDA ROAD DHALTITHA MODERN SPORTING CLUB", pageWidth / 2, 50, { align: "center" });
+                doc.setFontSize(18);
+                doc.setTextColor(30, 58, 138); 
+                doc.setFont("helvetica", "bold");
+                doc.text("ITINDA ROAD DHALTITHA MODERN SPORTING CLUB", pageWidth / 2, 50, { align: "center" });
 
-            doc.setFontSize(9);
-            doc.setTextColor(75, 85, 99);
-            doc.setFont("helvetica", "normal");
-            doc.text("Itinda Road, Dhaltitha, Basirhat, North 24 Parganas, West Bengal 743412", pageWidth / 2, 65, { align: "center" });
+                doc.setFontSize(9);
+                doc.setTextColor(75, 85, 99);
+                doc.setFont("helvetica", "normal");
+                doc.text("Itinda Road, Dhaltitha, Basirhat, North 24 Parganas, West Bengal 743412", pageWidth / 2, 65, { align: "center" });
 
-            doc.setFontSize(7);
-            doc.setTextColor(0, 0, 255);
-            const estdInfo = "Estd.-1985 | Govt. Regd. No.- S0035658 of 2023-24 | PAN No.- AACAI6060M | NGO ID- WB/2023/0359221 | M.S.M.E. Regd. No.-UDYAM-WB-14-0149488";
-            doc.text(estdInfo, pageWidth / 2, 78, { align: "center" });
+                doc.setFontSize(7);
+                doc.setTextColor(0, 0, 255);
+                const estdInfo = "Estd.-1985 | Govt. Regd. No.- S0035658 of 2023-24 | PAN No.- AACAI6060M | NGO ID- WB/2023/0359221 | M.S.M.E. Regd. No.-UDYAM-WB-14-0149488";
+                doc.text(estdInfo, pageWidth / 2, 78, { align: "center" });
 
-            doc.setDrawColor(29, 78, 216);
-            doc.setLineWidth(1.5);
-            doc.line(40, 90, pageWidth - 40, 90);
+                doc.setDrawColor(29, 78, 216);
+                doc.setLineWidth(1.5);
+                doc.line(40, 90, pageWidth - 40, 90);
 
-            // ২. Profile Title & Photo
-            doc.setFontSize(12);
-            doc.setTextColor(29, 78, 216);
-            doc.setFont("helvetica", "bold");
-            doc.text(`MEMBER PROFILE: ${member.fullId}`, 40, 115);
+                doc.setFontSize(12);
+                doc.setTextColor(29, 78, 216);
+                doc.setFont("helvetica", "bold");
+                doc.text(`MEMBER PROFILE: ${member.fullId}`, 40, 115);
 
-            if (pdfProfile) {
-                try { doc.addImage(pdfProfile, 'JPEG', pageWidth - 160, 105, 120, 140); } catch(e) { console.warn('Profile image failed'); }
-            } else {
-                doc.setDrawColor(200); doc.rect(pageWidth - 160, 105, 120, 140);
-                doc.setFontSize(10); doc.setTextColor(150); doc.text("No Photo", pageWidth - 100, 175, { align: "center" });
+                if (pdfProfileImg) {
+                    try { doc.addImage(pdfProfileImg, 'JPEG', pageWidth - 160, 105, 120, 140); } catch(e) {}
+                } else {
+                    doc.setDrawColor(200); doc.rect(pageWidth - 160, 105, 120, 140);
+                    doc.setFontSize(10); doc.setTextColor(150); doc.text("No Photo", pageWidth - 100, 175, { align: "center" });
+                }
+
+                doc.autoTable({
+                    startY: 135,
+                    margin: { left: 40 },
+                    tableWidth: 380,
+                    body: [
+                        ['Full Name', member.fullName.toUpperCase()],
+                        ['Designation', member.designation || 'MEMBER'],
+                        ['Profession', member.profession || 'N/A'],
+                        ['Guardian Name', member.guardianName],
+                        ['DOB / Age', member.dob],
+                        ['Gender', member.gender],
+                        ['Mobile No.', member.mobile],
+                        ['Email ID', member.email || 'N/A']
+                    ],
+                    theme: 'plain',
+                    styles: { fontSize: 10, cellPadding: 5, font: 'helvetica' },
+                    columnStyles: { 0: { fontStyle: 'bold', cellWidth: 100 } }
+                });
+
+                let currentY = doc.lastAutoTable.finalY + 20;
+                
+                doc.setFontSize(11);
+                doc.setTextColor(0, 0, 0);
+                doc.text("ADDRESS & CONTACT", 40, currentY);
+                doc.setLineWidth(0.5);
+                doc.line(40, currentY + 3, 160, currentY + 3);
+
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                const addressLines = doc.splitTextToSize(member.address, pageWidth - 80);
+                doc.text(addressLines, 40, currentY + 20);
+
+                currentY += (addressLines.length * 12) + 40;
+
+                doc.autoTable({
+                    startY: currentY,
+                    head: [['Membership Details', 'Official Records']],
+                    body: [
+                        ['Date of Joining', formatDate(member.joinDate)], 
+                        ['Resolution No.', member.resolutionNo || 'N/A'],
+                        ['Resolution Date', member.resolutionDate ? formatDate(member.resolutionDate) : 'N/A']
+                    ],
+                    theme: 'grid',
+                    styles: { fontSize: 9, font: 'helvetica' },
+                    headStyles: { fillColor: [243, 244, 246], textColor: 20 },
+                    margin: { left: 40, right: 40 }
+                });
+
+                currentY = doc.lastAutoTable.finalY + 30;
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "bold");
+                doc.text("Member's Signature:", 40, currentY + 20);
+
+                doc.setDrawColor(200, 200, 200);
+                doc.rect(150, currentY, 150, 50); 
+                
+                if (pdfSigImg) {
+                    try { doc.addImage(pdfSigImg, 'JPEG', 155, currentY + 5, 140, 40); } catch(e) {}
+                } else {
+                    doc.setFontSize(8); doc.setTextColor(150); doc.text("No Signature", 225, currentY + 30, { align: "center" });
+                }
+
+                let footerY = doc.internal.pageSize.getHeight() - 80;
+
+                if (pdfPresidentSigImg) {
+                    try { doc.addImage(pdfPresidentSigImg, 'JPEG', 60, footerY - 40, 110, 35); } catch(e) {}
+                }
+                doc.line(40, footerY, 180, footerY);
+                doc.text("President Signature", 110, footerY + 15, { align: "center" });
+
+                if (pdfSecretarySigImg) {
+                    try { doc.addImage(pdfSecretarySigImg, 'JPEG', pageWidth - 190, footerY - 40, 110, 35); } catch(e) {}
+                }
+                doc.line(pageWidth - 210, footerY, pageWidth - 70, footerY);
+                doc.text("Secretary Signature", pageWidth - 140, footerY + 15, { align: "center" });
+
+                doc.save(`${member.fullId.replace(/\//g, '_')}_Profile.pdf`); 
+                showToast('High-Quality Profile PDF Downloaded!');
+
+            } catch (error) {
+                 if(error === "Fail to programme") {
+                    showToast("Fail to programme", true);
+                    alert("Fail to programme: Image load error.");
+                } else {
+                    console.error("PDF Error.", error);
+                    showToast("Fail to programme", true);
+                    alert("Fail to programme: Image load error.");
+                }
             }
-
-            // ৩. Personal Details Table 
-            doc.autoTable({
-                startY: 135,
-                margin: { left: 40 },
-                tableWidth: 380,
-                body: [
-                    ['Full Name', member.fullName.toUpperCase()],
-                    ['Designation', member.designation || 'MEMBER'],
-                    ['Profession', member.profession || 'N/A'],
-                    ['Guardian Name', member.guardianName],
-                    ['DOB / Age', member.dob],
-                    ['Gender', member.gender],
-                    ['Mobile No.', member.mobile],
-                    ['Email ID', member.email || 'N/A']
-                ],
-                theme: 'plain',
-                styles: { fontSize: 10, cellPadding: 5, font: 'helvetica' },
-                columnStyles: { 0: { fontStyle: 'bold', cellWidth: 100 } }
-            });
-
-            // ৪. Address & Membership Details
-            let currentY = doc.lastAutoTable.finalY + 20;
-            
-            doc.setFontSize(11);
-            doc.setTextColor(0, 0, 0);
-            doc.text("ADDRESS & CONTACT", 40, currentY);
-            doc.setLineWidth(0.5);
-            doc.line(40, currentY + 3, 160, currentY + 3);
-
-            doc.setFontSize(10);
-            doc.setFont("helvetica", "normal");
-            const addressLines = doc.splitTextToSize(member.address, pageWidth - 80);
-            doc.text(addressLines, 40, currentY + 20);
-
-            currentY += (addressLines.length * 12) + 40;
-
-            doc.autoTable({
-                startY: currentY,
-                head: [['Membership Details', 'Official Records']],
-                body: [
-                    ['Date of Joining', formatDate(member.joinDate)], 
-                    ['Resolution No.', member.resolutionNo || 'N/A'],
-                    ['Resolution Date', member.resolutionDate ? formatDate(member.resolutionDate) : 'N/A']
-                ],
-                theme: 'grid',
-                styles: { fontSize: 9, font: 'helvetica' },
-                headStyles: { fillColor: [243, 244, 246], textColor: 20 },
-                margin: { left: 40, right: 40 }
-            });
-
-            // ৫. Member's Signature Cell
-            currentY = doc.lastAutoTable.finalY + 30;
-            doc.setFontSize(10);
-            doc.setFont("helvetica", "bold");
-            doc.text("Member's Signature:", 40, currentY + 20);
-
-            doc.setDrawColor(200, 200, 200);
-            doc.rect(150, currentY, 150, 50); 
-            
-            if (pdfSig) {
-                try { doc.addImage(pdfSig, 'JPEG', 155, currentY + 5, 140, 40); } catch(e) { console.warn('Signature image failed'); }
-            } else {
-                doc.setFontSize(8); doc.setTextColor(150); doc.text("No Signature", 225, currentY + 30, { align: "center" });
-            }
-
-            // ৬. Bottom Signatures 
-            let footerY = doc.internal.pageSize.getHeight() - 80;
-
-            if (pdfPresidentSig) {
-                try { doc.addImage(pdfPresidentSig, 'JPEG', 60, footerY - 40, 110, 35); } catch(e) {}
-            }
-            doc.line(40, footerY, 180, footerY);
-            doc.text("President Signature", 110, footerY + 15, { align: "center" });
-
-            if (pdfSecretarySig) {
-                try { doc.addImage(pdfSecretarySig, 'JPEG', pageWidth - 190, footerY - 40, 110, 35); } catch(e) {}
-            }
-            doc.line(pageWidth - 210, footerY, pageWidth - 70, footerY);
-            doc.text("Secretary Signature", pageWidth - 140, footerY + 15, { align: "center" });
-
-            doc.save(`${member.fullId.replace(/\//g, '_')}_Profile.pdf`); 
-            showToast('High-Quality Profile PDF Downloaded!');
         }
         
         function formatDOB(input) {
@@ -1722,4 +1835,4 @@
         }
     </script>
 </body>
-</html>
+    </html>

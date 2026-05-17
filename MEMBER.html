@@ -14,6 +14,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+</script>
+
     <!-- Cropper.js for Image Cropping -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
@@ -60,6 +65,8 @@
                     <p class="text-xs text-gray-400 mt-1"><i class="fas fa-info-circle"></i> Hint: contact to IT Section</p>
                 </div>
                 <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-md transition-colors shadow-sm"><i class="fas fa-sign-in-alt mr-2"></i> Login to Portal</button>
+                
+               
             </form>
         </div>
     </div>
@@ -329,6 +336,42 @@
                                 </div>
                                 <button type="button" onclick="addIdProofRow()" class="mb-4 text-sm text-blue-600 hover:text-blue-800 font-medium inline-flex items-center"><i class="fas fa-plus-circle mr-1"></i> Add Another ID Proof</button>
 
+
+<div class="mb-6">
+                                <h4 class="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wide border-b pb-2">Last SIR Status (2026 Voter List)</h4>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700">Is Last SIR Status Yes?</label>
+                                    <select id="sirStatus" onchange="toggleSIRFields()" class="mt-1 block w-full md:w-1/3 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 sm:text-sm">
+                                        <option value="No">No</option>
+                                        <option value="Yes">Yes</option>
+                                    </select>
+                                </div>
+
+                                <div id="sirFieldsContainer" class="hidden grid grid-cols-1 md:grid-cols-4 gap-4 bg-yellow-50 p-4 rounded border border-yellow-200">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">A/C Name</label>
+                                        <input type="text" id="sirAcName" list="acList" autocomplete="off" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm sm:text-sm uppercase">
+                                        <datalist id="acList">
+                                            <option value="BASIRHAT DAKSHIN A/C"></option><option value="BASIRHAT UTTAR A/C"></option><option value="DEGANGA A/C"></option><option value="HAROA A/C"></option><option value="MINAKHAN A/C"></option><option value="SANDESHKHALI A/C"></option><option value="HINGALGANJ /A/C"></option><option value="BADURIA A/C"></option><option value="SWARUPNAGAR /A/C"></option>                                  </datalist>
+                                    </div>
+                                    <div><label class="block text-sm font-medium text-gray-700">Part No.</label><input type="text" id="sirPartNo" class="mt-1 block w-full px-3 py-2 border rounded-md sm:text-sm"></div>
+                                    <div><label class="block text-sm font-medium text-gray-700">Serial No.</label><input type="text" id="sirSerialNo" class="mt-1 block w-full px-3 py-2 border rounded-md sm:text-sm"></div>
+                                    <div><label class="block text-sm font-medium text-gray-700">Voter ID No.</label><input type="text" id="sirVoterId" class="mt-1 block w-full px-3 py-2 border rounded-md sm:text-sm uppercase"></div>
+                                    
+                                    <div class="md:col-span-4 border-t border-yellow-300 pt-3 mt-2">
+                                        <label class="block text-sm font-medium text-gray-700">Upload 2026 Voter List Page (PDF Only)</label>
+                                        <input type="file" id="voterPdfInput" accept="application/pdf" class="mt-1 block w-full md:w-1/2 text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-yellow-200 file:text-yellow-800" onchange="processVoterPDF(event)">
+                                        
+                                        <div id="voterFinalPreviewContainer" class="hidden mt-3">
+                                            <p class="text-xs text-green-600 font-bold mb-1"><i class="fas fa-check-circle"></i> Highlighted & Cropped Document Ready</p>
+                                            <img id="voterFinalImage" src="" class="h-32 border border-gray-300 shadow-sm rounded cursor-pointer hover:opacity-80 transition-opacity border-2 hover:border-blue-500" onclick="openImagePreview(this.src)" title="Click to view full screen">
+                                            <button type="button" onclick="removeVoterDoc()" class="text-xs text-red-600 hover:text-red-800 mt-2 block"><i class="fas fa-trash"></i> Remove & Upload Again</button>
+                                        </div>
+                                        <input type="hidden" id="finalVoterDocBase64">
+                                    </div>
+                                </div>
+                            </div>
+
                                 <div class="border-t pt-4">
                                     <label class="block text-sm font-medium text-gray-700">Upload Member's Signature (Max 30MB)</label>
                                     <div id="signatureImagePreviewContainer" class="hidden mt-2 flex items-center space-x-4 bg-gray-50 p-2 rounded border w-fit">
@@ -424,10 +467,69 @@
         <i id="toastIcon" class="fas fa-check-circle text-green-400 mr-3"></i>
         <span id="toastMsg">Action successful</span>
     </div>
+    
+    
+<div id="pdfHighlighterModal" class="fixed inset-0 z-[120] bg-gray-900 bg-opacity-95 flex items-center justify-center hidden">
+    <div class="bg-white w-full h-full md:h-[92vh] md:max-w-4xl transform transition-all flex flex-col overflow-hidden relative md:rounded-xl shadow-2xl">
+        
+        <div class="flex justify-between items-center mb-1 border-b pb-2 px-3 pt-3">
+            <h3 class="text-lg font-bold text-gray-900" id="pdfModalTitle"><i class="fas fa-highlighter text-yellow-500 mr-2"></i> Highlight & Crop Voter</h3>
+            <button type="button" onclick="closePdfModal()" class="text-gray-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
+        </div>
+        
+        <div id="pdfToolbar" class="bg-gray-100 border-b px-2 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+            
+            <div class="flex items-center space-x-2">
+                <button type="button" id="btnHighlightMode" onclick="setHighlightMode(true)" class="px-2 py-1.5 bg-yellow-100 text-yellow-800 rounded font-bold border border-yellow-300 shadow-sm"><i class="fas fa-square mr-1"></i> Box</button>
+                <button type="button" id="btnMoveMode" onclick="setHighlightMode(false)" class="px-2 py-1.5 bg-blue-600 text-white rounded font-bold border border-blue-700 shadow-sm"><i class="fas fa-hand-paper mr-1"></i> Move</button>
+                <button type="button" onclick="undoHighlight()" class="px-2 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded font-bold border border-red-200"><i class="fas fa-undo mr-1"></i> Undo</button>
+            </div>
+
+            <div class="flex items-center bg-white border border-gray-300 rounded overflow-hidden shadow-sm">
+                <button type="button" onclick="zoomOut()" class="px-2 py-1 text-gray-600 hover:bg-gray-100 font-bold"><i class="fas fa-minus text-[10px]"></i></button>
+                <span class="px-2 text-xs font-bold text-gray-700 min-w-[40px] text-center" id="zoom_percent">100%</span>
+                <button type="button" onclick="zoomIn()" class="px-2 py-1 text-gray-600 hover:bg-gray-100 font-bold"><i class="fas fa-plus text-[10px]"></i></button>
+            </div>
+
+            <div class="flex items-center space-x-1 bg-white px-2 py-1 rounded border border-gray-200 shadow-sm" id="pdfPagination">
+                <button type="button" onclick="onPrevPage()" class="p-1 text-indigo-700 hover:bg-gray-50"><i class="fas fa-chevron-left text-[10px]"></i></button>
+                <span class="text-xs font-bold text-gray-700 mx-1"><span id="page_num" class="text-indigo-600">1</span> / <span id="page_count">?</span></span>
+                <button type="button" onclick="onNextPage()" class="p-1 text-indigo-700 hover:bg-gray-50"><i class="fas fa-chevron-right text-[10px]"></i></button>
+            </div>
+
+            <div class="flex items-center space-x-2">
+                <button type="button" id="btnProceedCrop" onclick="initiateCropping()" class="bg-indigo-600 text-white px-3 py-1.5 rounded font-bold text-xs flex items-center hover:bg-indigo-700 shadow-sm">
+                    Crop <i class="fas fa-arrow-right ml-1"></i>
+                </button>
+                <button type="button" id="btnFinalizeCrop" onclick="finalizeVoterCrop()" class="hidden bg-green-600 text-white px-5 py-1.5 rounded font-bold text-sm flex items-center hover:bg-green-700 shadow-md">
+                    <i class="fas fa-check-circle mr-1"></i> OK
+                </button>
+            </div>
+        </div>
+
+        <div class="flex-1 bg-gray-800 overflow-auto relative flex justify-center items-start" id="pdfCanvasContainer" style="cursor: grab;">
+            <canvas id="pdfCanvas" class="shadow-lg bg-white touch-none"></canvas>
+            <img id="pdfCropperImg" class="hidden max-w-full">
+        </div>
+
+        <div class="bg-gray-50 border-t px-3 py-1 text-[10px] text-gray-500 flex justify-between">
+            <span id="pdfInstructions">Move mode: Pinch to zoom, drag to scroll.</span>
+            <span>MSC v2</span>
+        </div>
+        
+    </div>
+</div>
+
+<div id="imagePreviewModal" class="fixed inset-0 z-[150] bg-black bg-opacity-90 flex items-center justify-center hidden backdrop-blur-sm">
+        <button type="button" onclick="closeImagePreview()" class="absolute top-4 right-4 text-white hover:text-red-500 text-4xl p-2 z-50">
+            <i class="fas fa-times"></i>
+        </button>
+        <img id="fullImagePreview" src="" class="max-w-[95%] max-h-[95vh] object-contain rounded shadow-2xl border border-gray-700">
+    </div>
 
     <script>
         // ✅ আপনার দেওয়া GOOGLE APPS SCRIPT URL এখানে রাখা হয়েছে
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwmLRiq5DIzKkzBpiE-js8AiZTxZRSacemJQmDcAHwJ7tIBaDbloSt2n4XDFv4wCfC6AQ/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyL11WS-_EXaAVbprFp5ETGpILm7qWh7Qwc956nj7W0mXKkMrrev0FL4AqFRMxctByVow/exec";
         
         const geminiApiKey = "";
 
@@ -688,7 +790,8 @@
             renderTable();
         }
 
-        function renderTable() {
+   
+   function renderTable() {
             const tbody = document.getElementById('memberTableBody');
             const emptyState = document.getElementById('emptyState');
             if(!tbody || !emptyState) return;
@@ -758,22 +861,38 @@
                     </td>
                 `;
 
+                // --- Updated ID Proofs and SIR Status Display ---
                 let idProofsHTML = '';
                 if(userRole === 'member') {
                     idProofsHTML = `<span class="text-[11px] text-red-500 font-semibold bg-red-50 px-2 py-1 rounded"><i class="fas fa-lock mr-1"></i> Hidden</span>`;
                 } else {
-                    if(member.idProofs && member.idProofs.length > 0) {
-                        member.idProofs.forEach(proof => {
-                            let docUrlStr = proof.docUrl || proof.docBase64;
+                    let hasID = (member.idProofs && member.idProofs.length > 0);
+                    let hasSIR = (member.sirStatus === 'Yes' && member.sirDetails);
+
+                    if (!hasID && !hasSIR) {
+                        idProofsHTML = `<span class="text-xs text-gray-400 italic">No ID Saved</span>`;
+                    } else {
+                        if (hasID) {
+                            member.idProofs.forEach(proof => {
+                                let docUrlStr = proof.docUrl || proof.docBase64;
+                                idProofsHTML += `
+                                    <div class="text-[10px] font-semibold text-gray-700 bg-gray-100 p-1.5 rounded mb-1 inline-block text-left w-full">
+                                        ${proof.type}: <span class="font-mono text-gray-900">${proof.number}</span>
+                                        ${docUrlStr ? `<a href="#" onclick="viewDoc('${docUrlStr}'); return false;" class="text-blue-600 hover:text-blue-900 ml-2" title="View Document"><i class="fas fa-paperclip"></i> View</a>` : ''}
+                                    </div>
+                                `;
+                            });
+                        }
+                        if (hasSIR) {
+                            let sirDocUrl = member.sirDetails.docUrl || member.sirDetails.docBase64;
                             idProofsHTML += `
-                                <div class="text-[10px] font-semibold text-gray-700 bg-gray-100 p-1.5 rounded mb-1 inline-block text-left w-full">
-                                    ${proof.type}: <span class="font-mono text-gray-900">${proof.number}</span>
-                                    ${docUrlStr ? `<a href="#" onclick="viewDoc('${docUrlStr}'); return false;" class="text-blue-600 hover:text-blue-900 ml-2" title="View Document"><i class="fas fa-paperclip"></i> View</a>` : ''}
+                                <div class="text-[10px] font-semibold text-yellow-900 bg-yellow-50 p-1.5 rounded mb-1 inline-block text-left w-full border border-yellow-300">
+                                    Last SIR: <span class="font-mono text-gray-900">${member.sirDetails.voterId || 'N/A'}</span>
+                                    <div class="text-[9px] text-gray-600 font-normal mt-0.5">AC: ${member.sirDetails.acName || '-'} | Part: ${member.sirDetails.partNo || '-'} | Sl: ${member.sirDetails.serialNo || '-'}</div>
+                                    ${sirDocUrl ? `<a href="#" onclick="viewDoc('${sirDocUrl}'); return false;" class="text-blue-700 hover:text-blue-900 mt-1 inline-block font-bold" title="View Document"><i class="fas fa-eye"></i> View SIR Doc</a>` : ''}
                                 </div>
                             `;
-                        });
-                    } else {
-                        idProofsHTML = `<span class="text-xs text-gray-400 italic">No ID Saved</span>`;
+                        }
                     }
                 }
 
@@ -806,6 +925,9 @@
                 tbody.appendChild(tr);
             });
         }
+   
+   
+   
 
         let cropper = null;
         let cropTarget = '';
@@ -933,54 +1055,54 @@
         }
 
         function addIdProofRow(type = '', num = '', existingUrl = null) {
-            const container = document.getElementById('idProofsContainer');
-            if(!container) return;
-            
-            const rowCount = container.children.length;
-            const row = document.createElement('div');
-            row.className = 'id-proof-row grid grid-cols-1 md:grid-cols-4 gap-4 mb-3 pb-3 border-b border-gray-200 last:border-0';
-            
-            let base64InputHtml = '';
-            let fileInputClass = 'idImage mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-gray-100 hover:file:bg-gray-200';
-            
-            if (existingUrl) {
-                fileInputClass += ' hidden'; 
-                base64InputHtml = `
-                    <div class="existing-doc-container mt-2 flex items-center justify-between bg-gray-50 p-2 rounded border w-full">
-                        <input type="hidden" class="existingBase64" value="${existingUrl}">
-                        <span class="text-[10px] text-green-600 block truncate w-3/4"><i class="fas fa-check"></i> Saved - <a href="#" onclick="viewDoc('${existingUrl}'); return false;" class="text-blue-600 underline hover:text-blue-800">View</a></span>
-                        <button type="button" onclick="removeIdProofDoc(this)" class="text-xs text-red-600 hover:text-red-800 font-semibold" title="Remove Attachment"><i class="fas fa-trash"></i></button>
-                    </div>
-                `;
-            }
+    const container = document.getElementById('idProofsContainer');
+    if(!container) return;
+    
+    const rowCount = container.children.length;
+    const row = document.createElement('div');
+    row.className = 'id-proof-row grid grid-cols-1 md:grid-cols-4 gap-4 mb-3 pb-3 border-b border-gray-200 last:border-0';
+    
+    let base64InputHtml = '';
+    let fileInputClass = 'idImage mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-gray-100 hover:file:bg-gray-200';
+    
+    if (existingUrl) {
+        fileInputClass += ' hidden'; 
+        base64InputHtml = `
+            <div class="existing-doc-container mt-2 flex items-center justify-between bg-gray-50 p-2 rounded border w-full">
+                <input type="hidden" class="existingBase64" value="${existingUrl}">
+                <span class="text-[10px] text-green-600 block truncate w-3/4"><i class="fas fa-check"></i> Saved - <a href="#" onclick="viewDoc('${existingUrl}'); return false;" class="text-blue-600 underline hover:text-blue-800">View</a></span>
+                <button type="button" onclick="removeIdProofDoc(this)" class="text-xs text-red-600 hover:text-red-800 font-semibold" title="Remove Attachment"><i class="fas fa-trash"></i></button>
+            </div>
+        `;
+    }
 
-            row.innerHTML = `
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 ${rowCount === 0 ? 'required-asterisk' : ''}">ID Proof Type</label>
-                    <select class="idType mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" ${rowCount === 0 ? 'required' : ''}>
-                        <option value="">--Select--</option>
-                        <option value="Aadhaar" ${type === 'Aadhaar' ? 'selected' : ''}>Aadhaar</option>
-                        <option value="Pan" ${type === 'Pan' ? 'selected' : ''}>PAN</option>
-                        <option value="Voter" ${type === 'Voter' ? 'selected' : ''}>Voter ID</option>
-                        <option value="Passport" ${type === 'Passport' ? 'selected' : ''}>Passport</option>
-                        <option value="Driving Licence" ${type === 'Driving Licence' ? 'selected' : ''}>Driving Licence</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 ${rowCount === 0 ? 'required-asterisk' : ''}">ID Number</label>
-                    <input type="text" class="idProofNumber mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" value="${num}" ${rowCount === 0 ? 'required' : ''}>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Upload ID (Max 100MB)</label>
-                    <input type="file" class="${fileInputClass}" accept="image/jpeg, image/png, image/gif, application/pdf" onchange="validateFileSize(this, 100)">
-                    ${base64InputHtml}
-                </div>
-                <div class="flex items-center">
-                    <button type="button" onclick="this.closest('.id-proof-row').remove()" class="mt-4 text-sm text-red-500 hover:text-red-700 font-medium ${rowCount === 0 ? 'hidden' : ''}"><i class="fas fa-trash"></i> Remove Row</button>
-                </div>
-            `;
-            container.appendChild(row);
-        }
+    row.innerHTML = `
+        <div>
+            <label class="block text-sm font-medium text-gray-700 ${rowCount === 0 ? 'required-asterisk' : ''}">ID Proof Type</label>
+            <select class="idType mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" ${rowCount === 0 ? 'required' : ''}>
+                <option value="">--Select--</option>
+                <option value="Aadhaar" ${type === 'Aadhaar' ? 'selected' : ''}>Aadhaar</option>
+                <option value="Pan" ${type === 'Pan' ? 'selected' : ''}>PAN</option>
+                <option value="Voter" ${type === 'Voter' ? 'selected' : ''}>Voter ID</option>
+                <option value="Passport" ${type === 'Passport' ? 'selected' : ''}>Passport</option>
+                <option value="Driving Licence" ${type === 'Driving Licence' ? 'selected' : ''}>Driving Licence</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 ${rowCount === 0 ? 'required-asterisk' : ''}">ID Number</label>
+            <input type="text" class="idProofNumber mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" value="${num}" ${rowCount === 0 ? 'required' : ''}>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Upload ID (Max 100MB)</label>
+            <input type="file" class="${fileInputClass}" accept="image/jpeg, image/png, image/gif, application/pdf" onchange="validateFileSize(this, 100)">
+            ${base64InputHtml}
+        </div>
+        <div class="flex items-center">
+            <button type="button" onclick="this.closest('.id-proof-row').remove()" class="mt-4 text-sm text-red-500 hover:text-red-700 font-medium ${rowCount === 0 ? 'hidden' : ''}"><i class="fas fa-trash"></i> Remove Row</button>
+        </div>
+    `;
+    container.appendChild(row);
+}
 
         function removeIdProofDoc(btn) {
             const container = btn.closest('.existing-doc-container');
@@ -1076,85 +1198,119 @@
         }
 
         async function handleFormSubmit(e) {
-            e.preventDefault();
-            if (userRole !== 'admin') return;
+    e.preventDefault();
+    if (userRole !== 'admin') return;
 
-            const saveBtn = document.getElementById('saveBtn');
-            if(saveBtn) { saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Syncing to Google Drive & Sheet...'; saveBtn.disabled = true; }
+    const saveBtn = document.getElementById('saveBtn');
+    if(saveBtn) { 
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Syncing to Google Drive & Sheet...'; 
+        saveBtn.disabled = true; 
+    }
 
-            try {
-                const prefix = document.getElementById('idPrefixDisplay') ? document.getElementById('idPrefixDisplay').innerText : '';
-                const fullId = prefix + (document.getElementById('idNumber') ? document.getElementById('idNumber').value : '');
-                const locType = document.getElementById('localityType') ? document.getElementById('localityType').value : '';
-                
-                const addrObj = {
-                    road: document.getElementById('road') ? document.getElementById('road').value : '',
-                    vill: document.getElementById('vill') ? document.getElementById('vill').value : '',
-                    po: document.getElementById('po') ? document.getElementById('po').value : '',
-                    ps: document.getElementById('ps') ? document.getElementById('ps').value : '',
-                    district: document.getElementById('district') ? document.getElementById('district').value : '',
-                    pincode: document.getElementById('pincode') ? document.getElementById('pincode').value : '',
-                    localityType: locType,
-                    wardNo: (locType === 'Municipality' && document.getElementById('wardNo')) ? document.getElementById('wardNo').value : '',
-                    panchayetName: (locType === 'Panchayet' && document.getElementById('panchayetName')) ? document.getElementById('panchayetName').value : ''
-                };
+    try {
+        const prefix = document.getElementById('idPrefixDisplay') ? document.getElementById('idPrefixDisplay').innerText : '';
+        const fullId = prefix + (document.getElementById('idNumber') ? document.getElementById('idNumber').value : '');
+        const locType = document.getElementById('localityType') ? document.getElementById('localityType').value : '';
+        
+        const addrObj = {
+            road: document.getElementById('road') ? document.getElementById('road').value : '',
+            vill: document.getElementById('vill') ? document.getElementById('vill').value : '',
+            po: document.getElementById('po') ? document.getElementById('po').value : '',
+            ps: document.getElementById('ps') ? document.getElementById('ps').value : '',
+            district: document.getElementById('district') ? document.getElementById('district').value : '',
+            pincode: document.getElementById('pincode') ? document.getElementById('pincode').value : '',
+            localityType: locType,
+            wardNo: (locType === 'Municipality' && document.getElementById('wardNo')) ? document.getElementById('wardNo').value : '',
+            panchayetName: (locType === 'Panchayet' && document.getElementById('panchayetName')) ? document.getElementById('panchayetName').value : ''
+        };
 
-                let localityStr = '';
-                if(locType === 'Municipality') localityStr = `(Muni: Ward ${addrObj.wardNo})`;
-                if(locType === 'Panchayet') localityStr = `(Panchayet: ${addrObj.panchayetName})`;
-                const fullAddress = `${addrObj.road}, ${addrObj.vill}, P.O. ${addrObj.po}, P.S. ${addrObj.ps}, ${addrObj.district}, ${addrObj.pincode} ${localityStr}`;
+        let localityStr = '';
+        if(locType === 'Municipality') localityStr = `(Muni: Ward ${addrObj.wardNo})`;
+        if(locType === 'Panchayet') localityStr = `(Panchayet: ${addrObj.panchayetName})`;
+        const fullAddress = `${addrObj.road}, ${addrObj.vill}, P.O. ${addrObj.po}, P.S. ${addrObj.ps}, ${addrObj.district}, ${addrObj.pincode} ${localityStr}`;
 
-                let finalProfileData = croppedProfileData ? croppedProfileData : (existingProfilePic || '');
-                let finalSignatureData = processedSignatureData ? processedSignatureData : (existingSignature || '');
+        let finalProfileData = croppedProfileData ? croppedProfileData : (existingProfilePic || '');
+        let finalSignatureData = processedSignatureData ? processedSignatureData : (existingSignature || '');
 
-                const idProofRows = document.querySelectorAll('.id-proof-row');
-                const idProofsArray = [];
-                for (let row of idProofRows) {
-                    const typeEl = row.querySelector('.idType');
-                    const numEl = row.querySelector('.idProofNumber');
-                    const fileInput = row.querySelector('.idImage');
-                    const existingInput = row.querySelector('.existingBase64');
-                    const type = typeEl ? typeEl.value : ''; const num = numEl ? numEl.value : '';
+        const idProofRows = document.querySelectorAll('.id-proof-row');
+        const idProofsArray = [];
+        for (let row of idProofRows) {
+            const typeEl = row.querySelector('.idType');
+            const numEl = row.querySelector('.idProofNumber');
+            const fileInput = row.querySelector('.idImage');
+            const existingInput = row.querySelector('.existingBase64');
+            const type = typeEl ? typeEl.value : ''; const num = numEl ? numEl.value : '';
 
-                    let docData = null;
-                    if (fileInput && fileInput.files && fileInput.files[0]) {
-                        docData = await new Promise(resolve => getFileBase64(fileInput.files[0], resolve));
-                    } else if (existingInput) { docData = existingInput.value; }
+            let docData = null;
+            if (fileInput && fileInput.files && fileInput.files[0]) {
+                docData = await new Promise(resolve => getFileBase64(fileInput.files[0], resolve));
+            } else if (existingInput) { docData = existingInput.value; }
 
-                    if (type && num) { idProofsArray.push({ type: type, number: num, docBase64: docData }); }
-                }
-
-                let syncAction = isEditMode ? 'update' : 'create';
-                
-                const memberDataPayload = {
-                    id: isEditMode ? editingMemberId : Date.now().toString(), tabCategory: currentTab, fullId: fullId,
-                    resolutionNo: document.getElementById('resolutionNo') ? document.getElementById('resolutionNo').value : '',
-                    resolutionDate: document.getElementById('resolutionDate') ? document.getElementById('resolutionDate').value : '',
-                    joinDate: document.getElementById('joinDate') ? document.getElementById('joinDate').value : '',
-                    designation: document.getElementById('designation') ? document.getElementById('designation').value.toUpperCase() : '',
-                    fullName: document.getElementById('fullName') ? document.getElementById('fullName').value.toUpperCase() : '',
-                    gender: document.getElementById('gender') ? document.getElementById('gender').value : '',
-                    dob: document.getElementById('dob') ? document.getElementById('dob').value : '',
-                    guardianName: document.getElementById('guardianName') ? document.getElementById('guardianName').value : '',
-                    profession: document.getElementById('profession') ? document.getElementById('profession').value.toUpperCase() : '',
-                    mobile: document.getElementById('mobile') ? document.getElementById('mobile').value : '',
-                    email: document.getElementById('email') ? document.getElementById('email').value : '',
-                    address: fullAddress, addressObj: addrObj, idProofs: idProofsArray,
-                    profilePicBase64: finalProfileData, signatureBase64: finalSignatureData, resignDate: null, resignReason: ''
-                };
-
-                const result = await apiSyncAction(syncAction, memberDataPayload);
-                if (result.status === "success") {
-                    if (isEditMode) {
-                        const idx = membersData.findIndex(m => m.id.toString() === editingMemberId.toString());
-                        if (idx > -1) membersData[idx] = memberDataPayload;
-                    } else { membersData.push(memberDataPayload); }
-                    showToast(`Profile ${isEditMode ? 'updated' : 'saved'} successfully!`);
-                    await fetchDatabaseData(); closeModal();
-                } else { throw new Error(result.message); }
-            } catch (err) { console.error(err); showToast('Database Error: Check connection.', true); } 
-            finally { if(saveBtn) { saveBtn.innerHTML = isEditMode ? '<i class="fas fa-save mr-2 mt-1"></i> Update Profile' : '<i class="fas fa-save mr-2 mt-1"></i> Save Profile'; saveBtn.disabled = false; } }
+            if (type && num) { idProofsArray.push({ type: type, number: num, docBase64: docData }); }
         }
+
+        // --- নতুন কোড: Last SIR Status ও ভোটার লিস্টের ডেটা প্রসেসিং ---
+        const sirStatusValue = document.getElementById('sirStatus') ? document.getElementById('sirStatus').value : 'No';
+        const sirData = sirStatusValue === 'Yes' ? {
+            acName: document.getElementById('sirAcName') ? document.getElementById('sirAcName').value.toUpperCase() : '',
+            partNo: document.getElementById('sirPartNo') ? document.getElementById('sirPartNo').value : '',
+            serialNo: document.getElementById('sirSerialNo') ? document.getElementById('sirSerialNo').value : '',
+            voterId: document.getElementById('sirVoterId') ? document.getElementById('sirVoterId').value.toUpperCase() : '',
+            docBase64: document.getElementById('finalVoterDocBase64') ? document.getElementById('finalVoterDocBase64').value : ''
+        } : null;
+
+        let syncAction = isEditMode ? 'update' : 'create';
+        
+        const memberDataPayload = {
+            id: isEditMode ? editingMemberId : Date.now().toString(), 
+            tabCategory: currentTab, 
+            fullId: fullId,
+            resolutionNo: document.getElementById('resolutionNo') ? document.getElementById('resolutionNo').value : '',
+            resolutionDate: document.getElementById('resolutionDate') ? document.getElementById('resolutionDate').value : '',
+            joinDate: document.getElementById('joinDate') ? document.getElementById('joinDate').value : '',
+            designation: document.getElementById('designation') ? document.getElementById('designation').value.toUpperCase() : '',
+            fullName: document.getElementById('fullName') ? document.getElementById('fullName').value.toUpperCase() : '',
+            gender: document.getElementById('gender') ? document.getElementById('gender').value : '',
+            dob: document.getElementById('dob') ? document.getElementById('dob').value : '',
+            guardianName: document.getElementById('guardianName') ? document.getElementById('guardianName').value : '',
+            profession: document.getElementById('profession') ? document.getElementById('profession').value.toUpperCase() : '',
+            mobile: document.getElementById('mobile') ? document.getElementById('mobile').value : '',
+            email: document.getElementById('email') ? document.getElementById('email').value : '',
+            address: fullAddress, 
+            addressObj: addrObj, 
+            idProofs: idProofsArray,
+            profilePicBase64: finalProfileData, 
+            signatureBase64: finalSignatureData, 
+            sirStatus: sirStatusValue,       // ডেটাবেসে পাঠানোর জন্য নতুন ফিল্ড ১
+            sirDetails: sirData,             // ডেটাবেসে পাঠানোর জন্য নতুন ফিল্ড ২
+            resignDate: null, 
+            resignReason: ''
+        };
+
+        const result = await apiSyncAction(syncAction, memberDataPayload);
+        if (result.status === "success") {
+            if (isEditMode) {
+                const idx = membersData.findIndex(m => m.id.toString() === editingMemberId.toString());
+                if (idx > -1) membersData[idx] = memberDataPayload;
+            } else { 
+                membersData.push(memberDataPayload); 
+            }
+            showToast(`Profile ${isEditMode ? 'updated' : 'saved'} successfully!`);
+            await fetchDatabaseData(); 
+            closeModal();
+        } else { 
+            throw new Error(result.message); 
+        }
+    } catch (err) { 
+        console.error(err); 
+        showToast('Database Error: Check connection.', true); 
+    } finally { 
+        if(saveBtn) { 
+            saveBtn.innerHTML = isEditMode ? '<i class="fas fa-save mr-2 mt-1"></i> Update Profile' : '<i class="fas fa-save mr-2 mt-1"></i> Save Profile'; 
+            saveBtn.disabled = false; 
+        } 
+    }
+}
 
         async function deleteMember(id) {
             if (userRole !== 'admin') return;
@@ -1376,9 +1532,14 @@ async function downloadCategoryPDF() {
         doc.text(`${categoryName || 'MEMBER'} DATA SHEET ${financialYear}`, doc.internal.pageSize.getWidth() / 2, 90, { align: "center" });
 
         const tableBody = processedMembers.map((member, index) => {
-            let idsString = member.idProofs && member.idProofs.length > 0
-                ? member.idProofs.map(p => `${p.type}: ${p.number}`).join('\n')
-                : 'N/A';
+            let idsStringArray = [];
+            if (member.idProofs && member.idProofs.length > 0) {
+                idsStringArray = member.idProofs.map(p => `${p.type}: ${p.number}`);
+            }
+            if (member.sirStatus === 'Yes' && member.sirDetails) {
+                idsStringArray.push(`Last SIR: ${member.sirDetails.voterId || 'N/A'}`);
+            }
+            let idsString = idsStringArray.length > 0 ? idsStringArray.join('\n') : 'N/A';
 
             return [
                 index + 1,
@@ -1405,9 +1566,9 @@ async function downloadCategoryPDF() {
                 1: { cellWidth: 40, halign: 'center' }, 
                 2: { cellWidth: 70 },
                 3: { cellWidth: 140 },
-                4: { cellWidth: 145 }, // কলাম ব্যালেন্স করার জন্য এটি কমানো হলো
+                4: { cellWidth: 145 },
                 5: { cellWidth: 120 },
-                6: { cellWidth: 135 }, // View Button দেখানোর জন্য এই কলামটি বড় করা হলো (আগে ১১০ ছিল)
+                6: { cellWidth: 135 }, 
                 7: { cellWidth: 90, halign: 'center' }  
             },
             
@@ -1428,7 +1589,6 @@ async function downloadCategoryPDF() {
                 if (data.section === 'body') {
                     const member = processedMembers[data.row.index];
                     
-                    // 1. Profile Image Drawing
                     if (data.column.index === 1 && member.pdfProfileImg) {
                         try {
                             const dim = 35;
@@ -1438,11 +1598,9 @@ async function downloadCategoryPDF() {
                         } catch(e) {}
                     }
                     
-                    // 2. Custom Colored Text Drawing (FIXED COORDINATES)
                     if ([3, 4, 5].includes(data.column.index) && data.cell.customLines && data.cell.customLines.length > 0) {
-                        // Manual Coordinate Calculation
-                        let textX = data.cell.x + 4; // 4 is cellPadding
-                        let textY = data.cell.y + 14; // Initial Y offset
+                        let textX = data.cell.x + 4; 
+                        let textY = data.cell.y + 14; 
                         const fontSize = data.cell.styles.fontSize || 8;
                         const lineSpacing = fontSize * 1.2;
 
@@ -1459,7 +1617,7 @@ async function downloadCategoryPDF() {
                                 doc.setTextColor(0, 0, 255);
                             } else if (data.column.index === 5 && line.startsWith("Desig:")) {
                                 doc.setFont("helvetica", "bold");
-                                doc.setTextColor(21, 128, 61); // হাইলাইট সরিয়ে Deep Green রঙ দেওয়া হলো
+                                doc.setTextColor(21, 128, 61); 
                                 bgHighlight = null; 
                             }
 
@@ -1474,15 +1632,27 @@ async function downloadCategoryPDF() {
                         });
                     }
 
-                    // 3. Document Buttons Drawing (FIXED COORDINATES)
+                    // --- Updated Document Buttons Drawing (SIR Button Included) ---
                     if (data.column.index === 6) {
                         let textX = data.cell.x + 4;
                         let textY = data.cell.y + 14;
                         const fontSize = data.cell.styles.fontSize || 8;
                         const lineSpacing = fontSize * 1.7; 
 
+                        let allProofs = [];
                         if (member.idProofs && member.idProofs.length > 0) {
-                            member.idProofs.forEach(proof => {
+                            allProofs = [...member.idProofs];
+                        }
+                        if (member.sirStatus === 'Yes' && member.sirDetails) {
+                            allProofs.push({
+                                type: 'Last SIR',
+                                number: member.sirDetails.voterId || 'N/A',
+                                docUrl: member.sirDetails.docUrl || member.sirDetails.docBase64
+                            });
+                        }
+
+                        if (allProofs.length > 0) {
+                            allProofs.forEach(proof => {
                                 doc.setFont("helvetica", "normal");
                                 doc.setTextColor(0, 0, 0);
                                 doc.setFontSize(8);
@@ -1502,6 +1672,7 @@ async function downloadCategoryPDF() {
                                     if (typeUpper.includes("AADHAAR")) bgColor = [239, 68, 68]; 
                                     else if (typeUpper.includes("PAN")) bgColor = [59, 130, 246]; 
                                     else if (typeUpper.includes("VOTER")) bgColor = [34, 197, 94]; 
+                                    else if (typeUpper.includes("LAST SIR")) bgColor = [202, 138, 4]; // Amber color for SIR
 
                                     doc.setFillColor(bgColor[0], bgColor[1], bgColor[2]);
                                     doc.roundedRect(btnX, btnY, btnW, btnH, 2, 2, 'F');
@@ -1521,7 +1692,6 @@ async function downloadCategoryPDF() {
                         }
                     }
 
-                    // 4. Aspect Ratio Fixed Signature
                     if (data.column.index === 7 && member.pdfSigImg) {
                         try {
                             const padX = 3; const padY = 4;
@@ -1594,11 +1764,342 @@ async function downloadCategoryPDF() {
 }
 
 
+
+// --- SIR Status Toggle ---
+function toggleSIRFields() {
+    const status = document.getElementById('sirStatus').value;
+    const container = document.getElementById('sirFieldsContainer');
+    if (status === 'Yes') {
+        container.classList.remove('hidden');
+    } else {
+        container.classList.add('hidden');
+        // Clear fields when hidden
+        document.getElementById('sirAcName').value = '';
+        document.getElementById('sirPartNo').value = '';
+        document.getElementById('sirSerialNo').value = '';
+        document.getElementById('sirVoterId').value = '';
+        removeVoterDoc();
+    }
+}
+
+function removeVoterDoc() {
+    document.getElementById('voterPdfInput').value = '';
+    document.getElementById('finalVoterDocBase64').value = '';
+    document.getElementById('voterFinalPreviewContainer').classList.add('hidden');
+    document.getElementById('voterFinalImage').src = '';
+}
+
+
+// --- PDF Processing, Rectangular Box Highlight, Undo, Cropping & Zoom Logic ---
+let pdfDoc = null;
+let pageNum = 1;
+let pageRendering = false;
+let pageNumPending = null;
+
+let pdfDrawingCtx = null;
+let isPdfDrawing = false;
+let highlightMode = false;
+let pdfCropperInstance = null;
+let currentZoomPercent = 100;
+
+let tpStartDist = 0;
+let isPinching = false;
+let startX = 0, startY = 0;
+let canvasSnapshot = null;
+let historyStack = []; // Undo করার জন্য হিস্ট্রি
+
+async function processVoterPDF(e) {
+    const file = e.target.files[0];
+    if (!file || file.type !== "application/pdf") {
+        showToast("Please upload a valid PDF file.", true);
+        return;
+    }
+    
+    showToast("Reading PDF Document...", false);
+    const reader = new FileReader();
+    reader.onload = async function(ev) {
+        try {
+            const typedarray = new Uint8Array(ev.target.result);
+            pdfDoc = await pdfjsLib.getDocument(typedarray).promise;
+            
+            document.getElementById('page_count').textContent = pdfDoc.numPages;
+            pageNum = 1; 
+            currentZoomPercent = 100;
+
+            document.getElementById('pdfHighlighterModal').classList.remove('hidden');
+            document.getElementById('pdfCanvas').classList.remove('hidden');
+            document.getElementById('pdfCropperImg').classList.add('hidden');
+            
+            document.getElementById('btnProceedCrop').classList.remove('hidden');
+            document.getElementById('btnFinalizeCrop').classList.add('hidden');
+            document.getElementById('pdfToolbar').classList.remove('hidden');
+            document.getElementById('pdfPagination').classList.remove('hidden');
+            
+            setHighlightMode(false); 
+            renderPage(pageNum);
+
+        } catch (err) {
+            console.error(err);
+            showToast("Failed to process PDF", true);
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function renderPage(num) {
+    pageRendering = true;
+    historyStack = []; // পেজ পাল্টালে Undo হিস্ট্রি ক্লিয়ার হবে
+    
+    pdfDoc.getPage(num).then(function(page) {
+        const viewport = page.getViewport({ scale: 2.0 }); 
+        const canvas = document.getElementById('pdfCanvas');
+        pdfDrawingCtx = canvas.getContext('2d');
+        
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        const renderContext = { canvasContext: pdfDrawingCtx, viewport: viewport };
+        
+        page.render(renderContext).promise.then(function() {
+            pageRendering = false;
+            if (pageNumPending !== null) {
+                renderPage(pageNumPending);
+                pageNumPending = null;
+            }
+            setupCanvasDrawing(document.getElementById('pdfCanvas'));
+            applyZoom();
+        });
+    });
+
+    document.getElementById('page_num').textContent = num;
+}
+
+function applyZoom() {
+    const canvas = document.getElementById('pdfCanvas');
+    if (canvas) {
+        canvas.style.width = currentZoomPercent + '%';
+        canvas.style.height = 'auto'; 
+        const zoomEl = document.getElementById('zoom_percent');
+        if(zoomEl) zoomEl.textContent = currentZoomPercent + '%';
+    }
+}
+
+function zoomIn() {
+    if (currentZoomPercent >= 300) return;
+    currentZoomPercent += 20;
+    applyZoom();
+}
+
+function zoomOut() {
+    if (currentZoomPercent <= 40) return;
+    currentZoomPercent -= 20;
+    applyZoom();
+}
+
+function queueRenderPage(num) {
+    if (pageRendering) { pageNumPending = num; } 
+    else { renderPage(num); }
+}
+
+function onPrevPage() { if (pageNum <= 1) return; pageNum--; queueRenderPage(pageNum); }
+function onNextPage() { if (pageNum >= pdfDoc.numPages) return; pageNum++; queueRenderPage(pageNum); }
+
+function setHighlightMode(enable) {
+    highlightMode = enable;
+    const canvasContainer = document.getElementById('pdfCanvasContainer');
+    const btnPen = document.getElementById('btnHighlightMode');
+    const btnMove = document.getElementById('btnMoveMode');
+    const canvas = document.getElementById('pdfCanvas');
+    
+    if (enable) {
+        canvasContainer.style.cursor = 'crosshair';
+        if(canvas) { canvas.classList.remove('touch-auto'); canvas.classList.add('touch-none'); }
+        if(btnPen) btnPen.className = "px-2 py-1.5 bg-yellow-400 text-yellow-950 rounded font-bold border border-yellow-500 shadow-inner text-xs";
+        if(btnMove) btnMove.className = "px-2 py-1.5 bg-gray-200 text-gray-700 rounded font-bold border border-gray-300 text-xs shadow-sm";
+        document.getElementById('pdfInstructions').innerText = "Draw a rectangle box to highlight.";
+    } else {
+        canvasContainer.style.cursor = 'grab';
+        if(canvas) { canvas.classList.remove('touch-none'); canvas.classList.add('touch-auto'); }
+        if(btnPen) btnPen.className = "px-2 py-1.5 bg-yellow-100 text-yellow-800 rounded font-bold border border-yellow-300 text-xs shadow-sm";
+        if(btnMove) btnMove.className = "px-2 py-1.5 bg-blue-600 text-white rounded font-bold border border-blue-700 shadow-inner text-xs";
+        document.getElementById('pdfInstructions').innerText = "Move Mode: Pinch to zoom, drag to scroll.";
+    }
+}
+
+function getPointerPos(e, canvas) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    let clientX = e.clientX;
+    let clientY = e.clientY;
+    if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+    } else if (e.changedTouches && e.changedTouches.length > 0) {
+        clientX = e.changedTouches[0].clientX;
+        clientY = e.changedTouches[0].clientY;
+    }
+    return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+}
+
+function setupCanvasDrawing(canvas) {
+    const newCanvas = canvas.cloneNode(true);
+    canvas.parentNode.replaceChild(newCanvas, canvas);
+    pdfDrawingCtx = newCanvas.getContext('2d');
+    
+    const img = new Image();
+    img.src = canvas.toDataURL();
+    img.onload = () => { 
+        pdfDrawingCtx.drawImage(img, 0, 0); 
+        if(historyStack.length === 0) { historyStack.push(newCanvas.toDataURL()); }
+    };
+
+    newCanvas.addEventListener('mousedown', startPosition);
+    newCanvas.addEventListener('mouseup', endPosition);
+    newCanvas.addEventListener('mousemove', draw);
+    newCanvas.addEventListener('mouseleave', endPosition);
+    
+    newCanvas.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+            isPinching = true;
+            tpStartDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        } else if (e.touches.length === 1 && highlightMode) {
+            e.preventDefault(); 
+            startPosition(e);
+        }
+    }, {passive: false});
+
+    newCanvas.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2 && isPinching) {
+            e.preventDefault(); 
+            const currentDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+            const factor = currentDist / tpStartDist;
+            if (factor > 1.05) { zoomIn(); tpStartDist = currentDist; } 
+            else if (factor < 0.95) { zoomOut(); tpStartDist = currentDist; }
+        } else if (e.touches.length === 1 && highlightMode && isPdfDrawing) {
+            e.preventDefault();
+            draw(e);
+        }
+    }, {passive: false});
+
+    newCanvas.addEventListener('touchend', (e) => {
+        if (e.touches.length < 2) isPinching = false;
+        if (highlightMode && isPdfDrawing) endPosition(e);
+    });
+}
+
+function startPosition(e) {
+    if (!highlightMode) return;
+    isPdfDrawing = true;
+    const canvas = document.getElementById('pdfCanvas');
+    const pos = getPointerPos(e, canvas);
+    startX = pos.x;
+    startY = pos.y;
+    canvasSnapshot = pdfDrawingCtx.getImageData(0, 0, canvas.width, canvas.height);
+}
+
+function draw(e) {
+    if (!isPdfDrawing || !highlightMode || !pdfDrawingCtx) return;
+    const canvas = document.getElementById('pdfCanvas');
+    const pos = getPointerPos(e, canvas);
+    
+    // আগের স্ন্যাপশট রিস্টোর করে তারপর নতুন বক্স আঁকা হচ্ছে
+    pdfDrawingCtx.putImageData(canvasSnapshot, 0, 0);
+
+    const width = pos.x - startX;
+    const height = pos.y - startY;
+
+    // হলুদ চৌকো ফিল বক্স (Multiply ব্লেন্ডিং)
+    pdfDrawingCtx.fillStyle = 'rgba(255, 255, 0, 0.4)'; 
+    pdfDrawingCtx.globalCompositeOperation = 'multiply'; 
+    pdfDrawingCtx.fillRect(startX, startY, width, height);
+    pdfDrawingCtx.globalCompositeOperation = 'source-over'; 
+}
+
+function endPosition(e) {
+    if (!isPdfDrawing) return;
+    isPdfDrawing = false;
+    const canvas = document.getElementById('pdfCanvas');
+    historyStack.push(canvas.toDataURL()); // বক্স আঁকা শেষ হলে আনডু হিস্ট্রিতে সেভ
+}
+
+function undoHighlight() {
+    if (historyStack.length > 1) {
+        historyStack.pop(); 
+        const previousState = historyStack[historyStack.length - 1];
+        
+        const img = new Image();
+        img.src = previousState;
+        img.onload = () => {
+            const canvas = document.getElementById('pdfCanvas');
+            pdfDrawingCtx.clearRect(0, 0, canvas.width, canvas.height);
+            pdfDrawingCtx.drawImage(img, 0, 0);
+        };
+    } else {
+        showToast("Nothing to Undo!", true);
+    }
+}
+
+
+function initiateCropping() {
+    const canvas = document.getElementById('pdfCanvas');
+    const cropperImg = document.getElementById('pdfCropperImg');
+    
+    pdfDrawingCtx.globalCompositeOperation = 'source-over';
+    cropperImg.src = canvas.toDataURL('image/png');
+    
+    canvas.classList.add('hidden');
+    cropperImg.classList.remove('hidden');
+    
+    // টুলবার যাতে হাইড না হয় তাই এই লাইনটি মুছে দেওয়া হয়েছে
+    // document.getElementById('pdfToolbar').classList.add('hidden'); 
+    
+    document.getElementById('btnProceedCrop').classList.add('hidden');
+    document.getElementById('btnFinalizeCrop').classList.remove('hidden');
+    document.getElementById('pdfModalTitle').innerHTML = '<i class="fas fa-crop text-indigo-500 mr-2"></i> Crop Final Area';
+    document.getElementById('pdfInstructions').innerText = "Adjust the box to crop the highlighted area.";
+
+    setTimeout(() => {
+        if (pdfCropperInstance) pdfCropperInstance.destroy();
+        pdfCropperInstance = new Cropper(cropperImg, {
+            viewMode: 1,
+            autoCropArea: 0.8, 
+            guides: true,
+            background: true,
+            responsive: true
+        });
+    }, 150);
+}
+
+
+function finalizeVoterCrop() {
+    if (!pdfCropperInstance) return;
+    
+    try {
+        const croppedCanvas = pdfCropperInstance.getCroppedCanvas({ fillColor: '#FFFFFF' });
+        const finalBase64 = croppedCanvas.toDataURL('image/jpeg', 0.9);
+        
+        const hiddenInput = document.getElementById('finalVoterDocBase64');
+        if (hiddenInput) {
+            hiddenInput.value = finalBase64;
+        } else {
+            console.error("Hidden input 'finalVoterDocBase64' missing!");
+        }
+        
+        document.getElementById('voterFinalImage').src = finalBase64;
+        document.getElementById('voterFinalPreviewContainer').classList.remove('hidden');
+        
+        closePdfModal();
+        showToast("Voter List successfully processed and ready to upload!");
+    } catch (e) {
+        console.error(e);
+        showToast("Failed to crop image!", true);
+    }
+}
 // ==========================================
 // ✨ INDIVIDUAL PROFILE PDF GENERATION (Dynamic & Text-Based)
 // ==========================================
 async function downloadProfilePDF(id) {
-    // নির্দিষ্ট মেম্বারকে খুঁজে বের করা
     const member = membersData.find(m => m.id.toString() === id.toString());
     if (!member) {
         showToast("Member data not found!", true);
@@ -1609,10 +2110,8 @@ async function downloadProfilePDF(id) {
     
     try {
         const { jsPDF } = window.jspdf;
-        // প্রোফাইলের জন্য 'portrait' (লম্বালম্বি) A4 সাইজ নেওয়া হলো
         const doc = new jsPDF('portrait', 'pt', 'a4'); 
 
-        // ইমেজ লোড করা
         const profileImg = await loadImageElement(member.profilePicUrl || member.profilePicBase64).catch(()=>null);
         const sigImg = await loadImageElement(member.signatureUrl || member.signatureBase64).catch(()=>null);
         const { presidentSig, secretarySig } = getGlobalSignatures();
@@ -1637,12 +2136,10 @@ async function downloadProfilePDF(id) {
         doc.setTextColor(0, 0, 255);
         doc.text("ESTD-1985 • GOVT. REGD. NO.- S0035658 OF 2023-24 • PAN NO.- AACAI6060M • NGO ID- WB/2023/0359221 • M.S.M.E.REGD. NO.:UDYAM-WB-14-0149488", pageWidth / 2, 68, { align: "center" });
 
-        // Divider Line
         doc.setLineWidth(1.5);
         doc.setDrawColor(30, 58, 138);
         doc.line(40, 80, pageWidth - 40, 80);
 
-        // Profile Title
         doc.setFontSize(14);
         doc.setTextColor(0, 0, 0);
         doc.setFont("helvetica", "bold");
@@ -1650,11 +2147,11 @@ async function downloadProfilePDF(id) {
 
         let startY = 130;
 
-        // 2. PROFILE PICTURE (Top Right)
+        // 2. PROFILE PICTURE 
         if (profileImg) {
             doc.setDrawColor(150);
             doc.setLineWidth(1);
-            doc.rect(pageWidth - 135, startY, 95, 115); // Border
+            doc.rect(pageWidth - 135, startY, 95, 115); 
             doc.addImage(profileImg, 'JPEG', pageWidth - 130, startY + 5, 85, 105);
         } else {
             doc.setDrawColor(200);
@@ -1664,10 +2161,10 @@ async function downloadProfilePDF(id) {
             doc.text("No Photo", pageWidth - 87, startY + 60, { align: "center" });
         }
 
-        // 3. OFFICIAL INFORMATION (AutoTable for neat alignment)
+        // 3. OFFICIAL INFORMATION 
         doc.autoTable({
             startY: startY,
-            margin: { left: 40, right: 150 }, // Leaving space for the photo on the right
+            margin: { left: 40, right: 150 }, 
             theme: 'plain',
             styles: { cellPadding: 4, fontSize: 10, textColor: 50 },
             columnStyles: { 0: { fontStyle: 'bold', cellWidth: 120, textColor: 0 }, 1: { cellWidth: 180 } },
@@ -1680,7 +2177,6 @@ async function downloadProfilePDF(id) {
                 ['Status:', 'ACTIVE']
             ],
             didParseCell: function(data) {
-                // Designation টেক্সট Deep Green এবং Bold করা হচ্ছে (Row 2, Col 1)
                 if (data.section === 'body' && data.row.index === 2 && data.column.index === 1) {
                     data.cell.styles.textColor = [21, 128, 61]; 
                     data.cell.styles.fontStyle = 'bold';
@@ -1716,7 +2212,6 @@ async function downloadProfilePDF(id) {
                 ['Profession:', member.profession || 'N/A', '', '']
             ],
             didParseCell: function(data) {
-                // Full Name টেক্সট Blue এবং Bold করা হচ্ছে (Row 0, Col 1)
                 if (data.section === 'body' && data.row.index === 0 && data.column.index === 1) {
                     data.cell.styles.textColor = [0, 0, 255]; 
                     data.cell.styles.fontStyle = 'bold';
@@ -1748,16 +2243,33 @@ async function downloadProfilePDF(id) {
 
         startY = doc.lastAutoTable.finalY + 20;
 
-        // 6. IDENTITY DOCUMENTS
+        // --- Updated 6. IDENTITY DOCUMENTS (SIR integration and button overlay) ---
         doc.setFontSize(12);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(30, 58, 138);
         doc.text("Identity Documents", 40, startY);
         doc.line(40, startY + 6, pageWidth - 40, startY + 6);
 
-        let idBody = [];
+        let itemsForProfile = [];
         if (member.idProofs && member.idProofs.length > 0) {
-            idBody = member.idProofs.map((p, i) => [i + 1, p.type, p.number, p.docUrl || p.docBase64 ? 'Document Attached (In DB)' : 'Not Uploaded']);
+            itemsForProfile = [...member.idProofs];
+        }
+        if (member.sirStatus === 'Yes' && member.sirDetails) {
+            itemsForProfile.push({
+                type: 'Last SIR',
+                number: `${member.sirDetails.voterId || 'N/A'}\nAssembly: ${member.sirDetails.acName || 'N/A'}\nPart No: ${member.sirDetails.partNo || 'N/A'}, Serial No: ${member.sirDetails.serialNo || 'N/A'}`,
+                docUrl: member.sirDetails.docUrl,
+                docBase64: member.sirDetails.docBase64
+            });
+        }
+
+        let idBody = [];
+        if (itemsForProfile.length > 0) {
+            idBody = itemsForProfile.map((p, i) => {
+                let hasDoc = (p.docUrl || p.docBase64) ? true : false;
+                // If it has a document, leave empty space. Button will be drawn dynamically.
+                return [i + 1, p.type, p.number, hasDoc ? '' : 'Not Uploaded']; 
+            });
         } else {
             idBody = [['-', 'No ID documents provided', '', '']];
         }
@@ -1767,16 +2279,48 @@ async function downloadProfilePDF(id) {
             margin: { left: 40, right: 40 },
             theme: 'grid',
             headStyles: { fillColor: [240, 243, 255], textColor: 30, fontStyle: 'bold' },
-            styles: { cellPadding: 6, fontSize: 9, textColor: 40 },
-            head: [['Sl.', 'Document Type', 'Document Number', 'Attachment Status']],
+            styles: { cellPadding: 6, fontSize: 9, textColor: 40, valign: 'middle' },
+            head: [['Sl.', 'Document Type', 'Document Number / Details', 'Attachment']],
             body: idBody,
-            columnStyles: { 0: { cellWidth: 30, halign: 'center' }, 1: { cellWidth: 120 }, 2: { cellWidth: 150 } }
+            columnStyles: { 
+                0: { cellWidth: 30, halign: 'center' }, 
+                1: { cellWidth: 100 }, 
+                2: { cellWidth: 260 },
+                3: { cellWidth: 125, halign: 'center' } 
+            },
+            didDrawCell: function(data) {
+                // Draw the actual VIEW DOC button in the last column
+                if (data.section === 'body' && data.column.index === 3 && itemsForProfile.length > 0) {
+                    const proof = itemsForProfile[data.row.index];
+                    const docUrl = proof.docUrl || proof.docBase64;
+                    
+                    if (docUrl) {
+                        const btnW = 60;
+                        const btnH = 16;
+                        // Center horizontally and vertically within the cell
+                        const btnX = data.cell.x + (data.cell.width - btnW) / 2;
+                        const btnY = data.cell.y + (data.cell.height - btnH) / 2;
+                        
+                        let bgColor = [37, 99, 235]; // Blue 
+                        if (proof.type === 'Last SIR') bgColor = [202, 138, 4]; // Amber color for SIR Doc
+
+                        doc.setFillColor(bgColor[0], bgColor[1], bgColor[2]); 
+                        doc.roundedRect(btnX, btnY, btnW, btnH, 3, 3, 'F');
+                        
+                        doc.setFont("helvetica", "bold");
+                        doc.setTextColor(255, 255, 255);
+                        doc.setFontSize(8);
+                        doc.text("VIEW DOC", btnX + 11, btnY + 11);
+                        
+                        doc.link(btnX, btnY, btnW, btnH, { url: docUrl });
+                    }
+                }
+            }
         });
 
-        // 7. MEMBER'S SIGNATURE (Just below the ID table)
+        // 7. MEMBER'S SIGNATURE 
         let memberSigY = doc.lastAutoTable.finalY + 20;
         
-        // Page break logic if not enough space
         if (memberSigY > pageHeight - 150) {
             doc.addPage();
             memberSigY = 40;
@@ -1792,11 +2336,9 @@ async function downloadProfilePDF(id) {
         doc.setFontSize(10); doc.setFont("helvetica", "bold"); doc.setTextColor(0);
         doc.text("Member's Signature", 110, memberSigY + 60, { align: "center" });
 
-
-        // 8. AUTHORIZED SIGNATORIES (Fixed at Footer)
+        // 8. AUTHORIZED SIGNATORIES 
         let finalY = pageHeight - 80;
 
-        // President Signature (Left Bottom)
         if (presSigImg) {
             doc.addImage(presSigImg, 'JPEG', 40, finalY - 40, 100, 35);
         }
@@ -1805,7 +2347,6 @@ async function downloadProfilePDF(id) {
         doc.setFontSize(10); doc.setFont("helvetica", "bold"); doc.setTextColor(0);
         doc.text("President Signature", 100, finalY + 15, { align: "center" });
 
-        // Secretary Signature (Right Bottom)
         if (secSigImg) {
             doc.addImage(secSigImg, 'JPEG', pageWidth - 160, finalY - 40, 100, 35);
         }
@@ -1867,6 +2408,30 @@ async function downloadProfilePDF(id) {
                 document.getElementById('pincode').value = locationData[selectedVill].pin;
             }
         }
+        
+        // --- Image Full Screen Preview Logic ---
+function openImagePreview(src) {
+    if (!src) return;
+    document.getElementById('fullImagePreview').src = src;
+    document.getElementById('imagePreviewModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden'; // পেজ স্ক্রল বন্ধ করবে
+}
+
+function closeImagePreview() {
+    document.getElementById('imagePreviewModal').classList.add('hidden');
+    document.getElementById('fullImagePreview').src = '';
+    document.body.style.overflow = 'auto'; // পেজ স্ক্রল আবার চালু করবে
+}
+        
+        function closePdfModal() {
+    const modal = document.getElementById('pdfHighlighterModal');
+    if (modal) modal.classList.add('hidden');
+    if (pdfCropperInstance) {
+        pdfCropperInstance.destroy();
+        pdfCropperInstance = null;
+    }
+}
+        
     </script>
 </body>
 </html>

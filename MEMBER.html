@@ -1559,6 +1559,7 @@ async function downloadCategoryPDF() {
             head: [['Sl.', 'Photo', 'Member ID', 'Name & Personal Info', 'Address & Contact', 'Membership Details', 'Attached IDs', 'Signature']],
             body: tableBody,
             theme: 'grid',
+            rowPageBreak: 'avoid',
             styles: { fontSize: 8, cellPadding: 4, valign: 'middle', font: 'helvetica', minCellHeight: 45 }, 
             headStyles: { fillColor: [243, 244, 246], textColor: 20, fontStyle: 'bold', halign: 'center' },
             columnStyles: {
@@ -1585,9 +1586,12 @@ async function downloadCategoryPDF() {
                 }
             },
 
-            didDrawCell: function(data) {
+ didDrawCell: function(data) {
                 if (data.section === 'body') {
                     const member = processedMembers[data.row.index];
+                    
+                    // ✨ FIX: মেম্বার ডেটা undefined হলে কোড যাতে ক্র্যাশ না করে তার জন্য সেফটি চেক
+                    if (!member) return;
                     
                     if (data.column.index === 1 && member.pdfProfileImg) {
                         try {

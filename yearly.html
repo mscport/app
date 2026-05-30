@@ -551,8 +551,8 @@
         };
 
         function handleLogin() {
-            const u = document.getElementById('login-username').value;
-            const p = document.getElementById('login-password').value;
+            const u = document.getElementById('login-username').value.trim().toLowerCase();
+            const p = document.getElementById('login-password').value.trim();
             const err = document.getElementById('login-error');
 
             if (u === 'admin' && p === '1234') {
@@ -981,6 +981,7 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${d.category}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">₹ ${d.amount}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button onclick="viewRemarks('income', '${d.id}')" class="text-yellow-600 hover:text-yellow-900 mr-3" title="View Remarks"><i data-lucide="message-square" class="w-4 h-4"></i></button>
                         <button onclick="viewIncome('${d.id}')" class="text-blue-600 hover:text-blue-900 mr-3" title="View/Download PDF"><i data-lucide="file-text" class="w-4 h-4"></i></button>
                         ${State.currentUser === 'admin' ? `<button onclick="editIncome('${d.id}')" class="text-indigo-600 hover:text-indigo-900 mr-3"><i data-lucide="edit-2" class="w-4 h-4"></i></button><button onclick="deleteRecord('income', '${d.id}')" class="text-red-600 hover:text-red-900" title="Delete Record"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
                     </td>
@@ -1013,6 +1014,7 @@
                         ${(d.imageBase64 || d.imageUrl) ? `<button onclick="viewExpenseImage('${d.id}')" class="text-blue-600 hover:text-blue-800 focus:outline-none flex justify-center w-full" title="View Attachment"><i data-lucide="paperclip" class="w-4 h-4"></i></button>` : '-'}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button onclick="viewRemarks('expense', '${d.id}')" class="text-yellow-600 hover:text-yellow-900 mr-3" title="View Remarks"><i data-lucide="message-square" class="w-4 h-4"></i></button>
                         ${State.currentUser === 'admin' ? `<button onclick="editExpense('${d.id}')" class="text-indigo-600 hover:text-indigo-900 mr-3"><i data-lucide="edit-2" class="w-4 h-4"></i></button><button onclick="deleteRecord('expense', '${d.id}')" class="text-red-600 hover:text-red-900" title="Delete Record"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : '<span class="text-gray-300 text-xs">Admin Only</span>'}
                     </td>
                 </tr>
@@ -1104,6 +1106,10 @@
                         <label class="block text-sm">পরিমাণ</label>
                         <input type="number" id="edit-inc-amt" value="${data.amount}" class="w-full border rounded p-2">
                     </div>
+                    <div>
+                        <label class="block text-sm">মন্তব্য (Remarks)</label>
+                        <input type="text" id="edit-inc-remarks" value="${data.remarks || ''}" class="w-full border rounded p-2">
+                    </div>
                 </div>
             `;
 
@@ -1112,6 +1118,7 @@
                 data.donor = document.getElementById('edit-inc-donor').value;
                 data.category = document.getElementById('edit-inc-cat').value;
                 data.amount = Number(document.getElementById('edit-inc-amt').value);
+                data.remarks = document.getElementById('edit-inc-remarks').value;
                 
                 localStorage.setItem('msc_local_income', JSON.stringify(State.incomeData));
                 renderIncomeTable();
@@ -1169,6 +1176,10 @@
                         <label class="block text-sm">পরিমাণ</label>
                         <input type="number" id="edit-exp-amt" value="${data.amount}" class="w-full border rounded p-2">
                     </div>
+                    <div>
+                        <label class="block text-sm">মন্তব্য (Remarks)</label>
+                        <input type="text" id="edit-exp-remarks" value="${data.remarks || ''}" class="w-full border rounded p-2">
+                    </div>
                     <div class="border p-3 rounded bg-gray-50">
                         <label class="block text-sm mb-2">বিল Attachment (নতুন ছবি দিলে পুরানোটি মুছে যাবে)</label>
                         <div id="edit-img-container">
@@ -1194,6 +1205,7 @@
                 data.reason = document.getElementById('edit-exp-reason').value;
                 data.category = document.getElementById('edit-exp-cat').value;
                 data.amount = Number(document.getElementById('edit-exp-amt').value);
+                data.remarks = document.getElementById('edit-exp-remarks').value;
                 
                 if (State.tempBase64Image && State.tempBase64Image.startsWith('data:image')) {
                     data.imageBase64 = State.tempBase64Image;
@@ -1363,7 +1375,7 @@
                 document.getElementById('fs-img-view').src = imageData;
                 document.getElementById('fs-img-download').href = imageData;
                 fsModal.classList.remove('hidden');
-            } else { alert("দুঃখিত! এই বিলটির কোনো ছবি খুঁজে পাওয়া যাচ্ছে না।"); }
+            } else { alert("দুঃখিত! এই বিলটির কোনো ছবি খুঁজে পাওয়া যাচ্ছে মাতৃ।"); }
         };
 
         // --- DASHBOARD & REPORTS (ADVANCED FILTERS + BACKEND PDF) ---
@@ -1846,6 +1858,25 @@
 
             return str.trim();
         }
+
+        window.viewRemarks = function(type, id) {
+            const data = type === 'income' 
+                ? State.incomeData.find(d => d.id === id) 
+                : State.expenseData.find(d => d.id === id);
+                
+            if(!data) return;
+            
+            const remarkText = (data.remarks && data.remarks.trim() !== '') ? data.remarks : 'কোনো মন্তব্য (Remarks) নেই।';
+            
+            showCustomPopup(`
+                <div class="p-4 bg-yellow-50 rounded border border-yellow-200 text-gray-800 font-medium text-center">
+                    <i data-lucide="message-square" class="w-8 h-8 text-yellow-500 mx-auto mb-2"></i>
+                    ${remarkText}
+                </div>
+            `, 'মন্তব্য (Remarks)');
+            
+            setTimeout(() => { if(window.lucide) lucide.createIcons(); }, 10);
+        };
     </script>
 </body>
 </html>

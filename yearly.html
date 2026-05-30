@@ -11,7 +11,7 @@
     <!-- Barcode & QR Code -->
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
-    <!-- HTML to PDF (Best for Bengali fonts) -->
+    <!-- HTML to PDF (Best for Bengali fonts - kept for single receipts) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
@@ -20,7 +20,7 @@
         .tab-btn.active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: bold; }
         .hidden { display: none !important; }
         
-  #receipt-template {
+        #receipt-template {
             width: 794px; /* A4 Width */
             min-height: 1000px;
             padding: 40px; 
@@ -123,9 +123,9 @@
                                 <input type="text" id="inc-fy" readonly class="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm p-2">
                             </div>
                             <div>
-    <label class="block text-sm font-medium text-gray-700">তারিখ</label>
-    <input type="date" id="inc-date" onchange="updateCustomFY('inc-date', 'inc-fy')" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
-</div>
+                                <label class="block text-sm font-medium text-gray-700">তারিখ</label>
+                                <input type="date" id="inc-date" onchange="updateCustomFY('inc-date', 'inc-fy')" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
+                            </div>
                         </div>
                         <div class="relative">
                             <label class="block text-sm font-medium text-gray-700">প্রদানকারীর নাম (Donor)</label>
@@ -214,9 +214,9 @@
                                 <input type="text" id="exp-fy" readonly class="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm p-2">
                             </div>
                             <div>
-    <label class="block text-sm font-medium text-gray-700">তারিখ</label>
-    <input type="date" id="exp-date" onchange="updateCustomFY('exp-date', 'exp-fy')" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
-</div>
+                                <label class="block text-sm font-medium text-gray-700">তারিখ</label>
+                                <input type="date" id="exp-date" onchange="updateCustomFY('exp-date', 'exp-fy')" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
+                            </div>
                         </div>
                         <div class="relative">
                             <label class="block text-sm font-medium text-gray-700">খরচের কারণ (Reason)</label>
@@ -237,11 +237,9 @@
                             <input type="text" id="exp-remarks" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 p-2 border">
                         </div>
                         
-                        <!-- Image Upload Area with Compression Logic -->
+                        <!-- Image Upload Area -->
                         <div class="border-2 border-dashed border-gray-300 rounded-md p-4 mt-2 bg-gray-50 relative">
                             <label class="block text-sm font-medium text-gray-700 mb-3">বিলের ছবি আপলোড করুন</label>
-                            
-                            <!-- UPDATED: Camera & File Force Selection Buttons -->
                             <div class="flex flex-wrap items-center gap-3">
                                 <label class="cursor-pointer bg-blue-100 text-blue-800 py-2 px-4 rounded-md hover:bg-blue-200 flex items-center gap-2 transition-colors border border-blue-300 shadow-sm text-sm font-bold">
                                     <i data-lucide="camera"></i> ক্যামেরা দিয়ে তুলুন
@@ -254,7 +252,6 @@
                                 <span id="img-status" class="text-sm text-gray-600 font-medium w-full mt-1">কোনো ছবি নেই</span>
                             </div>
                             
-                            <!-- Image Preview Area -->
                             <div id="img-preview-container" class="hidden mt-4 relative inline-block">
                                 <img id="exp-img-preview" src="" class="max-h-32 rounded border shadow-sm">
                                 <button onclick="removeImage()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow">
@@ -262,8 +259,6 @@
                                 </button>
                                 <p class="text-xs text-green-600 mt-1"><i data-lucide="check-circle-2" class="w-3 h-3 inline"></i> Compressed & Ready (300KB> )</p>
                             </div>
-                            <!-- Hidden canvas for compression -->
-                            <canvas id="compression-canvas" class="hidden"></canvas>
                         </div>
 
                         <div class="flex gap-4 mt-4">
@@ -325,71 +320,73 @@
                     </div>
                 </div>
 
-     <div class="bg-white p-6 rounded-lg shadow">
-    <h3 class="text-lg font-medium mb-4">বিস্তারিত রিপোর্ট জেনারেট করুন</h3>
-    
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-4">
-        <div>
-            <label class="block text-sm text-gray-600">From Date</label>
-            <input type="date" id="report-start" class="border rounded p-2 w-full">
-        </div>
-        <div>
-            <label class="block text-sm text-gray-600">To Date</label>
-            <input type="date" id="report-end" class="border rounded p-2 w-full">
-        </div>
-        <div>
-            <label class="block text-sm text-gray-600">রিপোর্টের ধরন</label>
-            <select id="report-type" class="border rounded p-2 w-full">
-                <option value="all">আয় ও ব্যয় (All)</option>
-                <option value="income">শুধুমাত্র আয়</option>
-                <option value="expense">শুধুমাত্র ব্যয়</option>
-            </select>
-        </div>
-        <div>
-            <label class="block text-sm text-gray-600">আয়/ব্যায়ের খাত</label>
-            <select id="report-category" class="border rounded p-2 w-full">
-                <option value="all">সব খাত (All Categories)</option>
-            </select>
-        </div>
-    </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-lg font-medium mb-4">বিস্তারিত রিপোর্ট জেনারেট করুন</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-4">
+                        <div>
+                            <label class="block text-sm text-gray-600">From Date</label>
+                            <input type="date" id="report-start" class="border rounded p-2 w-full">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-600">To Date</label>
+                            <input type="date" id="report-end" class="border rounded p-2 w-full">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-600">রিপোর্টের ধরন</label>
+                            <select id="report-type" class="border rounded p-2 w-full">
+                                <option value="all">আয় ও ব্যয় (All)</option>
+                                <option value="income">শুধুমাত্র আয়</option>
+                                <option value="expense">শুধুমাত্র ব্যয়</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-600">আয়/ব্যায়ের খাত</label>
+                            <select id="report-category" class="border rounded p-2 w-full">
+                                <option value="all">সব খাত (All Categories)</option>
+                            </select>
+                        </div>
+                    </div>
 
-    <div class="p-4 border rounded bg-gray-50 mb-4">
-        <h4 class="text-sm font-bold text-gray-700 mb-2">রিপোর্টে যে কলামগুলো দেখতে চান নির্বাচন করুন:</h4>
-        
-        <div class="mb-3">
-            <span class="text-xs font-semibold text-blue-600 block mb-1">আয়ের কলাম (Income):</span>
-            <div class="flex flex-wrap gap-4 text-sm text-gray-700">
-                <label class="flex items-center gap-1"><input type="checkbox" id="col-inc-id-date" checked> Receipt No. & Date</label>
-                <label class="flex items-center gap-1"><input type="checkbox" id="col-inc-donor" checked> দাতার নাম</label>
-                <label class="flex items-center gap-1"><input type="checkbox" id="col-inc-cat" checked> আয়ের খাত</label>
-                <label class="flex items-center gap-1"><input type="checkbox" id="col-inc-amt" checked> অর্থের পরিমান</label>
-                <label class="flex items-center gap-1"><input type="checkbox" id="col-inc-remark" checked> Remarks</label>
+                    <!-- REPORT COLUMN FILTERS (NEW) -->
+                    <div class="p-4 border rounded bg-gray-50 mb-4 mt-4">
+                        <h4 class="text-sm font-bold text-gray-700 mb-2">রিপোর্টে যে কলামগুলো দেখতে চান নির্বাচন করুন:</h4>
+                        
+                        <div class="mb-3">
+                            <span class="text-xs font-semibold text-blue-600 block mb-1">আয়ের কলাম (Income):</span>
+                            <div class="flex flex-wrap gap-4 text-sm text-gray-700">
+                                <label class="flex items-center gap-1"><input type="checkbox" id="col-inc-id-date" checked> Receipt No. & Date</label>
+                                <label class="flex items-center gap-1"><input type="checkbox" id="col-inc-donor" checked> দাতার নাম</label>
+                                <label class="flex items-center gap-1"><input type="checkbox" id="col-inc-cat" checked> আয়ের খাত</label>
+                                <label class="flex items-center gap-1"><input type="checkbox" id="col-inc-amt" checked> অর্থের পরিমান</label>
+                                <label class="flex items-center gap-1"><input type="checkbox" id="col-inc-remark" checked> Remarks</label>
+                            </div>
+                        </div>
+
+                        <div>
+                            <span class="text-xs font-semibold text-red-600 block mb-1">ব্যয়ের কলাম (Expense):</span>
+                            <div class="flex flex-wrap gap-4 text-sm text-gray-700">
+                                <label class="flex items-center gap-1"><input type="checkbox" id="col-exp-id-date" checked> Ref No. & Date</label>
+                                <label class="flex items-center gap-1"><input type="checkbox" id="col-exp-reason" checked> ব্যয়ের কারণ</label>
+                                <label class="flex items-center gap-1"><input type="checkbox" id="col-exp-cat" checked> প্রোজেক্ট বা খাত</label>
+                                <label class="flex items-center gap-1"><input type="checkbox" id="col-exp-amt" checked> ব্যয়ের পরিমান</label>
+                                <label class="flex items-center gap-1"><input type="checkbox" id="col-exp-remark" checked> Remarks</label>
+                                <label class="flex items-center gap-1"><input type="checkbox" id="col-exp-bill" checked> View Bill</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button onclick="updateReportCategoryOptions()" class="text-sm bg-gray-200 text-gray-800 px-3 py-2 rounded hover:bg-gray-300">
+                            <i data-lucide="refresh-cw" class="w-4 h-4 inline"></i> ক্যাটাগরি লোড করুন
+                        </button>
+                        <button onclick="generateDetailedReport()" class="bg-indigo-600 text-white px-6 py-2 rounded flex items-center gap-2 hover:bg-indigo-700 font-medium">
+                            <i data-lucide="file-text" class="w-4 h-4"></i> Text-PDF জেনারেট করুন
+                        </button>
+                    </div>
+                </div>
             </div>
-        </div>
-
-        <div>
-            <span class="text-xs font-semibold text-red-600 block mb-1">ব্যয়ের কলাম (Expense):</span>
-            <div class="flex flex-wrap gap-4 text-sm text-gray-700">
-                <label class="flex items-center gap-1"><input type="checkbox" id="col-exp-id-date" checked> Ref No. & Date</label>
-                <label class="flex items-center gap-1"><input type="checkbox" id="col-exp-reason" checked> ব্যয়ের কারণ</label>
-                <label class="flex items-center gap-1"><input type="checkbox" id="col-exp-cat" checked> প্রোজেক্ট বা খাত</label>
-                <label class="flex items-center gap-1"><input type="checkbox" id="col-exp-amt" checked> ব্যয়ের পরিমান</label>
-                <label class="flex items-center gap-1"><input type="checkbox" id="col-exp-remark" checked> Remarks</label>
-                <label class="flex items-center gap-1"><input type="checkbox" id="col-exp-bill" checked> View Bill</label>
-            </div>
-        </div>
-    </div>
-
-    <div class="flex gap-3">
-        <button onclick="updateReportCategoryOptions()" class="text-sm bg-gray-200 text-gray-800 px-3 py-2 rounded hover:bg-gray-300">
-            <i data-lucide="refresh-cw" class="w-4 h-4 inline"></i> ক্যাটাগরি লোড করুন
-        </button>
-        <button onclick="generateDetailedReport()" class="bg-indigo-600 text-white px-6 py-2 rounded flex items-center gap-2 hover:bg-indigo-700 font-medium">
-            <i data-lucide="file-text" class="w-4 h-4"></i> জেনারেট Text-PDF
-        </button>
-    </div>
-</div>
-                 
+            
             <!-- 6. সেটিংস (Admin Only) -->
             <div id="tab-settings" class="tab-content hidden">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -445,16 +442,13 @@
                 <h3 id="modal-title" class="text-lg font-semibold">Edit Data</h3>
                 <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700"><i data-lucide="x"></i></button>
             </div>
-            <div id="modal-content" class="p-6 overflow-y-auto flex-1">
-                <!-- Dynamic Content goes here based on action -->
-            </div>
+            <div id="modal-content" class="p-6 overflow-y-auto flex-1"></div>
             <div id="modal-footer" class="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3">
                 <button onclick="closeModal()" class="px-4 py-2 bg-gray-200 rounded text-gray-800">Cancel</button>
                 <button id="modal-save-btn" class="px-4 py-2 bg-blue-600 rounded text-white hidden">Update</button>
             </div>
         </div>
     </div>
-
 
     <div id="pdf-wrapper" style="position: absolute; top: 0; left: 0; z-index: -9999; visibility: hidden; width: 800px; background: white;">
         <div id="receipt-render-area" style="width: 800px; padding: 20px; background: white;">
@@ -481,9 +475,7 @@
                     </table>
                 </div>
 
-                <div class="barcode-area">
-                    <svg id="receipt-barcode"></svg>
-                </div>
+                <div class="barcode-area"><svg id="receipt-barcode"></svg></div>
 
                 <div class="signature-area">
                     <div class="sign-box" id="pr-sec-sign-area">
@@ -504,9 +496,8 @@
 
     <!-- ==================== JAVASCRIPT LOGIC ==================== -->
     <script>
-        // --- 1. STATE & DATA (Simulating Google Sheet / Database) ---
         const State = {
-            currentUser: null, // null, 'admin', 'member'
+            currentUser: null, 
             currentTab: 'income-entry',
             fy: '',
             incomeCat: ['মাসিক চাঁদা', 'টুর্নামেন্ট অনুদান', 'পূজা ডোনেশন', 'অন্যান্য'],
@@ -514,37 +505,29 @@
             signatories: [],
             incomeData: [],
             expenseData: [],
-            
-            // Pagination state
             incPage: 0,
             expPage: 0,
             rowsPerPage: 50,
-
-            // Temp memory for uploaded files before save
             tempBase64Image: null
         };
 
-        // ==========================================
-        // 🌟 GOOGLE SHEET WEB APP URL (এখানে আপনার লিংক দিন)
-        // ==========================================
+        // 🌟 GOOGLE SHEET WEB APP URL
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzhostFDUTw6fNCBYNQHMw6ukE_J4QXCkEVW1DCxaeMmdhKrZoNAkgormyfUnDq--EB/exec";
 
-        // Initialize Icons
         lucide.createIcons();
 
-        // On Load initialization
         window.onload = () => {
-    calculateFY();
-    populateSelects();
-    mockData(); 
-    fetchDataFromBackend();
-};
+            calculateFY();
+            populateSelects();
+            mockData(); 
+            fetchDataFromBackend();
+        };
 
         function calculateFY() {
             const today = new Date();
             let year = today.getFullYear();
             let nextYear = year + 1;
-            if (today.getMonth() < 3) { // Before April
+            if (today.getMonth() < 3) { 
                 year = year - 1;
                 nextYear = year + 1;
             }
@@ -552,26 +535,21 @@
             document.getElementById('inc-fy').value = State.fy;
             document.getElementById('exp-fy').value = State.fy;
             
-            // Set current date
             const dateStr = today.toISOString().split('T')[0];
             document.getElementById('inc-date').value = dateStr;
             document.getElementById('exp-date').value = dateStr;
         }
 
-        function mockData() {
-            for(let i=1; i<=15; i++) {
-                State.incomeData.push({
-                    id: `MSC/${State.fy}/${i.toString().padStart(3,'0')}`,
-                    date: '2023-10-15', donor: `Sagar Sarkar | সাগর সরকার`, category: 'মাসিক চাঁদা', amount: 500 * i, remarks: ''
-                });
-                State.expenseData.push({
-                    id: `EXP-${Date.now()}-${i}`,
-                    date: '2023-10-16', reason: `Electric Bill ${i}`, category: 'ইলেকট্রিক বিল', amount: 1200, remarks: '', imageBase64: null
-                });
-            }
-        }
+        window.mockData = function() {
+            const savedIncome = localStorage.getItem('msc_local_income');
+            const savedExpense = localStorage.getItem('msc_local_expense');
+            const savedSigns = localStorage.getItem('msc_local_signs'); 
 
-        // --- 2. LOGIN LOGIC ---
+            if(savedIncome) State.incomeData = JSON.parse(savedIncome);
+            if(savedExpense) State.expenseData = JSON.parse(savedExpense);
+            if(savedSigns) State.signatories = JSON.parse(savedSigns); 
+        };
+
         function handleLogin() {
             const u = document.getElementById('login-username').value;
             const p = document.getElementById('login-password').value;
@@ -615,1022 +593,36 @@
             document.getElementById('login-password').value = '';
         }
 
-        // --- 3. NAVIGATION ---
         function switchTab(tabId) {
             State.currentTab = tabId;
-            // Hide all
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             
-            // Show target
             document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-            
-            // Update nav styling
-            const btns = document.querySelectorAll('.tab-btn');
-            btns.forEach(btn => {
-                if(btn.textContent.trim().toLowerCase().includes(tabId.split('-')[0])) {
-                    // Fuzzy match for simple setup
-                }
-            });
-            // exact match workaround via onclick string
             document.querySelectorAll(`[onclick="switchTab('${tabId}')"]`).forEach(el => el.classList.add('active'));
 
-            // specific tab logic
             if(tabId === 'saved-income') renderIncomeTable();
             if(tabId === 'saved-expense') renderExpenseTable();
             if(tabId === 'settings') renderSettings();
             if(tabId === 'dashboard') updateDashboard();
         }
 
-        // --- 4. TRANSLATION SIMULATION (WILL BE OVERRIDDEN BELOW) ---
-        const dictionary = {
-            'raju': 'রাজু', 'club': 'ক্লাব', 'donation': 'দান', 'bill': 'বিল'
-        };
-        
-        function handleTranslationSuggest(inputEl, boxId) {
-            const val = inputEl.value.toLowerCase();
-            const box = document.getElementById(boxId);
-            
-            if(val.length < 2) { box.classList.add('hidden'); return; }
-            
-            box.innerHTML = '';
-            let hasSuggestions = false;
-
-            // Simple mock logic: if english typing, suggest bengali pseudo-translation
-            let suggestionText = dictionary[val] || val + " (বাংলা)"; 
-            
-            const div = document.createElement('div');
-            div.className = 'suggestion-item';
-            div.innerHTML = `Translate to: <b>${suggestionText}</b> <span class="text-xs text-gray-400 ml-2">Google API Sim</span>`;
-            div.onclick = () => {
-                inputEl.value = suggestionText;
-                box.classList.add('hidden');
-            };
-            box.appendChild(div);
-            hasSuggestions = true;
-
-            // Fetch history match (simulated)
-            const historyData = inputEl.id.includes('inc') ? State.incomeData.map(d=>d.donor) : State.expenseData.map(d=>d.reason);
-            const matches = [...new Set(historyData.filter(d => d.toLowerCase().includes(val)))].slice(0,3);
-            
-            matches.forEach(m => {
-                const hDiv = document.createElement('div');
-                hDiv.className = 'suggestion-item text-gray-600';
-                hDiv.innerHTML = `<i data-lucide="history" class="w-3 h-3 inline"></i> ${m}`;
-                hDiv.onclick = () => {
-                    inputEl.value = m;
-                    box.classList.add('hidden');
-                };
-                box.appendChild(hDiv);
-                hasSuggestions = true;
-            });
-
-            if(hasSuggestions) {
-                box.classList.remove('hidden');
-                lucide.createIcons();
-            } else {
-                box.classList.add('hidden');
-            }
-        }
-
-        // Hide suggestions on outside click
-        document.addEventListener('click', (e) => {
-            if(!e.target.closest('.relative')) {
-                document.querySelectorAll('.suggestion-box').forEach(b => b.classList.add('hidden'));
-            }
-        });
-
-        // --- 5. INCOME LOGIC ---
-        function populateSelects() {
-            const incSel = document.getElementById('inc-category');
-            if(incSel) incSel.innerHTML = State.incomeCat.map(c => `<option value="${c}">${c}</option>`).join('');
-            
-            const expSel = document.getElementById('exp-category');
-            if(expSel) expSel.innerHTML = State.expenseCat.map(c => `<option value="${c}">${c}</option>`).join('');
-        }
-
-        function generateReceiptNo() {
-    const customFy = document.getElementById('inc-fy').value; // ইনপুট বক্স থেকে আপনার দেওয়া ইয়ার নেবে
-    const count = State.incomeData.length + 1;
-    return `MSC/${customFy}/${count.toString().padStart(3, '0')}`;
-}
-
-        function toggleAccountField() {
-            const mode = document.getElementById('inc-pay-mode').value;
-            const accContainer = document.getElementById('account-field-container');
-            if(mode === 'Online') {
-                accContainer.classList.remove('hidden');
-            } else {
-                accContainer.classList.add('hidden');
-                document.getElementById('inc-account').value = '';
-            }
-        }
-
-        async function saveIncome() {
-            const date = document.getElementById('inc-date').value;
-            const donor = document.getElementById('inc-donor').value;
-            const cat = document.getElementById('inc-category').value;
-            const amt = document.getElementById('inc-amount').value;
-            const remarks = document.getElementById('inc-remarks').value;
-            
-            const payMode = document.getElementById('inc-pay-mode') ? document.getElementById('inc-pay-mode').value : 'Cash';
-            const account = document.getElementById('inc-account') ? document.getElementById('inc-account').value : '';
-
-            if(!donor || !amt) { alert("নাম এবং পরিমাণ আবশ্যক!"); return; }
-
-            const receiptNo = generateReceiptNo();
-            const newData = { id: receiptNo, date, donor, category: cat, amount: Number(amt), remarks, payMode, account };
-            
-            State.incomeData.push(newData);
-            
-            // Backend এ ডেটা পাঠানোর লজিক (Fetch API)
-            if(WEB_APP_URL !== "আপনার_গুগল_শিটের_ওয়েব_অ্যাপ_লিংক_এখানে_দিন") {
-                fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: "addIncome", data: newData })
-                })
-                .then(res => res.json())
-                .then(data => console.log("Income Saved to Google Sheet:", data))
-                .catch(err => console.error("Error saving to sheet:", err));
-            }
-
-            // বাটনের এনিমেশন (SAVED দেখানোর জন্য)
-            const btn = document.querySelector('button[onclick="saveIncome()"]');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> SAVED!`;
-            btn.classList.replace('bg-green-600', 'bg-blue-600');
-            if(window.lucide) lucide.createIcons();
-            setTimeout(() => { btn.innerHTML = originalText; btn.classList.replace('bg-blue-600', 'bg-green-600'); if(window.lucide) lucide.createIcons();}, 2000);
-
-            // 🟢 নতুন Pop-up (Yes/No) লজিক
-            showCustomPopup(`
-                <div class="text-center py-4">
-                    <i data-lucide="check-circle-2" class="w-16 h-16 text-green-500 mx-auto mb-3"></i>
-                    <h3 class="text-xl font-bold text-gray-800 mb-2">সফলভাবে সেভ হয়েছে!</h3>
-                    <p class="text-sm text-gray-600 mb-6">রিসিপ্ট নং: <strong class="text-blue-600">${newData.id}</strong></p>
-                    <p class="mb-5 text-gray-700 font-medium">আপনি কি এই বিলের PDF ডাউনলোড করতে চান?</p>
-                    <div class="flex justify-center gap-4">
-                        <button id="btn-dl-yes" class="bg-blue-600 text-white px-6 py-2 rounded shadow hover:bg-blue-700 flex items-center gap-2">
-                            <i data-lucide="download" class="w-4 h-4"></i> হ্যাঁ (Yes)
-                        </button>
-                        <button id="btn-dl-no" class="bg-gray-200 text-gray-800 px-6 py-2 rounded shadow hover:bg-gray-300">
-                            না (No)
-                        </button>
-                    </div>
-                </div>
-            `, "নিশ্চিতকরণ (Confirmation)");
-
-            // যদি 'হ্যাঁ' তে ক্লিক করে
-            document.getElementById('btn-dl-yes').onclick = async () => {
-                const dlBtn = document.getElementById('btn-dl-yes');
-                dlBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> ডাউনলোড হচ্ছে...`;
-                dlBtn.disabled = true;
-                document.getElementById('btn-dl-no').disabled = true;
-                
-                await generatePDFReceipt(newData); // PDF ডাউনলোড হবে
-                
-                closeModal(); // Pop-up বন্ধ হবে
-                clearForm('income'); // ফর্ম ক্লিয়ার হবে
-            };
-
-            // যদি 'না' তে ক্লিক করে
-            document.getElementById('btn-dl-no').onclick = () => {
-                closeModal(); // শুধু Pop-up বন্ধ হবে
-                clearForm('income'); // ফর্ম ক্লিয়ার হবে
-            };
-
-            // আইকনগুলো লোড করার জন্য
-            setTimeout(() => { if(window.lucide) lucide.createIcons(); }, 10);
-        }
-
-        // --- 6. EXPENSE LOGIC & IMAGE UPLOAD ---
-// --- 6. EXPENSE LOGIC & IMAGE UPLOAD ---
-
-        // ১. ছবি সাইজ কমানোর ফাংশন (আপনি এটি কপি করতে ভুলে গিয়েছিলেন)
-        function compressImage(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = (event) => {
-                    const img = new Image();
-                    img.src = event.target.result;
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 800; // সাইজ ছোট করা হচ্ছে
-                        let width = img.width;
-                        let height = img.height;
-
-                        if (width > MAX_WIDTH) {
-                            height *= MAX_WIDTH / width;
-                            width = MAX_WIDTH;
-                        }
-
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        
-                        resolve(canvas.toDataURL('image/jpeg', 0.4)); // কোয়ালিটি ৪০% করে সাইজ কমানো হলো
-                    };
-                    img.onerror = (err) => reject(err);
-                };
-                reader.onerror = (err) => reject(err);
-            });
-        }
-
-       
-
-
-     // ২. আপডেট করা ছবি সিলেক্ট ফাংশন
-async function handleImageSelect(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    document.getElementById('img-status').textContent = 'Processing Image...';
-
-    try {
-        const compressedBase64 = await compressImage(file);
-        State.tempBase64Image = compressedBase64;
-        
-        document.getElementById('exp-img-preview').src = compressedBase64;
-        document.getElementById('img-preview-container').classList.remove('hidden');
-        document.getElementById('img-status').textContent = 'Attached (Compressed & Ready)';
-        
-        const msgElem = document.querySelector('#img-preview-container p.text-xs');
-        if(msgElem) msgElem.innerHTML = `<i data-lucide="check-circle-2" class="w-3 h-3 inline"></i> Compressed Quality Ready`;
-        if(window.lucide) lucide.createIcons();
-
-    } catch (error) {
-        console.error(error);
-        alert("ছবি প্রসেস করতে সমস্যা হয়েছে!");
-        document.getElementById('img-status').textContent = 'কোনো ছবি নেই';
-    }
-}
-function removeImage() {
-    State.tempBase64Image = null;
-    document.getElementById('exp-img-preview').src = '';
-    document.getElementById('img-preview-container').classList.add('hidden');
-    const camInput = document.getElementById('exp-image-cam');
-    if (camInput) camInput.value = '';
-    const fileInput = document.getElementById('exp-image-file');
-    if (fileInput) fileInput.value = '';
-    document.getElementById('img-status').textContent = 'কোনো ছবি নেই';
-}
-
-async function saveExpense() {
-    const date = document.getElementById('exp-date').value;
-    const reason = document.getElementById('exp-reason').value;
-    const cat = document.getElementById('exp-category').value;
-    const amt = document.getElementById('exp-amount').value;
-    const remarks = document.getElementById('exp-remarks').value;
-
-    if(!reason || !amt) { alert("কারণ এবং পরিমাণ আবশ্যক!"); return; }
-
-    const saveBtn = document.querySelector('button[onclick="saveExpense()"]');
-    const originalBtnHTML = saveBtn.innerHTML;
-    saveBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> সেভ হচ্ছে...`;
-    saveBtn.disabled = true;
-
-    try {
-        const newData = {
-            id: `EXP-${Date.now()}`, 
-            date, reason, category: cat, amount: Number(amt), remarks,
-            imageBase64: State.tempBase64Image // আপনার ব্যাকএন্ড এই নামেই ডাটা রিসিভ করে
-        };
-
-        // Backend এ পাঠানো
-        if(WEB_APP_URL !== "আপনার_গুগল_শিটের_ওয়েব_অ্যাপ_লিংক_এখানে_দিন") {
-            const res = await fetch(WEB_APP_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: "addExpense", data: newData })
-            });
-            const result = await res.json();
-            
-            // সার্ভার থেকে ফেরত আসা URL দিয়ে ডাটা আপডেট করা
-            if(result.status === 'success' && result.imageUrl) {
-                newData.imageUrl = result.imageUrl; 
-            }
-        }
-
-        State.expenseData.push(newData);
-
-        showCustomPopup(`
-            <h3 class="text-xl font-bold mb-4 border-b pb-2">খরচ সংরক্ষিত হয়েছে</h3>
-            <table class="w-full text-left">
-                <tr><td class="py-1 text-gray-600">খরচের সিরিয়াল নং</td><td>: ${newData.id}</td></tr>
-                <tr><td class="py-1 text-gray-600">তারিখ</td><td>: ${formatDate(date)}</td></tr>
-                <tr><td class="py-1 text-gray-600">খরচের কারণ</td><td>: ${reason}</td></tr>
-                <tr><td class="py-1 text-gray-600">পরিমাণ</td><td>: ₹ ${amt}</td></tr>
-            </table>
-            <div class="mt-6 flex justify-end">
-                <button onclick="closeModal()" class="bg-blue-600 text-white px-4 py-2 rounded">ঠিক আছে</button>
-            </div>
-        `, "Success");
-
-        clearForm('expense');
-        renderExpenseTable();
-        updateDashboard();
-
-    } catch (error) {
-        console.error("Error saving expense:", error);
-        alert("ডাটা সেভ করতে সমস্যা হয়েছে। ইন্টারনেট চেক করুন।");
-    } finally {
-        saveBtn.innerHTML = originalBtnHTML;
-        saveBtn.disabled = false;
-        if(window.lucide) lucide.createIcons();
-    }
-}
-
-   function clearForm(type) {
-    if(type === 'income') {
-        document.getElementById('inc-donor').value = '';
-        document.getElementById('inc-amount').value = '';
-        document.getElementById('inc-remarks').value = '';
-        document.getElementById('inc-category').value = '';
-        // Date ইনপুট ক্লিয়ার করা হলো না, তাই আগের তারিখ থেকে যাবে
-    } else {
-        document.getElementById('exp-reason').value = '';
-        document.getElementById('exp-amount').value = '';
-        document.getElementById('exp-remarks').value = '';
-        document.getElementById('exp-category').value = '';
-        removeImage();
-        // Date ইনপুট ক্লিয়ার করা হলো না
-    }
-    // calculateFY() মুছে ফেলা হয়েছে। 
-    // ফলে নতুন এন্ট্রির সময় আপনার দেওয়া শেষ তারিখটিই বহাল থাকবে। 
-    // অ্যাপ রিলোড হলে window.onload থেকে কারেন্ট ডেট অটোমেটিক নেবে।
-}
-
-        // --- 7. TABLES & PAGINATION ---
-        function renderIncomeTable() {
-            const tbody = document.getElementById('income-table-body');
-            const search = document.getElementById('search-income').value.toLowerCase();
-            
-            let filtered = State.incomeData.filter(d => 
-                d.donor.toLowerCase().includes(search) || d.id.toLowerCase().includes(search) || d.category.toLowerCase().includes(search)
-            );
-            
-            // Pagination math
-            const totalPages = Math.ceil(filtered.length / State.rowsPerPage);
-            const start = State.incPage * State.rowsPerPage;
-            const paginated = filtered.slice(start, start + State.rowsPerPage);
-
-            tbody.innerHTML = paginated.map(d => `
-                <tr>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">${d.id}<br><span class="text-xs text-gray-500">${formatDate(d.date)}</span></td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${d.donor}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${d.category}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">₹ ${d.amount}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button onclick="viewIncome('${d.id}')" class="text-blue-600 hover:text-blue-900 mr-3" title="View/Download PDF"><i data-lucide="file-text" class="w-4 h-4"></i></button>
-                        ${State.currentUser === 'admin' ? `<button onclick="editIncome('${d.id}')" class="text-indigo-600 hover:text-indigo-900"><i data-lucide="edit-2" class="w-4 h-4"></i></button>` : ''}
-                    </td>
-                </tr>
-            `).join('');
-
-            renderPagination('income', totalPages, filtered.length, start);
-            lucide.createIcons();
-        }
-
-        function renderExpenseTable() {
-            const tbody = document.getElementById('expense-table-body');
-            const search = document.getElementById('search-expense').value.toLowerCase();
-            
-            let filtered = State.expenseData.filter(d => 
-                d.reason.toLowerCase().includes(search) || d.category.toLowerCase().includes(search)
-            );
-            
-            const totalPages = Math.ceil(filtered.length / State.rowsPerPage);
-            const start = State.expPage * State.rowsPerPage;
-            const paginated = filtered.slice(start, start + State.rowsPerPage);
-
-            tbody.innerHTML = paginated.map(d => `
-                <tr>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formatDate(d.date)}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${d.reason}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${d.category}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-red-600">₹ ${d.amount}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
-                        ${(d.imageBase64 || d.imageUrl) ? `<button onclick="viewExpenseImage('${d.id}')" class="text-blue-600 hover:text-blue-800 focus:outline-none flex justify-center w-full" title="View Attachment"><i data-lucide="paperclip" class="w-4 h-4"></i></button>` : '-'}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        ${State.currentUser === 'admin' ? `<button onclick="editExpense('${d.id}')" class="text-indigo-600 hover:text-indigo-900"><i data-lucide="edit-2" class="w-4 h-4"></i></button>` : '<span class="text-gray-300 text-xs">Admin Only</span>'}
-                    </td>
-                </tr>
-            `).join('');
-
-            renderPagination('expense', totalPages, filtered.length, start);
-            lucide.createIcons();
-        }
-
-        function renderPagination(type, totalPages, totalItems, startIdx) {
-            const container = document.getElementById(`${type}-pagination`);
-            if(totalItems === 0) { container.innerHTML = '<p class="text-sm text-gray-500">No data found</p>'; return; }
-
-            let html = `<div class="text-sm text-gray-700">Showing <span class="font-medium">${startIdx + 1}</span> to <span class="font-medium">${Math.min(startIdx + State.rowsPerPage, totalItems)}</span> of <span class="font-medium">${totalItems}</span> results</div>`;
-            
-            html += `<div class="flex gap-1">`;
-            html += `<button onclick="changePage('${type}', -1)" class="px-3 py-1 border rounded text-gray-600 hover:bg-gray-50" ${State[`${type.substring(0,3)}Page`] === 0 ? 'disabled' : ''}>&laquo;</button>`;
-            
-            // simple logic for page numbers
-            for(let i=0; i<totalPages; i++) {
-                if(i < 5 || i === totalPages-1 || Math.abs(i - State[`${type.substring(0,3)}Page`]) <= 1) {
-                    html += `<button onclick="setPage('${type}', ${i})" class="px-3 py-1 border rounded ${State[`${type.substring(0,3)}Page`] === i ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}">${i+1}</button>`;
-                } else if (i === 5 && totalPages > 6) {
-                    html += `<span class="px-2 py-1">...</span>`;
-                }
-            }
-
-            html += `<button onclick="changePage('${type}', 1)" class="px-3 py-1 border rounded text-gray-600 hover:bg-gray-50" ${State[`${type.substring(0,3)}Page`] === totalPages-1 ? 'disabled' : ''}>&raquo;</button>`;
-            html += `</div>`;
-            
-            container.innerHTML = html;
-        }
-
-        function changePage(type, dir) {
-            const prop = `${type.substring(0,3)}Page`;
-            State[prop] += dir;
-            type === 'income' ? renderIncomeTable() : renderExpenseTable();
-        }
-        function setPage(type, pageNum) {
-            State[`${type.substring(0,3)}Page`] = pageNum;
-            type === 'income' ? renderIncomeTable() : renderExpenseTable();
-        }
-
-        // --- 8. EDIT MODALS (ADMIN ONLY) ---
-        function editIncome(id) {
-            const data = State.incomeData.find(d => d.id === id);
-            if(!data) return;
-
-            const html = `
-                <div class="grid gap-4">
-                    <div class="flex justify-between items-center bg-gray-100 p-2 rounded">
-                        <span class="font-bold text-gray-700">রিসিপ্ট নং: ${data.id}</span>
-                        <div>
-                            <label class="text-xs text-gray-500">তারিখ পরিবর্তন</label>
-                            <input type="date" id="edit-inc-date" value="${data.date}" class="border rounded p-1 text-sm">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm">দাতার নাম</label>
-                        <input type="text" id="edit-inc-donor" value="${data.donor}" class="w-full border rounded p-2">
-                    </div>
-                    <div>
-                        <label class="block text-sm">খাত</label>
-                        <select id="edit-inc-cat" class="w-full border rounded p-2">
-                            ${State.incomeCat.map(c => `<option value="${c}" ${c===data.category?'selected':''}>${c}</option>`).join('')}
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm">পরিমাণ</label>
-                        <input type="number" id="edit-inc-amt" value="${data.amount}" class="w-full border rounded p-2">
-                    </div>
-                </div>
-            `;
-
-            showModal('Update Income', html, () => {
-                data.date = document.getElementById('edit-inc-date').value;
-                data.donor = document.getElementById('edit-inc-donor').value;
-                data.category = document.getElementById('edit-inc-cat').value;
-                data.amount = Number(document.getElementById('edit-inc-amt').value);
-                // SYNC APP SCRIPT HERE
-                renderIncomeTable();
-                updateDashboard();
-                closeModal();
-            });
-        }
-
-        // ১. এডিট মডালের জন্য নতুন ছবি আপলোড ফাংশন
-async function handleEditImageSelect(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    try {
-        const compressedBase64 = await compressImage(file);
-        State.tempBase64Image = compressedBase64;
-        
-        let previewImg = document.getElementById('edit-img-preview');
-        let wrap = document.getElementById('edit-img-wrap');
-        
-        if (previewImg) {
-            previewImg.src = compressedBase64;
-            wrap.style.display = 'inline-block';
-        } else {
-            document.getElementById('edit-img-container').innerHTML = `
-                <div class="relative inline-block mb-2" id="edit-img-wrap">
-                    <img id="edit-img-preview" src="${compressedBase64}" class="h-20 border rounded">
-                    <button onclick="State.tempBase64Image=null; document.getElementById('edit-img-wrap').style.display='none'" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><i data-lucide="x" class="w-3 h-3"></i></button>
-                </div>
-            `;
-            if(window.lucide) lucide.createIcons();
-        }
-    } catch (error) {
-        alert("ছবি প্রসেস করতে সমস্যা হয়েছে!");
-    }
-}
-
-// ২. আপডেট করা এডিট এক্সপেন্স ফাংশন
-function editExpense(id) {
-    const data = State.expenseData.find(d => d.id === id);
-    if(!data) return;
-
-    // গুগল শিট থেকে পাওয়া URL বা লোকাল Base64 যেকোনো একটি লোড করা হচ্ছে
-    State.tempBase64Image = data.imageUrl || data.imageBase64 || null; 
-
-    const html = `
-        <div class="grid gap-4">
-            <div>
-                <label class="block text-sm">তারিখ</label>
-                <input type="date" id="edit-exp-date" value="${data.date}" class="w-full border rounded p-2">
-            </div>
-            <div>
-                <label class="block text-sm">খরচের কারণ</label>
-                <input type="text" id="edit-exp-reason" value="${data.reason}" class="w-full border rounded p-2">
-            </div>
-            <div>
-                <label class="block text-sm">খাত</label>
-                <select id="edit-exp-cat" class="w-full border rounded p-2">
-                    ${State.expenseCat.map(c => `<option value="${c}" ${c===data.category?'selected':''}>${c}</option>`).join('')}
-                </select>
-            </div>
-            <div>
-                <label class="block text-sm">পরিমাণ</label>
-                <input type="number" id="edit-exp-amt" value="${data.amount}" class="w-full border rounded p-2">
-            </div>
-            <div class="border p-3 rounded bg-gray-50">
-                <label class="block text-sm mb-2">বিল Attachment (নতুন ছবি দিলে পুরানোটি মুছে যাবে)</label>
-                <div id="edit-img-container">
-                    ${State.tempBase64Image ? `
-                        <div class="relative inline-block mb-2" id="edit-img-wrap">
-                            <img id="edit-img-preview" src="${State.tempBase64Image}" class="h-20 border rounded">
-                            <button onclick="State.tempBase64Image=null; document.getElementById('edit-img-wrap').style.display='none'" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><i data-lucide="x" class="w-3 h-3"></i></button>
-                        </div>
-                    ` : ''}
-                </div>
-                <input type="file" onchange="handleEditImageSelect(event)" accept="image/*" class="mt-2 text-sm w-full">
-            </div>
-        </div>
-    `;
-
-    showModal('Update Expense', html, async () => {
-        const saveBtn = document.getElementById('modal-save-btn');
-        const originalText = saveBtn.innerHTML;
-        saveBtn.innerHTML = "Updating...";
-        saveBtn.disabled = true;
-
-        data.date = document.getElementById('edit-exp-date').value;
-        data.reason = document.getElementById('edit-exp-reason').value;
-        data.category = document.getElementById('edit-exp-cat').value;
-        data.amount = Number(document.getElementById('edit-exp-amt').value);
-        
-        // নতুন ছবি দেওয়া হলে Base64 সেভ হবে, নাহলে পুরোনো URL থাকবে
-        if (State.tempBase64Image && State.tempBase64Image.startsWith('data:image')) {
-            data.imageBase64 = State.tempBase64Image;
-            data.imageUrl = null; 
-        } else if (!State.tempBase64Image) {
-            data.imageBase64 = null;
-            data.imageUrl = null;
-        }
-
-        // Backend Update Logic (Delete old & Add new)
-        if(WEB_APP_URL !== "আপনার_গুগল_শিটের_ওয়েব_অ্যাপ_লিংক_এখানে_দিন") {
-            try {
-                // ১. গুগল শিট থেকে পুরোনো রেকর্ডটি ডিলিট করা
-                await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: "deleteExpense", id: id })
-                });
-                
-                // ২. নতুন আপডেট করা রেকর্ডটি গুগল শিটে সেভ করা
-                const res = await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: "addExpense", data: data })
-                });
-                const result = await res.json();
-                
-                // গুগল শিট থেকে নতুন লিংক পেলে সেটি সেভ করা
-                if(result.status === 'success' && result.imageUrl) {
-                    data.imageUrl = result.imageUrl;
-                    data.imageBase64 = null;
-                }
-            } catch(e) {
-                console.error("Failed to update backend:", e);
-                alert("সার্ভারে আপডেট করতে সমস্যা হয়েছে। ইন্টারনেট চেক করুন।");
-            }
-        }
-
-        renderExpenseTable();
-        updateDashboard();
-        closeModal();
-        State.tempBase64Image = null; 
-        saveBtn.innerHTML = originalText;
-        saveBtn.disabled = false;
-    });
-    setTimeout(() => { if(window.lucide) lucide.createIcons(); }, 10);
-}
-
-        // --- 9. MODAL UTILS ---
-        function showModal(title, contentHtml, onSave) {
-            document.getElementById('modal-title').innerText = title;
-            document.getElementById('modal-content').innerHTML = contentHtml;
-            const saveBtn = document.getElementById('modal-save-btn');
-            
-            if(onSave) {
-                saveBtn.classList.remove('hidden');
-                saveBtn.onclick = onSave;
-            } else {
-                saveBtn.classList.add('hidden');
-            }
-            
-            document.getElementById('action-modal').classList.remove('hidden');
-        }
-
-        function showCustomPopup(html, title="Notice") {
-            showModal(title, html, null); // no save btn, just close
-        }
-
-        function closeModal() {
-            document.getElementById('action-modal').classList.add('hidden');
-        }
-
-        // --- 10. PDF GENERATION (RECEIPT) ---
-        function viewIncome(id) {
-            const data = State.incomeData.find(d => d.id === id);
-            
-            // Pop-up logic exactly as requested
-            let html = `
-                <div class="border p-4 rounded text-sm relative" style="font-family: 'Tiro Bangla', serif;">
-                    <div class="text-center border-b pb-2 mb-4">
-                        <h2 class="text-xl font-bold text-blue-900">মডার্ণ স্পোর্টিং ক্লাব</h2>
-                        <p class="text-gray-600 text-xs">ইটিন্ডা রোড,ধলতিথা,বসিরহাট,উত্তর ২৪ পরগণা,পিন-৭৪৩৪১২</p>
-                        <i data-lucide="qr-code" class="absolute top-4 right-4 w-12 h-12 text-gray-400"></i>
-                    </div>
-                    <div class="flex justify-between font-bold mb-4">
-                        <span>রিসিপ্ট নং: ${data.id}</span>
-                        <span>তারিখ: ${formatDate(data.date)}</span>
-                    </div>
-                    <table class="w-full mb-6">
-                        <tr><td class="py-1 w-1/3">দাতার নাম</td><td>: ${data.donor}</td></tr>
-                        <tr><td class="py-1">কোন খাতে দান</td><td>: ${data.category}</td></tr>
-                        <tr><td class="py-1">টাকার পরিমাণ (সংখ্যায়)</td><td>: ₹ ${data.amount}/-</td></tr>
-                        <tr><td class="py-1">টাকার পরিমাণ (কথায়)</td><td>: ${numberToBengaliWords(data.amount)} মাত্র</td></tr>
-                    </table>
-                    <div class="text-center mb-8">
-                        <svg id="popup-barcode"></svg>
-                    </div>
-                    <div class="text-center text-xs text-gray-400 mt-4 border-t pt-2">
-                        [System Generated Slip already signed no need signature]
-                    </div>
-                    <div class="mt-4 flex justify-end gap-2">
-                        <button onclick="generatePDFReceiptById('${data.id}')" class="bg-green-600 text-white px-4 py-2 rounded text-sm flex items-center gap-1"><i data-lucide="download" class="w-4 h-4"></i> Download PDF</button>
-                    </div>
-                </div>
-            `;
-            showModal('View Receipt', html, null);
-            setTimeout(() => {
-                JsBarcode("#popup-barcode", data.id, { format: "CODE128", height: 30, displayValue: true, fontSize: 12 });
-                lucide.createIcons();
-            }, 100);
-        }
-function generatePDFReceiptById(id) {
-            const data = State.incomeData.find(d => d.id === id);
-            if(data) generatePDFReceipt(data);
-        }
-async function generatePDFReceipt(data) {
-            document.getElementById('pr-receipt-no').innerText = data.id;
-            document.getElementById('pr-date').innerText = formatDate(data.date);
-            document.getElementById('pr-donor').innerText = data.donor;
-            document.getElementById('pr-category').innerText = data.category;
-            document.getElementById('pr-amount-num').innerText = data.amount;
-            document.getElementById('pr-amount-words').innerText = numberToBengaliWords(data.amount);
-if(document.getElementById('pr-payment-mode')) { document.getElementById('pr-payment-mode').innerText = data.payMode || 'Cash'; } if(document.getElementById('pr-account-name')) { document.getElementById('pr-account-name').innerText = (data.payMode === 'Online' && data.account) ? `(A/c: ${data.account})` : ''; }
-            new QRious({
-                element: document.getElementById('receipt-qr'),
-                value: data.id, size: 80
-            });
-
-            JsBarcode("#receipt-barcode", data.id, { format: "CODE128", width: 1.5, height: 40, displayValue: true });
-
-            // BUG FIX 1: ফাঁকা সিগনেচার ফিল্টার করে বাদ দেওয়া এবং reverse() করে সবার শেষের (আসল) সিগনেচারটা পিক করা
-            const validSigns = State.signatories.filter(s => s.base64 && s.base64.length > 50);
-            const secSign = validSigns.slice().reverse().find(s => s.desig && s.desig.toLowerCase().includes('sec'));
-            const treSign = validSigns.slice().reverse().find(s => s.desig && s.desig.toLowerCase().includes('tre'));
-            
-            const secArea = document.getElementById('pr-sec-sign-area');
-            const treArea = document.getElementById('pr-tre-sign-area');
-            
-            // BUG FIX 2: innerHTML += ব্যবহার না করে একবারে পুরোটা সেট করা (DOM যেন ধ্বংস না হয়)
-            secArea.innerHTML = (secSign ? `<img src="${secSign.base64}" class="sign-img">` : `<div style="height:40px; margin-bottom:2px;"></div>`) 
-                              + `<div style="border-top: 1px solid black; padding-top: 5px;">Secretary Signature</div>`;
-            
-            treArea.innerHTML = (treSign ? `<img src="${treSign.base64}" class="sign-img">` : `<div style="height:40px; margin-bottom:2px;"></div>`) 
-                              + `<div style="border-top: 1px solid black; padding-top: 5px;">Treasurer Signature</div>`;
-
-            const element = document.getElementById('receipt-template');
-            const parentContainer = document.getElementById('receipt-render-area').parentNode;
-            parentContainer.style.display = 'block'; 
-
-            // BUG FIX 3: ব্রাউজারকে ছবি স্ক্রিনে রেন্ডার করার জন্য ৫০০ মিলিসেকেন্ড গ্যারান্টেড সময় দেওয়া
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            // Aggressive PDF Download Options
-            
-
-            try {
-                const pdfWorker = html2pdf().set(opt).from(element);
-                const pdfBlob = await pdfWorker.outputPdf('blob');
-                const blobUrl = URL.createObjectURL(pdfBlob);
-                
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = blobUrl;
-                a.download = opt.filename;
-                document.body.appendChild(a);
-                a.click();
-                
-                setTimeout(() => {
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(blobUrl);
-                }, 1500);
-
-            } catch (error) {
-                console.error("Download Error...", error);
-                await html2pdf().set(opt).from(element).save();
-            } finally {
-                parentContainer.style.display = 'none'; 
-            }
-        }
-        // --- 11. DASHBOARD & REPORTS ---
-        function updateDashboard() {
-            const tInc = State.incomeData.reduce((sum, d) => sum + d.amount, 0);
-            const tExp = State.expenseData.reduce((sum, d) => sum + d.amount, 0);
-            const bal = tInc - tExp;
-
-            document.getElementById('dash-total-income').innerText = `₹ ${tInc}`;
-            document.getElementById('dash-total-expense').innerText = `₹ ${tExp}`;
-            document.getElementById('dash-balance').innerText = `₹ ${bal}`;
-        }
-
-        function generateReport() {
-            const start = document.getElementById('report-start').value;
-            const end = document.getElementById('report-end').value;
-            
-            const html = `
-                <div id="report-print-area" style="padding: 20px; font-family: 'Tiro Bangla', serif;">
-                    <h2 style="text-align:center; color:#1e3a8a;">মডার্ণ স্পোর্টিং ক্লাব</h2>
-                    <h3 style="text-align:center;">আর্থিক ব্যালেন্সশীট (AI Generated)</h3>
-                    <p style="text-align:center; font-size:12px; margin-bottom: 20px;">
-                        ${start ? `From: ${start}` : 'All Time'} ${end ? `To: ${end}` : ''}
-                    </p>
-                    <table style="width:100%; border-collapse: collapse; margin-bottom: 20px;" border="1">
-                        <tr style="background:#f3f4f6;">
-                            <th style="padding:8px;">বিবরণ</th><th style="padding:8px; text-align:right;">পরিমাণ (₹)</th>
-                        </tr>
-                        <tr><td style="padding:8px;">মোট আয়</td><td style="padding:8px; text-align:right; color:green;">${document.getElementById('dash-total-income').innerText}</td></tr>
-                        <tr><td style="padding:8px;">মোট ব্যায়</td><td style="padding:8px; text-align:right; color:red;">${document.getElementById('dash-total-expense').innerText}</td></tr>
-                        <tr style="font-weight:bold; background:#e0e7ff;"><td style="padding:8px;">অবশিষ্ট ব্যালেন্স</td><td style="padding:8px; text-align:right;">${document.getElementById('dash-balance').innerText}</td></tr>
-                    </table>
-                    <p style="font-size:10px; text-align:center; color:gray;">Generated on: ${new Date().toLocaleString()}</p>
-                </div>
-            `;
-            
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = html;
-            document.body.appendChild(tempDiv);
-            
-            html2pdf().set({
-                margin: 1, filename: 'Balance_Sheet.pdf', html2canvas: { scale: 2 }, jsPDF: { format: 'a4' }
-            }).from(tempDiv.firstElementChild).save().then(()=>{
-                document.body.removeChild(tempDiv);
-            });
-        }
-
-        // --- 12. SETTINGS ---
-        function renderSettings() {
-            document.getElementById('settings-inc-cat-list').innerHTML = State.incomeCat.map((c, i) => `
-                <li class="flex justify-between items-center bg-gray-50 p-2 rounded border">
-                    ${c} <button onclick="deleteCategory('income', ${i})" class="text-red-500 hover:text-red-700"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                </li>
-            `).join('');
-
-            document.getElementById('settings-exp-cat-list').innerHTML = State.expenseCat.map((c, i) => `
-                <li class="flex justify-between items-center bg-gray-50 p-2 rounded border">
-                    ${c} <button onclick="deleteCategory('expense', ${i})" class="text-red-500 hover:text-red-700"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                </li>
-            `).join('');
-
-            document.getElementById('signatories-list').innerHTML = State.signatories.map((s, i) => `
-                <div class="flex justify-between items-center bg-white border p-3 rounded shadow-sm">
-                    <div>
-                        <p class="font-bold text-sm">${s.name}</p>
-                        <p class="text-xs text-gray-500">${s.desig}</p>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        ${s.base64 ? `<img src="${s.base64}" class="w-20 h-10 object-contain border bg-gray-50">` : '<span class="text-xs text-red-500">No Sign</span>'}
-                        <button onclick="deleteSignatory(${i})" class="text-red-500 hover:bg-red-50 p-1 rounded"><i data-lucide="trash" class="w-4 h-4"></i></button>
-                    </div>
-                </div>
-            `).join('');
-
-            lucide.createIcons();
-        }
-
-        function addCategory(type) {
-            const input = document.getElementById(type === 'income' ? 'new-inc-cat' : 'new-exp-cat');
-            const val = input.value.trim();
-            if(val) {
-                if(type === 'income') State.incomeCat.push(val); else State.expenseCat.push(val);
-                input.value = '';
-                populateSelects();
-                renderSettings();
-            }
-        }
-        function deleteCategory(type, index) {
-            if(confirm("Delete this category?")) {
-                if(type === 'income') State.incomeCat.splice(index, 1); else State.expenseCat.splice(index, 1);
-                populateSelects();
-                renderSettings();
-            }
-        }
-
-    let tempSigBase64 = '';
-function handleSignatureUpload(e) {
-    const file = e.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            
-            // সিগনেচারের সাইজ ২৪০x৯০ রাখা হলো
-            const MAX_WIDTH = 130;
-            let width = img.width;
-            let height = img.height;
-            
-            if (width > MAX_WIDTH) {
-                height = Math.round(height * (MAX_WIDTH / width));
-                width = MAX_WIDTH;
-            }
-            
-            canvas.width = width; 
-            canvas.height = height; 
-            
-            const ctx = canvas.getContext('2d');
-            
-            // 🟢 অত্যন্ত জরুরি: সাদা ব্যাকগ্রাউন্ড দেওয়া হলো, নাহলে JPEG তে ছবি কালো হয়ে যাবে
-            ctx.fillStyle = "#ffffff"; 
-            ctx.fillRect(0, 0, width, height);
-            
-            // ছবি আঁকা
-            ctx.drawImage(img, 0, 0, width, height); 
-            
-            // 🟢 PNG-এর বদলে JPEG এবং 0.6 কোয়ালিটি ব্যবহার করা হলো 
-            // এতে ছবির সাইজ মাত্র ৫-১০ KB হবে এবং গুগল শিটে ১০০% সেভ হবে!
-            tempSigBase64 = canvas.toDataURL('image/jpeg', 0.6);
-            
-            const preview = document.getElementById('sig-preview-temp');
-            preview.src = tempSigBase64;
-            preview.classList.remove('hidden');
-        };
-        img.src = event.target.result;
-    };
-    reader.readAsDataURL(file);
-}
-
-function saveSignatory() {
-    const name = document.getElementById('sig-name').value;
-    const desig = document.getElementById('sig-desig').value;
-    if(!name || !desig) { alert("নাম এবং পদবি আবশ্যক"); return; }
-    
-    State.signatories.push({ id: Date.now(), name, desig, base64: tempSigBase64 });
-    
-    // 🟢 এই জাদুকরী লাইনটি আপনার সিগনেচারকে পার্মানেন্টলি সেভ করে রাখবে
-    localStorage.setItem('msc_local_signs', JSON.stringify(State.signatories)); 
-    
-    document.getElementById('sig-name').value = '';
-    document.getElementById('sig-desig').value = '';
-    document.getElementById('sig-file').value = '';
-    document.getElementById('sig-preview-temp').classList.add('hidden');
-    tempSigBase64 = '';
-    
-    renderSettings();
-    syncSettingsToBackend();
-}
-
-function deleteSignatory(index) {
-    if(confirm("স্বাক্ষরটি মুছে ফেলতে চান?")) {
-        State.signatories.splice(index, 1);
-        
-        // 🟢 ডিলিট করার পরও যেন লোকাল মেমোরি আপডেট হয়
-        localStorage.setItem('msc_local_signs', JSON.stringify(State.signatories)); 
-        
-        renderSettings();
-        syncSettingsToBackend();
-    }
-}
-
-function addCategory(type) {
-    const input = document.getElementById(type === 'income' ? 'new-inc-cat' : 'new-exp-cat');
-    const val = input.value.trim();
-    if(val) {
-        if(type === 'income') State.incomeCat.push(val); else State.expenseCat.push(val);
-        input.value = '';
-        populateSelects();
-        renderSettings();
-        syncSettingsToBackend(); // গুগল শিটে পাঠানো হচ্ছে
-    }
-}
-
-function deleteCategory(type, index) {
-    if(confirm("Delete this category?")) {
-        if(type === 'income') State.incomeCat.splice(index, 1); else State.expenseCat.splice(index, 1);
-        populateSelects();
-        renderSettings();
-        syncSettingsToBackend(); // গুগল শিটে আপডেট পাঠানো হচ্ছে
-    }
-}
-
-        function formatDate(dateStr) {
-            if(!dateStr) return '';
-            const [y, m, d] = dateStr.split('-');
-            return `${d}/${m}/${y}`;
-        }
-
-        function numberToBengaliWords(number) {
-            const words = {
-                0: 'শূন্য', 1: 'এক', 2: 'দুই', 3: 'তিন', 4: 'চার', 5: 'পাঁচ', 6: 'ছয়', 7: 'সাত', 8: 'আট', 9: 'নয়',
-                10: 'দশ', 11: 'এগারো', 12: 'বারো', 13: 'তেরো', 14: 'চোদ্দ', 15: 'পনেরো', 16: 'ষোলো', 17: 'সতেরো', 18: 'আঠারো', 19: 'উনিশ',
-                20: 'কুড়ি', 21: 'একুশ', 22: 'বাইশ', 23: 'তেইশ', 24: 'চব্বিশ', 25: 'পঁচিশ', 26: 'ছাব্বিশ', 27: 'সাতাশ', 28: 'আঠাশ', 29: 'উনত্রিশ',
-                30: 'ত্রিশ', 31: 'একত্রিশ', 32: 'বত্রিশ', 33: 'তেত্রিশ', 34: 'চৌত্রিশ', 35: 'পঁয়ত্রিশ', 36: 'ছত্রিশ', 37: 'সাঁইত্রিশ', 38: 'আটত্রিশ', 39: 'উনচল্লিশ',
-                40: 'চল্লিশ', 41: 'একচল্লিশ', 42: 'বিয়াল্লিশ', 43: 'তেতাল্লিশ', 44: 'চুয়াল্লিশ', 45: 'পঁয়তাল্লিশ', 46: 'ছেচল্লিশ', 47: 'সাতচল্লিশ', 48: 'আটচল্লিশ', 49: 'উনপঞ্চাশ',
-                50: 'পঞ্চাশ', 51: 'একান্ন', 52: 'বায়ান্ন', 53: 'তিপ্পান্ন', 54: 'চুয়ান্ন', 55: 'পঞ্চান্ন', 56: 'ছাপ্পান্ন', 57: 'সাতান্ন', 58: 'আটান্ন', 59: 'উনষাট',
-                60: 'ষাট', 61: 'একষট্টি', 62: 'বাষট্টি', 63: 'তেষট্টি', 64: 'চৌষট্টি', 65: 'পঁয়ষট্টি', 66: 'ছেষট্টি', 67: 'সাতষট্টি', 68: 'আটষট্টি', 69: 'উনসত্তর',
-                70: 'সত্তর', 71: 'একাত্তর', 72: 'বাহাত্তর', 73: 'তিয়াত্তর', 74: 'চুয়াত্তর', 75: 'পঁচাত্তর', 76: 'ছিয়াত্তর', 77: 'সাতাত্তর', 78: 'আটাত্তর', 79: 'উনআশি',
-                80: 'আশি', 81: 'একাশি', 82: 'বিরাশি', 83: 'তিরাশি', 84: 'চুরাশি', 85: 'পঁচাশি', 86: 'ছিয়াশি', 87: 'সাতাশি', 88: 'অষ্টআশি', 89: 'উননব্বই',
-                90: 'নব্বই', 91: 'একানব্বই', 92: 'বিরানব্বই', 93: 'তিরানব্বই', 94: 'চুরানব্বই', 95: 'পঁচানব্বই', 96: 'ছিয়ানব্বই', 97: 'সাতানব্বই', 98: 'আটানব্বই', 99: 'নিরানব্বই'
-            };
-
-            if (number === 0) return words[0];
-
-            let str = '';
-            let n = parseInt(number);
-
-            let crore = Math.floor(n / 10000000);
-            n -= crore * 10000000;
-            let lakh = Math.floor(n / 100000);
-            n -= lakh * 100000;
-            let thousand = Math.floor(n / 1000);
-            n -= thousand * 1000;
-            let hundred = Math.floor(n / 100);
-            n -= hundred * 100;
-            let tens = n;
-
-            if (crore > 0) { str += (crore > 99 ? numberToBengaliWords(crore) : words[crore]) + ' কোটি '; }
-            if (lakh > 0) { str += words[lakh] + ' লক্ষ '; }
-            if (thousand > 0) { str += words[thousand] + ' হাজার '; }
-            if (hundred > 0) { str += words[hundred] + ' শত '; }
-            if (tens > 0) { str += words[tens]; }
-
-            return str.trim();
-        }
-
-        function viewExpenseImage(id) {
-            // OVERRIDDEN BELOW IN NEW FEATURES SECTION TO FIX BROKEN PREVIEW
-            const data = State.expenseData.find(d => d.id === id);
-            if(data && data.imageBase64) {
-                const imgHtml = `
-                    <div class="flex justify-center p-2 mb-4">
-                        <img src="${data.imageBase64}" class="max-w-full max-h-[60vh] rounded shadow border">
-                    </div>
-                    <div class="text-center">
-                        <button onclick="closeModal()" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 font-medium">বন্ধ করুন</button>
-                    </div>
-                `;
-                showCustomPopup(imgHtml, "বিলের ছবি (Bill Attachment)");
-            }
-        }
-
         let transDebounceTimer;
+        
         async function handleTranslationSuggest(inputEl, boxId) {
             clearTimeout(transDebounceTimer);
             const val = inputEl.value;
             const box = document.getElementById(boxId);
             
             if(val.trim().length < 1) { box.classList.add('hidden'); return; }
-            
             box.innerHTML = '<div class="p-2 text-xs text-gray-500 italic">Searching suggestions...</div>';
             box.classList.remove('hidden');
 
             transDebounceTimer = setTimeout(async () => {
                 box.innerHTML = '';
                 let hasSuggestions = false;
-
                 let historyData = [];
+                
                 if(inputEl.id.includes('inc-donor')) historyData = State.incomeData.map(d=>d.donor);
                 else if(inputEl.id.includes('inc-category')) historyData = State.incomeData.map(d=>d.category).concat(State.incomeCat);
                 else if(inputEl.id.includes('exp-reason')) historyData = State.expenseData.map(d=>d.reason);
@@ -1642,10 +634,7 @@ function deleteCategory(type, index) {
                     const hDiv = document.createElement('div');
                     hDiv.className = 'suggestion-item text-gray-800 hover:bg-gray-100 border-b border-gray-100 font-semibold bg-yellow-50';
                     hDiv.innerHTML = `<i data-lucide="history" class="w-3 h-3 inline mr-1 text-yellow-600"></i> Past Ref: ${m}`;
-                    hDiv.onclick = () => {
-                        inputEl.value = m;
-                        box.classList.add('hidden');
-                    };
+                    hDiv.onclick = () => { inputEl.value = m; box.classList.add('hidden'); };
                     box.appendChild(hDiv);
                     hasSuggestions = true;
                 });
@@ -1654,21 +643,15 @@ function deleteCategory(type, index) {
                 let englishText = isBengali ? convertBnToEn(val) : val;
                 let localBengaliText = isBengali ? val : convertEnToBn(val);
 
-                if(englishText.length > 0) {
-                    englishText = englishText.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-                }
+                if(englishText.length > 0) englishText = englishText.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
                 let apiSuggestions = [];
                 if (!isBengali && navigator.onLine) {
                     try {
                         const response = await fetch(`https://inputtools.google.com/request?text=${encodeURIComponent(val)}&itc=bn-t-i0-und&num=5`);
                         const data = await response.json();
-                        if (data[0] === "SUCCESS") {
-                            apiSuggestions = data[1][0][1];
-                        }
-                    } catch(e) {
-                        console.warn("Google API failed, falling back to local map", e);
-                    }
+                        if (data[0] === "SUCCESS") apiSuggestions = data[1][0][1];
+                    } catch(e) { console.warn("Google API failed"); }
                 }
 
                 if (apiSuggestions && apiSuggestions.length > 0) {
@@ -1677,10 +660,7 @@ function deleteCategory(type, index) {
                         const div = document.createElement('div');
                         div.className = 'suggestion-item text-green-800 bg-green-50 border-b border-green-100';
                         div.innerHTML = `<i data-lucide="cloud" class="w-4 h-4 inline mr-1 text-green-600"></i> Web API: ${suggestionText}`;
-                        div.onclick = () => {
-                            inputEl.value = suggestionText;
-                            box.classList.add('hidden');
-                        };
+                        div.onclick = () => { inputEl.value = suggestionText; box.classList.add('hidden'); };
                         box.appendChild(div);
                         hasSuggestions = true;
                     });
@@ -1690,10 +670,7 @@ function deleteCategory(type, index) {
                 const fDiv = document.createElement('div');
                 fDiv.className = 'suggestion-item font-bold text-blue-800 bg-blue-50 border-b border-blue-100';
                 fDiv.innerHTML = `<i data-lucide="languages" class="w-4 h-4 inline mr-1 text-blue-600"></i> Logic Map: ${fallbackText}`;
-                fDiv.onclick = () => {
-                    inputEl.value = fallbackText;
-                    box.classList.add('hidden');
-                };
+                fDiv.onclick = () => { inputEl.value = fallbackText; box.classList.add('hidden'); };
                 box.appendChild(fDiv);
                 hasSuggestions = true;
 
@@ -1705,6 +682,12 @@ function deleteCategory(type, index) {
                 }
             }, 300);
         }
+
+        document.addEventListener('click', (e) => {
+            if(!e.target.closest('.relative')) {
+                document.querySelectorAll('.suggestion-box').forEach(b => b.classList.add('hidden'));
+            }
+        });
 
         function convertEnToBn(text) {
             const map = { 'aa':'আ','sh':'শ','ch':'চ','th':'থ','ph':'ফ','kh':'খ','gh':'ঘ','dh':'ধ','bh':'ভ','jh':'ঝ','ng':'ঙ', 'a':'আ','b':'ব','c':'ক','d':'দ','e':'এ','f':'ফ','g':'গ','h':'হ','i':'ই','j':'জ','k':'ক','l':'ল','m':'ম','n':'ন','o':'ও','p':'প','q':'ক','r':'র','s':'স','t':'ট','u':'উ','v':'ভ','w':'ও','x':'ক্স','y':'য়','z':'জ' };
@@ -1751,12 +734,553 @@ function deleteCategory(type, index) {
             }
         }
 
+        // --- INCOME LOGIC ---
+        function populateSelects() {
+            const incSel = document.getElementById('inc-category');
+            if(incSel) incSel.innerHTML = State.incomeCat.map(c => `<option value="${c}">${c}</option>`).join('');
+            
+            const expSel = document.getElementById('exp-category');
+            if(expSel) expSel.innerHTML = State.expenseCat.map(c => `<option value="${c}">${c}</option>`).join('');
+        }
 
-        // ==========================================
-        // --- NEW FEATURES ADDED BELOW THIS LINE ---
-        // ==========================================
+        function generateReceiptNo() {
+            const customFy = document.getElementById('inc-fy').value;
+            const count = State.incomeData.length + 1;
+            return `MSC/${customFy}/${count.toString().padStart(3, '0')}`;
+        }
 
-        // 1. FORCED AGGRESSIVE PDF DOWNLOAD (Prompts user for Path automatically)
+        function toggleAccountField() {
+            const mode = document.getElementById('inc-pay-mode').value;
+            const accContainer = document.getElementById('account-field-container');
+            if(mode === 'Online') {
+                accContainer.classList.remove('hidden');
+            } else {
+                accContainer.classList.add('hidden');
+                document.getElementById('inc-account').value = '';
+            }
+        }
+
+        async function saveIncome() {
+            const date = document.getElementById('inc-date').value;
+            const donor = document.getElementById('inc-donor').value;
+            const cat = document.getElementById('inc-category').value;
+            const amt = document.getElementById('inc-amount').value;
+            const remarks = document.getElementById('inc-remarks').value;
+            const payMode = document.getElementById('inc-pay-mode') ? document.getElementById('inc-pay-mode').value : 'Cash';
+            const account = document.getElementById('inc-account') ? document.getElementById('inc-account').value : '';
+
+            if(!donor || !amt) { alert("নাম এবং পরিমাণ আবশ্যক!"); return; }
+
+            const receiptNo = generateReceiptNo();
+            const newData = { id: receiptNo, date, donor, category: cat, amount: Number(amt), remarks, payMode, account };
+            
+            State.incomeData.push(newData);
+            localStorage.setItem('msc_local_income', JSON.stringify(State.incomeData));
+            
+            if(WEB_APP_URL !== "আপনার_গুগল_শিটের_ওয়েব_অ্যাপ_লিংক_এখানে_দিন" && WEB_APP_URL) {
+                fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: "addIncome", data: newData })
+                }).catch(err => console.error("Error saving to sheet:", err));
+            }
+
+            const btn = document.querySelector('button[onclick="saveIncome()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> SAVED!`;
+            btn.classList.replace('bg-green-600', 'bg-blue-600');
+            if(window.lucide) lucide.createIcons();
+            setTimeout(() => { btn.innerHTML = originalText; btn.classList.replace('bg-blue-600', 'bg-green-600'); if(window.lucide) lucide.createIcons();}, 2000);
+
+            showCustomPopup(`
+                <div class="text-center py-4">
+                    <i data-lucide="check-circle-2" class="w-16 h-16 text-green-500 mx-auto mb-3"></i>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">সফলভাবে সেভ হয়েছে!</h3>
+                    <p class="text-sm text-gray-600 mb-6">রিসিপ্ট নং: <strong class="text-blue-600">${newData.id}</strong></p>
+                    <p class="mb-5 text-gray-700 font-medium">আপনি কি এই বিলের PDF ডাউনলোড করতে চান?</p>
+                    <div class="flex justify-center gap-4">
+                        <button id="btn-dl-yes" class="bg-blue-600 text-white px-6 py-2 rounded shadow hover:bg-blue-700 flex items-center gap-2">
+                            <i data-lucide="download" class="w-4 h-4"></i> হ্যাঁ (Yes)
+                        </button>
+                        <button id="btn-dl-no" class="bg-gray-200 text-gray-800 px-6 py-2 rounded shadow hover:bg-gray-300">
+                            না (No)
+                        </button>
+                    </div>
+                </div>
+            `, "নিশ্চিতকরণ (Confirmation)");
+
+            document.getElementById('btn-dl-yes').onclick = async () => {
+                const dlBtn = document.getElementById('btn-dl-yes');
+                dlBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> ডাউনলোড হচ্ছে...`;
+                dlBtn.disabled = true;
+                document.getElementById('btn-dl-no').disabled = true;
+                
+                await generatePDFReceipt(newData);
+                closeModal();
+                clearForm('income');
+            };
+
+            document.getElementById('btn-dl-no').onclick = () => {
+                closeModal();
+                clearForm('income');
+            };
+            setTimeout(() => { if(window.lucide) lucide.createIcons(); }, 10);
+        }
+
+        // --- EXPENSE LOGIC & IMAGE UPLOAD ---
+        function compressImage(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 800;
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.4));
+                    };
+                    img.onerror = (err) => reject(err);
+                };
+                reader.onerror = (err) => reject(err);
+            });
+        }
+
+        async function handleImageSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            document.getElementById('img-status').textContent = 'Processing Image...';
+
+            try {
+                const compressedBase64 = await compressImage(file);
+                State.tempBase64Image = compressedBase64;
+                document.getElementById('exp-img-preview').src = compressedBase64;
+                document.getElementById('img-preview-container').classList.remove('hidden');
+                document.getElementById('img-status').textContent = 'Attached (Compressed & Ready)';
+                const msgElem = document.querySelector('#img-preview-container p.text-xs');
+                if(msgElem) msgElem.innerHTML = `<i data-lucide="check-circle-2" class="w-3 h-3 inline"></i> Compressed Quality Ready`;
+                if(window.lucide) lucide.createIcons();
+            } catch (error) {
+                alert("ছবি প্রসেস করতে সমস্যা হয়েছে!");
+                document.getElementById('img-status').textContent = 'কোনো ছবি নেই';
+            }
+        }
+
+        function removeImage() {
+            State.tempBase64Image = null;
+            document.getElementById('exp-img-preview').src = '';
+            document.getElementById('img-preview-container').classList.add('hidden');
+            const camInput = document.getElementById('exp-image-cam');
+            if (camInput) camInput.value = '';
+            const fileInput = document.getElementById('exp-image-file');
+            if (fileInput) fileInput.value = '';
+            document.getElementById('img-status').textContent = 'কোনো ছবি নেই';
+        }
+
+        async function saveExpense() {
+            const date = document.getElementById('exp-date').value;
+            const reason = document.getElementById('exp-reason').value;
+            const cat = document.getElementById('exp-category').value;
+            const amt = document.getElementById('exp-amount').value;
+            const remarks = document.getElementById('exp-remarks').value;
+
+            if(!reason || !amt) { alert("কারণ এবং পরিমাণ আবশ্যক!"); return; }
+
+            const saveBtn = document.querySelector('button[onclick="saveExpense()"]');
+            const originalBtnHTML = saveBtn.innerHTML;
+            saveBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> সেভ হচ্ছে...`;
+            saveBtn.disabled = true;
+
+            try {
+                const newData = {
+                    id: `EXP-${Date.now()}`, date, reason, category: cat, amount: Number(amt), remarks,
+                    imageBase64: State.tempBase64Image
+                };
+
+                if(WEB_APP_URL !== "আপনার_গুগল_শিটের_ওয়েব_অ্যাপ_লিংক_এখানে_দিন" && WEB_APP_URL) {
+                    const res = await fetch(WEB_APP_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({ action: "addExpense", data: newData })
+                    });
+                    const result = await res.json();
+                    if(result.status === 'success' && result.imageUrl) newData.imageUrl = result.imageUrl; 
+                }
+
+                State.expenseData.push(newData);
+                localStorage.setItem('msc_local_expense', JSON.stringify(State.expenseData));
+
+                showCustomPopup(`
+                    <h3 class="text-xl font-bold mb-4 border-b pb-2">খরচ সংরক্ষিত হয়েছে</h3>
+                    <table class="w-full text-left">
+                        <tr><td class="py-1 text-gray-600">খরচের সিরিয়াল নং</td><td>: ${newData.id}</td></tr>
+                        <tr><td class="py-1 text-gray-600">তারিখ</td><td>: ${formatDate(date)}</td></tr>
+                        <tr><td class="py-1 text-gray-600">খরচের কারণ</td><td>: ${reason}</td></tr>
+                        <tr><td class="py-1 text-gray-600">পরিমাণ</td><td>: ₹ ${amt}</td></tr>
+                    </table>
+                    <div class="mt-6 flex justify-end">
+                        <button onclick="closeModal()" class="bg-blue-600 text-white px-4 py-2 rounded">ঠিক আছে</button>
+                    </div>
+                `, "Success");
+
+                clearForm('expense');
+                renderExpenseTable();
+                updateDashboard();
+
+            } catch (error) {
+                console.error("Error saving expense:", error);
+                alert("ডাটা সেভ করতে সমস্যা হয়েছে। ইন্টারনেট চেক করুন।");
+            } finally {
+                saveBtn.innerHTML = originalBtnHTML;
+                saveBtn.disabled = false;
+                if(window.lucide) lucide.createIcons();
+            }
+        }
+
+        function clearForm(type) {
+            if(type === 'income') {
+                document.getElementById('inc-donor').value = '';
+                document.getElementById('inc-amount').value = '';
+                document.getElementById('inc-remarks').value = '';
+                document.getElementById('inc-category').value = '';
+            } else {
+                document.getElementById('exp-reason').value = '';
+                document.getElementById('exp-amount').value = '';
+                document.getElementById('exp-remarks').value = '';
+                document.getElementById('exp-category').value = '';
+                removeImage();
+            }
+        }
+
+        // --- TABLES & PAGINATION ---
+        function renderIncomeTable() {
+            const tbody = document.getElementById('income-table-body');
+            const search = document.getElementById('search-income').value.toLowerCase();
+            
+            let filtered = State.incomeData.filter(d => 
+                d.donor.toLowerCase().includes(search) || d.id.toLowerCase().includes(search) || d.category.toLowerCase().includes(search)
+            );
+            
+            const totalPages = Math.ceil(filtered.length / State.rowsPerPage);
+            const start = State.incPage * State.rowsPerPage;
+            const paginated = filtered.slice(start, start + State.rowsPerPage);
+
+            tbody.innerHTML = paginated.map(d => `
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">${d.id}<br><span class="text-xs text-gray-500">${formatDate(d.date)}</span></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${d.donor}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${d.category}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">₹ ${d.amount}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button onclick="viewIncome('${d.id}')" class="text-blue-600 hover:text-blue-900 mr-3" title="View/Download PDF"><i data-lucide="file-text" class="w-4 h-4"></i></button>
+                        ${State.currentUser === 'admin' ? `<button onclick="editIncome('${d.id}')" class="text-indigo-600 hover:text-indigo-900 mr-3"><i data-lucide="edit-2" class="w-4 h-4"></i></button><button onclick="deleteRecord('income', '${d.id}')" class="text-red-600 hover:text-red-900" title="Delete Record"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+
+            renderPagination('income', totalPages, filtered.length, start);
+            if(window.lucide) lucide.createIcons();
+        }
+
+        function renderExpenseTable() {
+            const tbody = document.getElementById('expense-table-body');
+            const search = document.getElementById('search-expense').value.toLowerCase();
+            
+            let filtered = State.expenseData.filter(d => 
+                d.reason.toLowerCase().includes(search) || d.category.toLowerCase().includes(search)
+            );
+            
+            const totalPages = Math.ceil(filtered.length / State.rowsPerPage);
+            const start = State.expPage * State.rowsPerPage;
+            const paginated = filtered.slice(start, start + State.rowsPerPage);
+
+            tbody.innerHTML = paginated.map(d => `
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formatDate(d.date)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${d.reason}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${d.category}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-red-600">₹ ${d.amount}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+                        ${(d.imageBase64 || d.imageUrl) ? `<button onclick="viewExpenseImage('${d.id}')" class="text-blue-600 hover:text-blue-800 focus:outline-none flex justify-center w-full" title="View Attachment"><i data-lucide="paperclip" class="w-4 h-4"></i></button>` : '-'}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        ${State.currentUser === 'admin' ? `<button onclick="editExpense('${d.id}')" class="text-indigo-600 hover:text-indigo-900 mr-3"><i data-lucide="edit-2" class="w-4 h-4"></i></button><button onclick="deleteRecord('expense', '${d.id}')" class="text-red-600 hover:text-red-900" title="Delete Record"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : '<span class="text-gray-300 text-xs">Admin Only</span>'}
+                    </td>
+                </tr>
+            `).join('');
+
+            renderPagination('expense', totalPages, filtered.length, start);
+            if(window.lucide) lucide.createIcons();
+        }
+
+        function renderPagination(type, totalPages, totalItems, startIdx) {
+            const container = document.getElementById(`${type}-pagination`);
+            if(totalItems === 0) { container.innerHTML = '<p class="text-sm text-gray-500">No data found</p>'; return; }
+
+            let html = `<div class="text-sm text-gray-700">Showing <span class="font-medium">${startIdx + 1}</span> to <span class="font-medium">${Math.min(startIdx + State.rowsPerPage, totalItems)}</span> of <span class="font-medium">${totalItems}</span> results</div>`;
+            html += `<div class="flex gap-1">`;
+            html += `<button onclick="changePage('${type}', -1)" class="px-3 py-1 border rounded text-gray-600 hover:bg-gray-50" ${State[`${type.substring(0,3)}Page`] === 0 ? 'disabled' : ''}>&laquo;</button>`;
+            
+            for(let i=0; i<totalPages; i++) {
+                if(i < 5 || i === totalPages-1 || Math.abs(i - State[`${type.substring(0,3)}Page`]) <= 1) {
+                    html += `<button onclick="setPage('${type}', ${i})" class="px-3 py-1 border rounded ${State[`${type.substring(0,3)}Page`] === i ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}">${i+1}</button>`;
+                } else if (i === 5 && totalPages > 6) { html += `<span class="px-2 py-1">...</span>`; }
+            }
+            html += `<button onclick="changePage('${type}', 1)" class="px-3 py-1 border rounded text-gray-600 hover:bg-gray-50" ${State[`${type.substring(0,3)}Page`] === totalPages-1 ? 'disabled' : ''}>&raquo;</button></div>`;
+            container.innerHTML = html;
+        }
+
+        function changePage(type, dir) { State[`${type.substring(0,3)}Page`] += dir; type === 'income' ? renderIncomeTable() : renderExpenseTable(); }
+        function setPage(type, pageNum) { State[`${type.substring(0,3)}Page`] = pageNum; type === 'income' ? renderIncomeTable() : renderExpenseTable(); }
+
+        // --- EDIT & DELETE (ADMIN ONLY) ---
+        window.deleteRecord = async function(type, id) {
+            if(!confirm("আপনি কি নিশ্চিত যে এই রেকর্ডটি ডিলিট করতে চান? এই কাজ পরিবর্তনযোগ্য নয়!")) return;
+
+            if(type === 'income') {
+                State.incomeData = State.incomeData.filter(d => d.id !== id);
+                localStorage.setItem('msc_local_income', JSON.stringify(State.incomeData));
+                renderIncomeTable();
+            } else {
+                State.expenseData = State.expenseData.filter(d => d.id !== id);
+                localStorage.setItem('msc_local_expense', JSON.stringify(State.expenseData));
+                renderExpenseTable();
+            }
+            updateDashboard();
+
+            if(typeof WEB_APP_URL !== 'undefined' && WEB_APP_URL !== "আপনার_গুগল_শিটের_ওয়েব_অ্যাপ_লিংক_এখানে_দিন") {
+                try {
+                    fetch(WEB_APP_URL, {
+                        method: 'POST',   
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({ action: type === 'income' ? "deleteIncome" : "deleteExpense", id: id })
+                    });
+                } catch(e) { console.error("Network error: ", e); }
+            }
+
+            showCustomPopup(`
+                <h3 class="text-lg font-bold text-red-600 mb-4 flex items-center gap-2"><i data-lucide="trash-2"></i> রেকর্ড মুছে ফেলা হয়েছে</h3>
+                <p class="text-gray-700">সফলভাবে ডিলিট করা হয়েছে। (ID: ${id})</p>
+                <div class="mt-6 flex justify-end">
+                    <button onclick="closeModal()" class="bg-gray-800 text-white px-4 py-2 rounded">ঠিক আছে</button>
+                </div>
+            `, "Deleted Successfully");
+            setTimeout(() => { if(window.lucide) lucide.createIcons(); }, 10);
+        };
+
+        function editIncome(id) {
+            const data = State.incomeData.find(d => d.id === id);
+            if(!data) return;
+
+            const html = `
+                <div class="grid gap-4">
+                    <div class="flex justify-between items-center bg-gray-100 p-2 rounded">
+                        <span class="font-bold text-gray-700">রিসিপ্ট নং: ${data.id}</span>
+                        <div>
+                            <label class="text-xs text-gray-500">তারিখ পরিবর্তন</label>
+                            <input type="date" id="edit-inc-date" value="${data.date}" class="border rounded p-1 text-sm">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm">দাতার নাম</label>
+                        <input type="text" id="edit-inc-donor" value="${data.donor}" class="w-full border rounded p-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm">খাত</label>
+                        <select id="edit-inc-cat" class="w-full border rounded p-2">
+                            ${State.incomeCat.map(c => `<option value="${c}" ${c===data.category?'selected':''}>${c}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm">পরিমাণ</label>
+                        <input type="number" id="edit-inc-amt" value="${data.amount}" class="w-full border rounded p-2">
+                    </div>
+                </div>
+            `;
+
+            showModal('Update Income', html, () => {
+                data.date = document.getElementById('edit-inc-date').value;
+                data.donor = document.getElementById('edit-inc-donor').value;
+                data.category = document.getElementById('edit-inc-cat').value;
+                data.amount = Number(document.getElementById('edit-inc-amt').value);
+                
+                localStorage.setItem('msc_local_income', JSON.stringify(State.incomeData));
+                renderIncomeTable();
+                updateDashboard();
+                closeModal();
+            });
+        }
+
+        async function handleEditImageSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            try {
+                const compressedBase64 = await compressImage(file);
+                State.tempBase64Image = compressedBase64;
+                let previewImg = document.getElementById('edit-img-preview');
+                let wrap = document.getElementById('edit-img-wrap');
+                if (previewImg) {
+                    previewImg.src = compressedBase64;
+                    wrap.style.display = 'inline-block';
+                } else {
+                    document.getElementById('edit-img-container').innerHTML = `
+                        <div class="relative inline-block mb-2" id="edit-img-wrap">
+                            <img id="edit-img-preview" src="${compressedBase64}" class="h-20 border rounded">
+                            <button onclick="State.tempBase64Image=null; document.getElementById('edit-img-wrap').style.display='none'" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><i data-lucide="x" class="w-3 h-3"></i></button>
+                        </div>
+                    `;
+                    if(window.lucide) lucide.createIcons();
+                }
+            } catch (error) { alert("ছবি প্রসেস করতে সমস্যা হয়েছে!"); }
+        }
+
+        function editExpense(id) {
+            const data = State.expenseData.find(d => d.id === id);
+            if(!data) return;
+
+            State.tempBase64Image = data.imageUrl || data.imageBase64 || null; 
+
+            const html = `
+                <div class="grid gap-4">
+                    <div>
+                        <label class="block text-sm">তারিখ</label>
+                        <input type="date" id="edit-exp-date" value="${data.date}" class="w-full border rounded p-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm">খরচের কারণ</label>
+                        <input type="text" id="edit-exp-reason" value="${data.reason}" class="w-full border rounded p-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm">খাত</label>
+                        <select id="edit-exp-cat" class="w-full border rounded p-2">
+                            ${State.expenseCat.map(c => `<option value="${c}" ${c===data.category?'selected':''}>${c}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm">পরিমাণ</label>
+                        <input type="number" id="edit-exp-amt" value="${data.amount}" class="w-full border rounded p-2">
+                    </div>
+                    <div class="border p-3 rounded bg-gray-50">
+                        <label class="block text-sm mb-2">বিল Attachment (নতুন ছবি দিলে পুরানোটি মুছে যাবে)</label>
+                        <div id="edit-img-container">
+                            ${State.tempBase64Image ? `
+                                <div class="relative inline-block mb-2" id="edit-img-wrap">
+                                    <img id="edit-img-preview" src="${State.tempBase64Image}" class="h-20 border rounded">
+                                    <button onclick="State.tempBase64Image=null; document.getElementById('edit-img-wrap').style.display='none'" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><i data-lucide="x" class="w-3 h-3"></i></button>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <input type="file" onchange="handleEditImageSelect(event)" accept="image/*" class="mt-2 text-sm w-full">
+                    </div>
+                </div>
+            `;
+
+            showModal('Update Expense', html, async () => {
+                const saveBtn = document.getElementById('modal-save-btn');
+                const originalText = saveBtn.innerHTML;
+                saveBtn.innerHTML = "Updating...";
+                saveBtn.disabled = true;
+
+                data.date = document.getElementById('edit-exp-date').value;
+                data.reason = document.getElementById('edit-exp-reason').value;
+                data.category = document.getElementById('edit-exp-cat').value;
+                data.amount = Number(document.getElementById('edit-exp-amt').value);
+                
+                if (State.tempBase64Image && State.tempBase64Image.startsWith('data:image')) {
+                    data.imageBase64 = State.tempBase64Image;
+                    data.imageUrl = null; 
+                } else if (!State.tempBase64Image) {
+                    data.imageBase64 = null;
+                    data.imageUrl = null;
+                }
+
+                localStorage.setItem('msc_local_expense', JSON.stringify(State.expenseData));
+
+                if(WEB_APP_URL !== "আপনার_গুগল_শিটের_ওয়েব_অ্যাপ_লিংক_এখানে_দিন" && WEB_APP_URL) {
+                    try {
+                        await fetch(WEB_APP_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                            body: JSON.stringify({ action: "deleteExpense", id: id })
+                        });
+                        const res = await fetch(WEB_APP_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                            body: JSON.stringify({ action: "addExpense", data: data })
+                        });
+                        const result = await res.json();
+                        if(result.status === 'success' && result.imageUrl) {
+                            data.imageUrl = result.imageUrl;
+                            data.imageBase64 = null;
+                        }
+                    } catch(e) { console.error("Failed to update backend:", e); }
+                }
+
+                renderExpenseTable();
+                updateDashboard();
+                closeModal();
+                State.tempBase64Image = null; 
+                saveBtn.innerHTML = originalText;
+                saveBtn.disabled = false;
+            });
+            setTimeout(() => { if(window.lucide) lucide.createIcons(); }, 10);
+        }
+
+        function showModal(title, contentHtml, onSave) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-content').innerHTML = contentHtml;
+            const saveBtn = document.getElementById('modal-save-btn');
+            if(onSave) { saveBtn.classList.remove('hidden'); saveBtn.onclick = onSave; } 
+            else { saveBtn.classList.add('hidden'); }
+            document.getElementById('action-modal').classList.remove('hidden');
+        }
+
+        function showCustomPopup(html, title="Notice") { showModal(title, html, null); }
+        function closeModal() { document.getElementById('action-modal').classList.add('hidden'); }
+
+        // --- SINGLE RECEIPT PDF ---
+        function viewIncome(id) {
+            const data = State.incomeData.find(d => d.id === id);
+            let html = `
+                <div class="border p-4 rounded text-sm relative" style="font-family: 'Tiro Bangla', serif;">
+                    <div class="text-center border-b pb-2 mb-4">
+                        <h2 class="text-xl font-bold text-blue-900">মডার্ণ স্পোর্টিং ক্লাব</h2>
+                        <p class="text-gray-600 text-xs">ইটিন্ডা রোড,ধলতিথা,বসিরহাট,উত্তর ২৪ পরগণা,পিন-৭৪৩৪১২</p>
+                    </div>
+                    <div class="flex justify-between font-bold mb-4">
+                        <span>রিসিপ্ট নং: ${data.id}</span>
+                        <span>তারিখ: ${formatDate(data.date)}</span>
+                    </div>
+                    <table class="w-full mb-6">
+                        <tr><td class="py-1 w-1/3">দাতার নাম</td><td>: ${data.donor}</td></tr>
+                        <tr><td class="py-1">কোন খাতে দান</td><td>: ${data.category}</td></tr>
+                        <tr><td class="py-1">টাকার পরিমাণ (সংখ্যায়)</td><td>: ₹ ${data.amount}/-</td></tr>
+                        <tr><td class="py-1">টাকার পরিমাণ (কথায়)</td><td>: ${numberToBengaliWords(data.amount)} মাত্র</td></tr>
+                    </table>
+                    <div class="text-center mb-8"><svg id="popup-barcode"></svg></div>
+                    <div class="mt-4 flex justify-end gap-2">
+                        <button onclick="generatePDFReceiptById('${data.id}')" class="bg-green-600 text-white px-4 py-2 rounded text-sm flex items-center gap-1"><i data-lucide="download" class="w-4 h-4"></i> Download PDF</button>
+                    </div>
+                </div>
+            `;
+            showModal('View Receipt', html, null);
+            setTimeout(() => { JsBarcode("#popup-barcode", data.id, { format: "CODE128", height: 30, displayValue: true, fontSize: 12 }); lucide.createIcons(); }, 100);
+        }
+
+        function generatePDFReceiptById(id) {
+            const data = State.incomeData.find(d => d.id === id);
+            if(data) generatePDFReceipt(data);
+        }
+
         window.generatePDFReceipt = async function(data) {
             document.getElementById('pr-receipt-no').innerText = data.id;
             document.getElementById('pr-date').innerText = formatDate(data.date);
@@ -1765,46 +1289,36 @@ function deleteCategory(type, index) {
             document.getElementById('pr-amount-num').innerText = data.amount;
             document.getElementById('pr-amount-words').innerText = numberToBengaliWords(data.amount);
             
-            if(document.getElementById('pr-payment-mode')) {
-                document.getElementById('pr-payment-mode').innerText = data.payMode || 'Cash';
-            }
-            if(document.getElementById('pr-account-name')) {
-                document.getElementById('pr-account-name').innerText = (data.payMode === 'Online' && data.account) ? `(A/c: ${data.account})` : '';
-            }
+            if(document.getElementById('pr-payment-mode')) document.getElementById('pr-payment-mode').innerText = data.payMode || 'Cash';
+            if(document.getElementById('pr-account-name')) document.getElementById('pr-account-name').innerText = (data.payMode === 'Online' && data.account) ? `(A/c: ${data.account})` : '';
             
-            new QRious({
-                element: document.getElementById('receipt-qr'),
-                value: data.id, size: 80
-            });
-
+            new QRious({ element: document.getElementById('receipt-qr'), value: data.id, size: 80 });
             JsBarcode("#receipt-barcode", data.id, { format: "CODE128", width: 1.5, height: 40, displayValue: true });
 
-            const secSign = State.signatories.find(s => s.desig.toLowerCase().includes('sec'));
-            const treSign = State.signatories.find(s => s.desig.toLowerCase().includes('tre'));
+            const validSigns = State.signatories.filter(s => s && s.base64 && s.base64.length > 50);
+            const secSign = validSigns.slice().reverse().find(s => s.desig && s.desig.toLowerCase().includes('sec'));
+            const treSign = validSigns.slice().reverse().find(s => s.desig && s.desig.toLowerCase().includes('tre'));
             
             const secArea = document.getElementById('pr-sec-sign-area');
             const treArea = document.getElementById('pr-tre-sign-area');
             
-            secArea.innerHTML = secSign && secSign.base64 ? `<img src="${secSign.base64}" class="sign-img" crossorigin="anonymous">` : `<div style="height:40px; margin-bottom:2px;"></div>`;
+            secArea.innerHTML = secSign ? `<img src="${secSign.base64}" class="sign-img" crossorigin="anonymous">` : `<div style="height:40px; margin-bottom:2px;"></div>`;
             secArea.innerHTML += `<div style="border-top: 1px solid black; padding-top: 5px;">Secretary Signature</div>`;
 
-            treArea.innerHTML = treSign && treSign.base64 ? `<img src="${treSign.base64}" class="sign-img" crossorigin="anonymous">` : `<div style="height:40px; margin-bottom:2px;"></div>`;
+            treArea.innerHTML = treSign ? `<img src="${treSign.base64}" class="sign-img" crossorigin="anonymous">` : `<div style="height:40px; margin-bottom:2px;"></div>`;
             treArea.innerHTML += `<div style="border-top: 1px solid black; padding-top: 5px;">Treasurer Signature</div>`;
 
             await new Promise(resolve => setTimeout(resolve, 800));
 
             const element = document.getElementById('receipt-template');
             const parentContainer = document.getElementById('receipt-render-area').parentNode;
-            
-            // রেন্ডার করার আগে ভিজিবল করতে হবে যেন ঠিকমতো ছবি তুলতে পারে
             parentContainer.style.visibility = 'visible'; 
 
-            // 🟢 এই অপশনটি আপনার কোড থেকে ডিলিট হয়ে গিয়েছিল, এটিই কম্পিউটারকে কাটতে বাধা দেবে
             const opt = {
                 margin:       [10, 0, 0, 0], 
                 filename:     `${data.id.replace(/\//g, '-')}_Receipt.pdf`,
                 image:        { type: 'jpeg', quality: 1 },
-                html2canvas:  { scale: 2, useCORS: true, windowWidth: 800, scrollX: 0, scrollY: 0, x: 0, y: 0 }, 
+                html2canvas:  { scale: 2, useCORS: true, windowWidth: 800 }, 
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'p' } 
             };
 
@@ -1812,512 +1326,526 @@ function deleteCategory(type, index) {
                 const pdfWorker = html2pdf().set(opt).from(element);
                 const pdfBlob = await pdfWorker.outputPdf('blob');
                 const blobUrl = URL.createObjectURL(pdfBlob);
-                
                 const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = blobUrl;
-                a.download = opt.filename;
-                document.body.appendChild(a);
-                a.click();
-                
-                setTimeout(() => {
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(blobUrl);
-                }, 1500);
-
+                a.style.display = 'none'; a.href = blobUrl; a.download = opt.filename;
+                document.body.appendChild(a); a.click();
+                setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(blobUrl); }, 1500);
             } catch (error) {
-                console.error("Advanced Download Error, falling back...", error);
                 await html2pdf().set(opt).from(element).save();
             } finally {
-                // কাজ শেষ হলে আবার লুকিয়ে দেওয়া হলো
                 parentContainer.style.visibility = 'hidden'; 
             }
         };
 
+        window.viewExpenseImage = function(id) {
+            const data = State.expenseData.find(d => d.id === id);
+            if(data && (data.imageBase64 || data.imageUrl)) {
+                let imageData = data.imageBase64 || data.imageUrl;
+                let fsModal = document.getElementById('fullscreen-img-modal');
+                
+                if(!fsModal) {
+                    fsModal = document.createElement('div');
+                    fsModal.id = 'fullscreen-img-modal';
+                    fsModal.className = 'fixed inset-0 z-[9999] bg-black bg-opacity-95 flex flex-col items-center justify-center hidden p-4';
+                    fsModal.innerHTML = `
+                        <div class="w-full flex justify-between items-center absolute top-0 left-0 p-4 bg-black/50">
+                            <span class="text-white font-bold">বিলের ছবি</span>
+                            <button onclick="document.getElementById('fullscreen-img-modal').classList.add('hidden')" class="bg-red-600 text-white p-2 rounded-full">✕</button>
+                        </div>
+                        <div class="w-full h-full flex items-center justify-center">
+                            <img id="fs-img-view" src="" class="max-w-full max-h-[80vh] border border-gray-700 rounded shadow-2xl bg-white">
+                        </div>
+                        <div class="absolute bottom-10">
+                            <a id="fs-img-download" href="#" download="Bill.jpg" class="bg-blue-600 text-white px-8 py-3 rounded-full font-bold">ডাউনলোড করুন (Save)</a>
+                        </div>`;
+                    document.body.appendChild(fsModal);
+                }
+                document.getElementById('fs-img-view').src = imageData;
+                document.getElementById('fs-img-download').href = imageData;
+                fsModal.classList.remove('hidden');
+            } else { alert("দুঃখিত! এই বিলটির কোনো ছবি খুঁজে পাওয়া যাচ্ছে না।"); }
+        };
 
-        // 2. ROBUST FULL SCREEN IMAGE VIEWER TO FIX BROKEN PREVIEWS
-   window.viewExpenseImage = function(id) {
-    const data = State.expenseData.find(d => d.id === id);
-    // যদি ডাটাতে সরাসরি Base64 ছবি থাকে, তবে সেটাই দেখাবে
-    if(data && (data.imageBase64 || data.imageUrl)) {
-        let imageData = data.imageBase64 || data.imageUrl;
-        let fsModal = document.getElementById('fullscreen-img-modal');
-        
-        if(!fsModal) {
-            fsModal = document.createElement('div');
-            fsModal.id = 'fullscreen-img-modal';
-            fsModal.className = 'fixed inset-0 z-[9999] bg-black bg-opacity-95 flex flex-col items-center justify-center hidden p-4';
-            fsModal.innerHTML = `
-                <div class="w-full flex justify-between items-center absolute top-0 left-0 p-4 bg-black/50">
-                    <span class="text-white font-bold">বিলের ছবি</span>
-                    <button onclick="document.getElementById('fullscreen-img-modal').classList.add('hidden')" class="bg-red-600 text-white p-2 rounded-full">✕</button>
-                </div>
-                <div class="w-full h-full flex items-center justify-center">
-                    <img id="fs-img-view" src="" class="max-w-full max-h-[80vh] border border-gray-700 rounded shadow-2xl bg-white">
-                </div>
-                <div class="absolute bottom-10">
-                    <a id="fs-img-download" href="#" download="Bill.jpg" class="bg-blue-600 text-white px-8 py-3 rounded-full font-bold">ডাউনলোড করুন (Save)</a>
-                </div>`;
-            document.body.appendChild(fsModal);
+        // --- DASHBOARD & REPORTS (ADVANCED FILTERS + BACKEND PDF) ---
+        function updateDashboard() {
+            const tInc = State.incomeData.reduce((sum, d) => sum + d.amount, 0);
+            const tExp = State.expenseData.reduce((sum, d) => sum + d.amount, 0);
+            const bal = tInc - tExp;
+
+            document.getElementById('dash-total-income').innerText = `₹ ${tInc}`;
+            document.getElementById('dash-total-expense').innerText = `₹ ${tExp}`;
+            document.getElementById('dash-balance').innerText = `₹ ${bal}`;
         }
-        
-        document.getElementById('fs-img-view').src = imageData;
-        document.getElementById('fs-img-download').href = imageData;
-        fsModal.classList.remove('hidden');
-    } else {
-        alert("দুঃখিত! এই বিলটির কোনো ছবি খুঁজে পাওয়া যাচ্ছে না।");
-    }
-};
-// ==========================================
-    // 3. DELETE FUNCTIONALITY FOR INCOME AND EXPENSE WITH BACKEND SYNC
-    // ==========================================
-    window.deleteRecord = async function(type, id) {
-        if(!confirm("আপনি কি নিশ্চিত যে এই রেকর্ডটি ডিলিট করতে চান? এই কাজ পরিবর্তনযোগ্য নয়!")) return;
 
-        // Remove from local state
-        if(type === 'income') {
-            State.incomeData = State.incomeData.filter(d => d.id !== id);
-        } else {
-            State.expenseData = State.expenseData.filter(d => d.id !== id);
+        function updateReportCategoryOptions() {
+            const type = document.getElementById('report-type').value;
+            const catSelect = document.getElementById('report-category');
+            let options = `<option value="all">সব খাত (All Categories)</option>`;
+            
+            if(type === 'income' || type === 'all') State.incomeCat.forEach(c => options += `<option value="INC_${c}">আয়: ${c}</option>`);
+            if(type === 'expense' || type === 'all') State.expenseCat.forEach(c => options += `<option value="EXP_${c}">ব্যায়: ${c}</option>`);
+            catSelect.innerHTML = options;
         }
-        
-        // Re-render and update dashboard
-        if (type === 'income') renderIncomeTable();
-        if (type === 'expense') renderExpenseTable();
-        updateDashboard();
 
-        // Backend Web App Call (Google Sheet Sync)
-        if(typeof WEB_APP_URL !== 'undefined' && WEB_APP_URL !== "আপনার_গুগল_শিটের_ওয়েব_অ্যাপ_লিংক_এখানে_দিন") {
-            try {
-                fetch(WEB_APP_URL, {
-                    method: 'POST',   
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({
-                        action: type === 'income' ? "deleteIncome" : "deleteExpense",
-                        id: id
-                    })
-                }).then(() => console.log(type + " deleted from Google Sheet"))
-                  .catch(err => console.error("Error deleting from sheet:", err));
-            } catch(e) {
-                console.error("Network error: ", e);
+        async function generateDetailedReport() {
+            const start = document.getElementById('report-start').value;
+            const end = document.getElementById('report-end').value;
+            const type = document.getElementById('report-type').value;
+            const selectedCat = document.getElementById('report-category').value;
+            
+            // Auto Calculate Financial Year
+            let reportFy = State.fy || document.getElementById('inc-fy').value;
+            if (start) {
+                const sd = new Date(start);
+                let y = sd.getFullYear();
+                if (sd.getMonth() < 3) y--; 
+                reportFy = `${y}-${(y+1).toString().slice(-2)}`;
             }
-        }
 
-        // Show a temporary success message
-        showCustomPopup(`
-            <h3 class="text-lg font-bold text-red-600 mb-4 flex items-center gap-2"><i data-lucide="trash-2"></i> রেকর্ড মুছে ফেলা হয়েছে</h3>
-            <p class="text-gray-700">সফলভাবে ডিলিট করা হয়েছে। (ID: ${id})</p>
-            <div class="mt-6 flex justify-end">
-                <button onclick="closeModal()" class="bg-gray-800 text-white px-4 py-2 rounded">ঠিক আছে</button>
-            </div>
-        `, "Deleted Successfully");
-        setTimeout(() => lucide.createIcons(), 10);
-    };
+            // Get Checkbox States for Columns
+            const incCols = {
+                idDate: document.getElementById('col-inc-id-date').checked,
+                donor: document.getElementById('col-inc-donor').checked,
+                cat: document.getElementById('col-inc-cat').checked,
+                amt: document.getElementById('col-inc-amt').checked,
+                remark: document.getElementById('col-inc-remark').checked
+            };
+            
+            const expCols = {
+                idDate: document.getElementById('col-exp-id-date').checked,
+                reason: document.getElementById('col-exp-reason').checked,
+                cat: document.getElementById('col-exp-cat').checked,
+                amt: document.getElementById('col-exp-amt').checked,
+                remark: document.getElementById('col-exp-remark').checked,
+                bill: document.getElementById('col-exp-bill').checked
+            };
 
-    // Hooking into existing render functions to add the Delete Button dynamically without modifying original functions
-    const originalRenderIncome = renderIncomeTable;
-    renderIncomeTable = function() {
-        originalRenderIncome(); // Call existing function
-        // Inject delete buttons seamlessly
-        const rows = document.querySelectorAll('#income-table-body tr');
-        rows.forEach(row => {
-            const actionTd = row.querySelector('td:last-child');
-            const idText = row.querySelector('td:first-child').innerText.split('\n')[0].trim();
-            if(actionTd && State.currentUser === 'admin' && !actionTd.innerHTML.includes('deleteRecord')) {
-                actionTd.innerHTML += `<button onclick="deleteRecord('income', '${idText}')" class="text-red-600 hover:text-red-900 ml-3" title="Delete Record"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
+            let incData = State.incomeData || [];
+            let expData = State.expenseData || [];
+
+            if (start) { incData = incData.filter(d => d.date >= start); expData = expData.filter(d => d.date >= start); }
+            if (end) { incData = incData.filter(d => d.date <= end); expData = expData.filter(d => d.date <= end); }
+
+            let incCatLabel = 'সব খাত';
+            let expCatLabel = 'সব খাত';
+
+            if (selectedCat !== 'all') {
+                if (selectedCat.startsWith('INC_')) {
+                    incCatLabel = selectedCat.replace('INC_', '');
+                    incData = incData.filter(d => d.category === incCatLabel);
+                    expData = []; 
+                } else if (selectedCat.startsWith('EXP_')) {
+                    expCatLabel = selectedCat.replace('EXP_', '');
+                    expData = expData.filter(d => d.category === expCatLabel);
+                    incData = []; 
+                }
             }
-        });
-        if(window.lucide) lucide.createIcons();
-    };
 
-    const originalRenderExpense = renderExpenseTable;
-    renderExpenseTable = function() {
-        originalRenderExpense(); // Call existing function
-        // Inject delete buttons seamlessly
-        const rows = document.querySelectorAll('#expense-table-body tr');
-        rows.forEach(row => {
-            const actionTd = row.querySelector('td:last-child');
-            if(actionTd && State.currentUser === 'admin' && !actionTd.innerHTML.includes('deleteRecord')) {
-                const editBtn = actionTd.querySelector('button[onclick^="editExpense"]');
-                if(editBtn) {
-                    const match = editBtn.getAttribute('onclick').match(/'([^']+)'/);
-                    if(match) {
-                        const id = match[1];
-                        actionTd.innerHTML += `<button onclick="deleteRecord('expense', '${id}')" class="text-red-600 hover:text-red-900 ml-3" title="Delete Record"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
+            const validSigns = State.signatories.filter(s => s && s.base64 && s.base64.length > 50);
+            const secSign = validSigns.slice().reverse().find(s => s.desig && s.desig.toLowerCase().includes('sec'));
+            const treSign = validSigns.slice().reverse().find(s => s.desig && s.desig.toLowerCase().includes('tre'));
+
+            const secSignHtml = secSign ? `<img src="${secSign.base64}" style="height:35px; object-fit:contain; border-bottom:1px solid #000; margin-bottom:2px;"><br>` : `<div style="height:40px; border-bottom:1px solid #000; margin-bottom:2px;"></div>`;
+            const treSignHtml = treSign ? `<img src="${treSign.base64}" style="height:35px; object-fit:contain; border-bottom:1px solid #000; margin-bottom:2px;"><br>` : `<div style="height:40px; border-bottom:1px solid #000; margin-bottom:2px;"></div>`;
+
+            // Dynamic Table Builder based on selected checkboxes
+            const renderDynamicTable = (data, isIncome) => {
+                if (data.length === 0) return '<p style="text-align:center; padding: 10px; border:1px solid #000;">কোনো ডেটা পাওয়া যায়নি।</p>';
+                
+                let total = 0;
+                let cols = isIncome ? incCols : expCols;
+                
+                let thead = `<thead style="display: table-header-group;"><tr style="background-color:#e5e7eb;">`;
+                if (cols.idDate) thead += `<th style="padding:8px; border:1px solid #000; text-align:left;">${isIncome ? 'Receipt No & Date' : 'Ref No & Date'}</th>`;
+                if (isIncome && cols.donor) thead += `<th style="padding:8px; border:1px solid #000; text-align:left;">দাতার নাম</th>`;
+                if (!isIncome && cols.reason) thead += `<th style="padding:8px; border:1px solid #000; text-align:left;">ব্যয়ের কারণ</th>`;
+                if (cols.cat) thead += `<th style="padding:8px; border:1px solid #000; text-align:left;">${isIncome ? 'আয়ের খাত' : 'প্রোজেক্ট/খাত'}</th>`;
+                if (cols.amt) thead += `<th style="padding:8px; border:1px solid #000; text-align:right;">পরিমান (₹)</th>`;
+                if (cols.remark) thead += `<th style="padding:8px; border:1px solid #000; text-align:left;">Remarks</th>`;
+                if (!isIncome && cols.bill) thead += `<th style="padding:8px; border:1px solid #000; text-align:center;">Bill</th>`;
+                thead += `</tr></thead>`;
+
+                let tbody = `<tbody>` + data.map(d => {
+                    total += d.amount;
+                    let row = `<tr style="page-break-inside: avoid;">`;
+                    if (cols.idDate) row += `<td style="padding:6px; border:1px solid #000; font-size:12px;"><b>${d.id}</b><br>${formatDate(d.date)}</td>`;
+                    if (isIncome && cols.donor) row += `<td style="padding:6px; border:1px solid #000;">${d.donor}</td>`;
+                    if (!isIncome && cols.reason) row += `<td style="padding:6px; border:1px solid #000;">${d.reason}</td>`;
+                    if (cols.cat) row += `<td style="padding:6px; border:1px solid #000;">${d.category}</td>`;
+                    if (cols.amt) row += `<td style="padding:6px; border:1px solid #000; text-align:right; font-weight:bold;">${Number(d.amount).toFixed(2)}</td>`;
+                    if (cols.remark) row += `<td style="padding:6px; border:1px solid #000;">${d.remarks || '-'}</td>`;
+                    if (!isIncome && cols.bill) {
+                        let billLink = '-';
+                        if(d.imageUrl) billLink = `<a href="${d.imageUrl}" style="color:#2563eb; font-weight:bold; text-decoration:none;">View Bill</a>`;
+                        else if(d.imageBase64) billLink = `<a href="${d.imageBase64}" download="Bill_${d.id}.jpg" style="color:#2563eb; font-weight:bold; text-decoration:none;">View Bill</a>`;
+                        row += `<td style="padding:6px; border:1px solid #000; text-align:center;">${billLink}</td>`;
                     }
-                }
+                    row += `</tr>`;
+                    return row;
+                }).join('') + `</tbody>`;
+
+                let activeCols = Object.values(cols).filter(Boolean).length;
+                let beforeAmtCols = (cols.idDate?1:0) + ((isIncome && cols.donor)?1:0) + ((!isIncome && cols.reason)?1:0) + (cols.cat?1:0);
+                let afterAmtCols = (activeCols - beforeAmtCols) - 1; 
+
+                let tfoot = `<tfoot style="display: table-row-group;"><tr style="background-color:#f3f4f6; font-weight:bold; page-break-inside: avoid;">`;
+                if (beforeAmtCols > 0) tfoot += `<td colspan="${beforeAmtCols}" style="padding:8px; border:1px solid #000; text-align:right;">মোট (Total):</td>`;
+                if (cols.amt) tfoot += `<td style="padding:8px; border:1px solid #000; text-align:right;">₹ ${Number(total).toFixed(2)}</td>`;
+                if (afterAmtCols > 0) tfoot += `<td colspan="${afterAmtCols}" style="padding:8px; border:1px solid #000;"></td>`;
+                tfoot += `</tr>`;
+
+                let totalWords = numberToBengaliWords(Math.round(total));
+                tfoot += `<tr style="background-color:#ffffff; font-weight:bold; page-break-inside: avoid;">
+                            <td colspan="${activeCols}" style="padding:10px; border:1px solid #000; text-align:right; color:#1e3a8a; font-size:15px;">
+                                মোট টাকার পরিমাণ (কথায়): ${totalWords} মাত্র
+                            </td>
+                          </tr></tfoot>`;
+
+                return `<table style="width:100%; border-collapse:collapse; font-size:14px; margin-bottom:15px;">${thead}${tbody}${tfoot}</table>`;
+            };
+
+            // Main HTML construction
+            let reportHtml = `
+                <style>
+                    @page {
+                        margin-top: 20px;
+                        margin-bottom: 20px;
+                        @bottom-right {
+                            content: "পৃষ্ঠা নং- " counter(page);
+                            font-family: sans-serif;
+                            font-size: 11px;
+                            color: gray;
+                        }
+                    }
+                </style>
+                <div style="font-family: sans-serif; color: black; padding: 15px; background: white; margin: 0;">
+                    <div style="text-align:center; margin-bottom:20px; padding-bottom:10px; border-bottom:2px solid #333;">
+                        <h2 style="font-size:24px; color:#1e3a8a; margin:0; font-weight: bold;">মডার্ণ স্পোর্টিং ক্লাব</h2>
+                        <p style="font-size:13px; margin:5px 0;">গভঃ রেজিঃ নং-S0035658, ইটিন্ডা রোড, ধলতিথা, বসিরহাট, উত্তর ২৪ পরগণা</p>
+                        <h3 style="font-size:18px; font-weight:bold; margin-top:10px; background: #f3f4f6; display: inline-block; padding: 4px 15px; border: 1px solid #000; border-radius: 4px;">বিস্তারিত আর্থিক রিপোর্ট (Financial Year: ${reportFy})</h3>
+                        <p style="font-size:12px; margin-top: 5px;"><b>সময়কাল:</b> ${start ? formatDate(start) : 'শুরু থেকে'} - ${end ? formatDate(end) : 'আজ পর্যন্ত'}</p>
+                    </div>
+            `;
+
+            if (type === 'all' || type === 'income') {
+                reportHtml += `<h4 style="background-color:#374151; color:white; padding:6px 10px; font-size:15px; margin-bottom:10px; margin-top:10px; border: 1px solid #000; page-break-after: avoid;">আয়ের বিস্তারিত বিবরণ : ${incCatLabel}</h4>`;
+                reportHtml += renderDynamicTable(incData, true);
             }
-        });
-        if(window.lucide) lucide.createIcons();
-    };
-    
-    // ==========================================
-
-// 4. STOP FAKE DATA & ENABLE LOCAL STORAGE PERSISTENCE
-
-// ==========================================
-
-
-// ১. Local Storage থেকে ডাটা লোড করার ফাংশন (বানান ঠিক করা হয়েছে)
-window.mockData = function() {
-    const savedIncome = localStorage.getItem('msc_local_income');
-    const savedExpense = localStorage.getItem('msc_local_expense'); // এখানে 'expese' ভুল বানান ছিল, ঠিক করা হলো
-    const savedSigns = localStorage.getItem('msc_local_signs'); 
-
-    if(savedIncome) State.incomeData = JSON.parse(savedIncome);
-    if(savedExpense) State.expenseData = JSON.parse(savedExpense);
-    if(savedSigns) State.signatories = JSON.parse(savedSigns); 
-};
-
-// ২. Google Sheet থেকে ডাটা ফেচ করার ফাংশন (Console Log সহ)
-async function fetchDataFromBackend() {
-    if(WEB_APP_URL === "আপনার_গুগল_শিটের_ওয়েব_অ্যাপ_লিংক_এখানে_দিন" || !WEB_APP_URL) return;
-    try {
-        const response = await fetch(`${WEB_APP_URL}?action=getData`);
-        const result = await response.json();
-        
-        console.log("Backend Data Received:", result); // ব্রাউজারের Console-এ চেক করার জন্য
-        
-        if(result && result.status === "success") {
-            State.incomeData = result.incomeData || [];
-            State.expenseData = result.expenseData || []; // Google Sheet থেকে expenseData ঠিকভাবে আসছে কিনা লক্ষ্য রাখবেন
             
-            if(result.incomeCat && result.incomeCat.length > 0) State.incomeCat = result.incomeCat;
-            if(result.expenseCat && result.expenseCat.length > 0) State.expenseCat = result.expenseCat;
-            if(result.signatories && result.signatories.length > 0) State.signatories = result.signatories;
-            
-            populateSelects();
-            renderSettings();
-            
-            if(State.currentTab === 'saved-income') renderIncomeTable();
-            if(State.currentTab === 'saved-expense') renderExpenseTable();
-            updateDashboard();
-        }
-    } catch(error) {
-        console.error("Backend থেকে ডাটা আনতে সমস্যা হচ্ছে:", error);
-    }
-}
-
-// Google Sheet থেকে ডাটা ফেচ করার নতুন ফাংশন
-async function fetchDataFromBackend() {
-    if(WEB_APP_URL === "আপনার_গুগল_শিটের_ওয়েব_অ্যাপ_লিংক_এখানে_দিন" || !WEB_APP_URL) return;
-    try {
-        const response = await fetch(`${WEB_APP_URL}?action=getData`);
-        const result = await response.json();
-        
-        if(result && result.status === "success") {
-            State.incomeData = result.incomeData || [];
-            State.expenseData = result.expenseData || [];
-            
-            // শিট থেকে ক্যাটাগরি ও সিগনেচার লোড হচ্ছে
-            if(result.incomeCat && result.incomeCat.length > 0) State.incomeCat = result.incomeCat;
-            if(result.expenseCat && result.expenseCat.length > 0) State.expenseCat = result.expenseCat;
-            if(result.signatories && result.signatories.length > 0) State.signatories = result.signatories;
-            
-            populateSelects();
-            renderSettings();
-            
-            if(State.currentTab === 'saved-income') renderIncomeTable();
-            if(State.currentTab === 'saved-expense') renderExpenseTable();
-            updateDashboard();
-        }
-    } catch(error) {
-        console.error("Backend থেকে ডাটা আনতে সমস্যা হচ্ছে:", error);
-    }
-}
-    
-
-// --- YEARLY.html আপডেট ---
-// syncSettingsToBackend ফাংশনটি নিচের কোড দিয়ে আপডেট করুন
-
-async function syncSettingsToBackend() {
-    if(WEB_APP_URL === "আপনার_গুগল_শিটের_ওয়েব_অ্যাপ_লিংক_এখানে_দিন" || !WEB_APP_URL) return;
-    try {
-        const response = await fetch(WEB_APP_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ 
-                action: "saveSettings", 
-                data: {
-                    incomeCat: State.incomeCat,
-                    expenseCat: State.expenseCat,
-                    signatories: State.signatories
-                }
-            })
-        });
-        
-        const result = await response.json();
-        
-        // যদি সার্ভার ড্রাইভ লিংক জেনারেট করে পাঠায়, তবে স্টেট আপডেট হবে
-        if(result.status === 'success' && result.updatedSigns) {
-            State.signatories = result.updatedSigns;
-            renderSettings(); // ইউআই রি-রেন্ডার
-            console.log("Settings synced with Drive URLs");
-        }
-    } catch(e) {
-        console.error("Settings sync failed:", e);
-    }
-}
-
-function updateCustomFY(dateInputId, fyInputId) {
-    const dateVal = document.getElementById(dateInputId).value;
-    if (!dateVal) return;
-    const selectedDate = new Date(dateVal);
-    let year = selectedDate.getFullYear();
-    let nextYear = year + 1;
-    
-    // জানুয়ারি থেকে মার্চ মাস হলে সেটি আগের ফাইন্যান্সিয়াল ইয়ারের আওতায় পড়বে
-    if (selectedDate.getMonth() < 3) { 
-        year = year - 1;
-        nextYear = year + 1;
-    }
-    
-    const calculatedFy = `${year}-${nextYear.toString().slice(-2)}`;
-    document.getElementById(fyInputId).value = calculatedFy;
-}
-
-// ১. ড্রপডাউনে ক্যাটাগরি লোড করার ফাংশন
-function updateReportCategoryOptions() {
-    const type = document.getElementById('report-type').value;
-    const catSelect = document.getElementById('report-category');
-    let options = `<option value="all">সব খাত (All Categories)</option>`;
-    
-    if(type === 'income' || type === 'all') {
-        State.incomeCat.forEach(c => options += `<option value="INC_${c}">আয়: ${c}</option>`);
-    }
-    if(type === 'expense' || type === 'all') {
-        State.expenseCat.forEach(c => options += `<option value="EXP_${c}">ব্যায়: ${c}</option>`);
-    }
-    catSelect.innerHTML = options;
-}
-
-async function generateDetailedReport() {
-    const start = document.getElementById('report-start').value;
-    const end = document.getElementById('report-end').value;
-    const type = document.getElementById('report-type').value;
-    const selectedCat = document.getElementById('report-category').value;
-    
-    let reportFy = State.fy || document.getElementById('inc-fy').value;
-    if (start) {
-        const sd = new Date(start);
-        let y = sd.getFullYear();
-        if (sd.getMonth() < 3) y--; 
-        reportFy = `${y}-${(y+1).toString().slice(-2)}`;
-    }
-
-    const incCols = {
-        idDate: document.getElementById('col-inc-id-date').checked,
-        donor: document.getElementById('col-inc-donor').checked,
-        cat: document.getElementById('col-inc-cat').checked,
-        amt: document.getElementById('col-inc-amt').checked,
-        remark: document.getElementById('col-inc-remark').checked
-    };
-    
-    const expCols = {
-        idDate: document.getElementById('col-exp-id-date').checked,
-        reason: document.getElementById('col-exp-reason').checked,
-        cat: document.getElementById('col-exp-cat').checked,
-        amt: document.getElementById('col-exp-amt').checked,
-        remark: document.getElementById('col-exp-remark').checked,
-        bill: document.getElementById('col-exp-bill').checked
-    };
-
-    let incData = State.incomeData || [];
-    let expData = State.expenseData || [];
-
-    if (start) { incData = incData.filter(d => d.date >= start); expData = expData.filter(d => d.date >= start); }
-    if (end) { incData = incData.filter(d => d.date <= end); expData = expData.filter(d => d.date <= end); }
-
-    let incCatLabel = 'সব খাত';
-    let expCatLabel = 'সব খাত';
-
-    if (selectedCat !== 'all') {
-        if (selectedCat.startsWith('INC_')) {
-            incCatLabel = selectedCat.replace('INC_', '');
-            incData = incData.filter(d => d.category === incCatLabel);
-            expData = []; 
-        } else if (selectedCat.startsWith('EXP_')) {
-            expCatLabel = selectedCat.replace('EXP_', '');
-            expData = expData.filter(d => d.category === expCatLabel);
-            incData = []; 
-        }
-    }
-
-    const validSigns = State.signatories.filter(s => s.base64 && s.base64.length > 50);
-    const secSign = validSigns.slice().reverse().find(s => s.desig && s.desig.toLowerCase().includes('sec'));
-    const treSign = validSigns.slice().reverse().find(s => s.desig && s.desig.toLowerCase().includes('tre'));
-
-    const secSignHtml = secSign ? `<img src="${secSign.base64}" style="height:35px; object-fit:contain; border-bottom:1px solid #000; margin-bottom:2px;"><br>` : `<div style="height:40px; border-bottom:1px solid #000; margin-bottom:2px;"></div>`;
-    const treSignHtml = treSign ? `<img src="${treSign.base64}" style="height:35px; object-fit:contain; border-bottom:1px solid #000; margin-bottom:2px;"><br>` : `<div style="height:40px; border-bottom:1px solid #000; margin-bottom:2px;"></div>`;
-
-    const renderDynamicTable = (data, isIncome) => {
-        if (data.length === 0) return '<p style="text-align:center; padding: 10px;">কোনো ডেটা পাওয়া যায়নি।</p>';
-        
-        let total = 0;
-        let cols = isIncome ? incCols : expCols;
-        
-        // হেডিং (thead)
-        let thead = `<thead><tr>`;
-        if (cols.idDate) thead += `<th style="text-align:left;">${isIncome ? 'Receipt No & Date' : 'Ref No & Date'}</th>`;
-        if (isIncome && cols.donor) thead += `<th style="text-align:left;">দাতার নাম</th>`;
-        if (!isIncome && cols.reason) thead += `<th style="text-align:left;">ব্যয়ের কারণ</th>`;
-        if (cols.cat) thead += `<th style="text-align:left;">${isIncome ? 'আয়ের খাত' : 'প্রোজেক্ট/খাত'}</th>`;
-        if (cols.amt) thead += `<th style="text-align:right;">পরিমান (₹)</th>`;
-        if (cols.remark) thead += `<th style="text-align:left;">Remarks</th>`;
-        if (!isIncome && cols.bill) thead += `<th style="text-align:center;">Bill</th>`;
-        thead += `</tr></thead>`;
-
-        // ডেটা রো (tbody)
-        let tbody = `<tbody>` + data.map(d => {
-            total += d.amount;
-            let row = `<tr>`;
-            if (cols.idDate) row += `<td style="font-size:12px;"><b>${d.id}</b><br>${formatDate(d.date)}</td>`;
-            if (isIncome && cols.donor) row += `<td>${d.donor}</td>`;
-            if (!isIncome && cols.reason) row += `<td>${d.reason}</td>`;
-            if (cols.cat) row += `<td>${d.category}</td>`;
-            if (cols.amt) row += `<td style="text-align:right; font-weight:bold;">${Number(d.amount).toFixed(2)}</td>`;
-            if (cols.remark) row += `<td>${d.remarks || '-'}</td>`;
-            if (!isIncome && cols.bill) {
-                let billLink = '-';
-                if(d.imageUrl) billLink = `<a href="${d.imageUrl}" style="color:#2563eb; font-weight:bold; text-decoration:none;">View Bill</a>`;
-                row += `<td style="text-align:center;">${billLink}</td>`;
+            if (type === 'all' || type === 'expense') {
+                reportHtml += `<h4 style="background-color:#991b1b; color:white; padding:6px 10px; font-size:15px; margin-bottom:10px; margin-top:20px; border: 1px solid #000; page-break-before: auto; page-break-after: avoid;">ব্যয়ের বিস্তারিত বিবরণ : ${expCatLabel}</h4>`;
+                reportHtml += renderDynamicTable(expData, false);
             }
-            row += `</tr>`;
-            return row;
-        }).join('') + `</tbody>`;
 
-        let activeCols = Object.values(cols).filter(Boolean).length;
-        let beforeAmtCols = (cols.idDate?1:0) + ((isIncome && cols.donor)?1:0) + ((!isIncome && cols.reason)?1:0) + (cols.cat?1:0);
-        let afterAmtCols = (activeCols - beforeAmtCols) - 1; 
-
-        // ফুটার (tfoot)
-        let tfoot = `<tfoot><tr style="background-color:#f3f4f6; font-weight:bold;">`;
-        if (beforeAmtCols > 0) tfoot += `<td colspan="${beforeAmtCols}" style="text-align:right;">মোট (Total):</td>`;
-        if (cols.amt) tfoot += `<td style="text-align:right;">₹ ${Number(total).toFixed(2)}</td>`;
-        if (afterAmtCols > 0) tfoot += `<td colspan="${afterAmtCols}"></td>`;
-        tfoot += `</tr>`;
-
-        let totalWords = numberToBengaliWords(Math.round(total));
-        tfoot += `<tr style="background-color:#ffffff; font-weight:bold;">
-                    <td colspan="${activeCols}" style="padding:10px; text-align:right; color:#1e3a8a; font-size:15px;">
-                        মোট টাকার পরিমাণ (কথায়): ${totalWords} মাত্র
-                    </td>
-                  </tr></tfoot>`;
-
-        return `<table class="report-table">${thead}${tbody}${tfoot}</table>`;
-    };
-
-    let reportHtml = `
-        <style>
-            @page {
-                margin-top: 20px;
-                margin-bottom: 120px; /* প্রতিটি পেজের নিচে ফুটারের জন্য ফিক্সড জায়গা */
-                @bottom-right {
-                    content: "পৃষ্ঠা নং- " counter(page);
-                    font-family: sans-serif;
-                    font-size: 11px;
-                    color: gray;
-                }
-            }
-            body { font-family: sans-serif; color: black; padding: 0 15px; background: white; margin: 0; }
-            
-            /* টেবিল এবং রো ব্রেকিং রুলস */
-            table.report-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 14px; }
-            table.report-table th, table.report-table td { border: 1px solid #000; padding: 6px; }
-            table.report-table thead { display: table-header-group; background-color: #e5e7eb; }
-            table.report-table tr { page-break-inside: avoid !important; break-inside: avoid !important; }
-            table.report-table td { page-break-inside: avoid !important; break-inside: avoid !important; }
-            
-            /* ফিক্সড ফুটার রুলস (যা প্রতি পেজে দেখাবে) */
-            .fixed-footer {
-                position: fixed;
-                bottom: 0px;
-                left: 15px;
-                right: 15px;
-                height: 90px;
-                background-color: white;
-            }
-        </style>
-        
-        <div class="fixed-footer">
-            <table style="width: 100%; border: none; font-size: 13px;">
-                <tr>
-                    <td style="border: none; text-align: left; vertical-align: bottom; width: 50%;">
-                        <div style="text-align: center; font-weight: bold; width: 160px;">
-                            ${secSignHtml}
-                            Secretary Signature
+            // Fixed Footer & Signature
+            reportHtml += `
+                    <div style="page-break-inside: avoid;">
+                        <table style="width: 100%; border: none; font-size: 13px; margin-top: 40px;">
+                            <tr>
+                                <td style="border: none; text-align: left; vertical-align: bottom; width: 50%;">
+                                    <div style="text-align: center; font-weight: bold; width: 160px;">
+                                        ${secSignHtml}
+                                        Secretary Signature
+                                    </div>
+                                </td>
+                                <td style="border: none; text-align: right; vertical-align: bottom; width: 50%;">
+                                    <div style="text-align: center; font-weight: bold; width: 160px; float: right;">
+                                        ${treSignHtml}
+                                        Treasurer Signature
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                        <div style="text-align:center; font-weight:bold; font-size: 16px; margin-top: 20px; padding-top: 10px; border-top: 1px dashed #000;">
+                            -: সমাপ্ত :-
                         </div>
-                    </td>
-                    <td style="border: none; text-align: right; vertical-align: bottom; width: 50%;">
-                        <div style="text-align: center; font-weight: bold; width: 160px; float: right;">
-                            ${treSignHtml}
-                            Treasurer Signature
+                        <div style="text-align:center; font-size:11px; color:gray; margin-top:5px;">
+                            Generated on: ${new Date().toLocaleString()}
                         </div>
-                    </td>
-                </tr>
-            </table>
-            <div style="text-align:center; font-size:11px; color:gray; margin-top:5px; border-top: 1px solid #ccc; padding-top: 5px;">
-                Generated on: ${new Date().toLocaleString()}
-            </div>
-        </div>
+                    </div>
+                </div>
+            `;
 
-        <div class="content">
-            <div style="text-align:center; margin-bottom:20px; padding-bottom:10px; border-bottom:2px solid #333;">
-                <h2 style="font-size:24px; color:#1e3a8a; margin:0; font-weight: bold;">মডার্ণ স্পোর্টিং ক্লাব</h2>
-                <p style="font-size:13px; margin:5px 0;">গভঃ রেজিঃ নং-S0035658, ইটিন্ডা রোড, ধলতিথা, বসিরহাট, উত্তর ২৪ পরগণা</p>
-                <h3 style="font-size:18px; font-weight:bold; margin-top:10px; background: #f3f4f6; display: inline-block; padding: 4px 15px; border: 1px solid #000; border-radius: 4px;">বিস্তারিত আর্থিক রিপোর্ট (Financial Year: ${reportFy})</h3>
-                <p style="font-size:12px; margin-top: 5px;"><b>সময়কাল:</b> ${start ? formatDate(start) : 'শুরু থেকে'} - ${end ? formatDate(end) : 'আজ পর্যন্ত'}</p>
-            </div>
-    `;
+            const btn = document.querySelector('button[onclick="generateDetailedReport()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin inline"></i> জেনারেট হচ্ছে...`;
+            btn.disabled = true;
 
-    if (type === 'all' || type === 'income') {
-        reportHtml += `<h4 style="background-color:#374151; color:white; padding:6px 10px; font-size:15px; margin-bottom:10px; margin-top:10px; border: 1px solid #000;">আয়ের বিস্তারিত বিবরণ : ${incCatLabel}</h4>`;
-        reportHtml += renderDynamicTable(incData, true);
-    }
-    
-    if (type === 'all' || type === 'expense') {
-        reportHtml += `<h4 style="background-color:#991b1b; color:white; padding:6px 10px; font-size:15px; margin-bottom:10px; margin-top:20px; page-break-before: auto; border: 1px solid #000;">ব্যয়ের বিস্তারিত বিবরণ : ${expCatLabel}</h4>`;
-        reportHtml += renderDynamicTable(expData, false);
-    }
-
-    reportHtml += `
-            <div style="text-align:center; font-weight:bold; font-size: 16px; margin-top: 20px; padding-top: 10px; border-top: 1px dashed #000; page-break-inside: avoid;">
-                -: সমাপ্ত :-
-            </div>
-        </div> `;
-
-    const btn = document.querySelector('button[onclick="generateDetailedReport()"]');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin inline"></i> জেনারেট হচ্ছে...`;
-    btn.disabled = true;
-
-    try {
-        const response = await fetch(WEB_APP_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: "generatePDF", data: { htmlContent: reportHtml } })
-        });
-        
-        const result = await response.json();
-        
-        if (result.status === 'success' && result.pdfBase64) {
-            const linkSource = `data:application/pdf;base64,${result.pdfBase64}`;
-            const downloadLink = document.createElement("a");
-            downloadLink.href = linkSource;
-            downloadLink.download = `MSC_Financial_Report_${Date.now()}.pdf`;
-            downloadLink.click();
-        } else {
-            alert("পিডিএফ তৈরি করতে সমস্যা হয়েছে: " + (result.message || "Unknown error"));
+            // 🟢 Text-Based Direct PDF via API or Print Window Fallback
+            try {
+                if(WEB_APP_URL === "আপনার_গুগল_শিটের_ওয়েব_অ্যাপ_লিংক_এখানে_দিন" || !WEB_APP_URL) {
+                    throw new Error("No URL Provided");
+                }
+                const response = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: "generatePDF", data: { htmlContent: reportHtml } })
+                });
+                const result = await response.json();
+                
+                if (result.status === 'success' && result.pdfBase64) {
+                    const linkSource = `data:application/pdf;base64,${result.pdfBase64}`;
+                    const downloadLink = document.createElement("a");
+                    downloadLink.href = linkSource;
+                    downloadLink.download = `MSC_Financial_Report_${Date.now()}.pdf`;
+                    downloadLink.click();
+                } else {
+                    throw new Error(result.message || "Unknown API Error");
+                }
+            } catch (error) {
+                console.error("API Fallback Triggered:", error);
+                alert("সার্ভার (Apps Script) কাজ করছে না। টেক্সট-ভিত্তিক ফাইল ডাউনলোড করার জন্য Print ডায়ালগ ওপেন করা হচ্ছে। সেখান থেকে 'Save as PDF' সিলেক্ট করুন।");
+                
+                // Fallback to Native Text-Based PDF (Print Dialog)
+                const printWin = window.open('', '_blank');
+                printWin.document.write(`<html><head><title>Report</title></head><body>${reportHtml}<script>window.onload=()=>setTimeout(()=>window.print(),500);<\/script></body></html>`);
+                printWin.document.close();
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                if(window.lucide) lucide.createIcons();
+            }
         }
-    } catch (error) {
-        console.error(error);
-        alert("সার্ভার বা ইন্টারনেট সংযোগে সমস্যা হচ্ছে।");
-    } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-        if(window.lucide) lucide.createIcons();
-    }
-}
+
+        // --- 12. SETTINGS (ROBUST, ERROR-PROOF) ---
+        function renderSettings() {
+            try {
+                const incCats = Array.isArray(State.incomeCat) ? State.incomeCat : [];
+                const expCats = Array.isArray(State.expenseCat) ? State.expenseCat : [];
+                const signs = Array.isArray(State.signatories) ? State.signatories : [];
+
+                State.incomeCat = incCats;
+                State.expenseCat = expCats;
+                State.signatories = signs;
+
+                document.getElementById('settings-inc-cat-list').innerHTML = incCats.map((c, i) => `
+                    <li class="flex justify-between items-center bg-gray-50 p-2 rounded border">
+                        ${c} <button onclick="deleteCategory('income', ${i})" class="text-red-500 hover:text-red-700"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </li>
+                `).join('');
+
+                document.getElementById('settings-exp-cat-list').innerHTML = expCats.map((c, i) => `
+                    <li class="flex justify-between items-center bg-gray-50 p-2 rounded border">
+                        ${c} <button onclick="deleteCategory('expense', ${i})" class="text-red-500 hover:text-red-700"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </li>
+                `).join('');
+
+                document.getElementById('signatories-list').innerHTML = signs.map((s, i) => {
+                    if(!s) return '';
+                    return `
+                    <div class="flex justify-between items-center bg-white border p-3 rounded shadow-sm">
+                        <div>
+                            <p class="font-bold text-sm">${s.name || 'Unknown'}</p>
+                            <p class="text-xs text-gray-500">${s.desig || ''}</p>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            ${s.base64 ? `<img src="${s.base64}" class="w-20 h-10 object-contain border bg-gray-50">` : '<span class="text-xs text-red-500">No Sign</span>'}
+                            <button onclick="deleteSignatory(${i})" class="text-red-500 hover:bg-red-50 p-1 rounded"><i data-lucide="trash" class="w-4 h-4"></i></button>
+                        </div>
+                    </div>`;
+                }).join('');
+
+                if(window.lucide) lucide.createIcons();
+            } catch (error) {
+                console.error("Settings rendering failed:", error);
+            }
+        }
+
+        let tempSigBase64 = '';
+        function handleSignatureUpload(e) {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 130;
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    if (width > MAX_WIDTH) {
+                        height = Math.round(height * (MAX_WIDTH / width));
+                        width = MAX_WIDTH;
+                    }
+                    
+                    canvas.width = width; 
+                    canvas.height = height; 
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = "#ffffff"; 
+                    ctx.fillRect(0, 0, width, height);
+                    ctx.drawImage(img, 0, 0, width, height); 
+                    
+                    tempSigBase64 = canvas.toDataURL('image/jpeg', 0.6);
+                    
+                    const preview = document.getElementById('sig-preview-temp');
+                    preview.src = tempSigBase64;
+                    preview.classList.remove('hidden');
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function saveSignatory() {
+            const name = document.getElementById('sig-name').value;
+            const desig = document.getElementById('sig-desig').value;
+            if(!name || !desig) { alert("নাম এবং পদবি আবশ্যক"); return; }
+            
+            State.signatories.push({ id: Date.now(), name, desig, base64: tempSigBase64 });
+            localStorage.setItem('msc_local_signs', JSON.stringify(State.signatories)); 
+            
+            document.getElementById('sig-name').value = '';
+            document.getElementById('sig-desig').value = '';
+            document.getElementById('sig-file').value = '';
+            document.getElementById('sig-preview-temp').classList.add('hidden');
+            tempSigBase64 = '';
+            
+            renderSettings();
+            if(typeof syncSettingsToBackend === 'function') syncSettingsToBackend();
+        }
+
+        function deleteSignatory(index) {
+            if(confirm("স্বাক্ষরটি মুছে ফেলতে চান?")) {
+                State.signatories.splice(index, 1);
+                localStorage.setItem('msc_local_signs', JSON.stringify(State.signatories)); 
+                renderSettings();
+                if(typeof syncSettingsToBackend === 'function') syncSettingsToBackend();
+            }
+        }
+
+        function addCategory(type) {
+            const input = document.getElementById(type === 'income' ? 'new-inc-cat' : 'new-exp-cat');
+            const val = input.value.trim();
+            if(val) {
+                if(type === 'income') State.incomeCat.push(val); else State.expenseCat.push(val);
+                input.value = '';
+                populateSelects();
+                renderSettings();
+                if(typeof syncSettingsToBackend === 'function') syncSettingsToBackend(); 
+            }
+        }
+
+        function deleteCategory(type, index) {
+            if(confirm("Delete this category?")) {
+                if(type === 'income') State.incomeCat.splice(index, 1); else State.expenseCat.splice(index, 1);
+                populateSelects();
+                renderSettings();
+                if(typeof syncSettingsToBackend === 'function') syncSettingsToBackend();
+            }
+        }
+
+        // --- 13. DATA SYNC (BACKEND) ---
+        async function fetchDataFromBackend() {
+            if(WEB_APP_URL === "আপনার_গুগল_শিটের_ওয়েব_অ্যাপ_লিংক_এখানে_দিন" || !WEB_APP_URL) return;
+            try {
+                const response = await fetch(`${WEB_APP_URL}?action=getData`);
+                const result = await response.json();
+                
+                if(result && result.status === "success") {
+                    State.incomeData = result.incomeData || [];
+                    State.expenseData = result.expenseData || [];
+                    
+                    if(result.incomeCat && result.incomeCat.length > 0) State.incomeCat = result.incomeCat;
+                    if(result.expenseCat && result.expenseCat.length > 0) State.expenseCat = result.expenseCat;
+                    if(result.signatories && result.signatories.length > 0) State.signatories = result.signatories;
+                    
+                    populateSelects();
+                    renderSettings();
+                    
+                    if(State.currentTab === 'saved-income') renderIncomeTable();
+                    if(State.currentTab === 'saved-expense') renderExpenseTable();
+                    updateDashboard();
+                }
+            } catch(error) {
+                console.error("Backend থেকে ডাটা আনতে সমস্যা হচ্ছে:", error);
+            }
+        }
+
+        async function syncSettingsToBackend() {
+            if(WEB_APP_URL === "আপনার_গুগল_শিটের_ওয়েব_অ্যাপ_লিংক_এখানে_দিন" || !WEB_APP_URL) return;
+            try {
+                const response = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ 
+                        action: "saveSettings", 
+                        data: {
+                            incomeCat: State.incomeCat,
+                            expenseCat: State.expenseCat,
+                            signatories: State.signatories
+                        }
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if(result.status === 'success' && result.updatedSigns) {
+                    State.signatories = result.updatedSigns;
+                    renderSettings();
+                }
+            } catch(e) { console.error("Settings sync failed:", e); }
+        }
+
+        function updateCustomFY(dateInputId, fyInputId) {
+            const dateVal = document.getElementById(dateInputId).value;
+            if (!dateVal) return;
+            const selectedDate = new Date(dateVal);
+            let year = selectedDate.getFullYear();
+            let nextYear = year + 1;
+            
+            if (selectedDate.getMonth() < 3) { 
+                year = year - 1;
+                nextYear = year + 1;
+            }
+            
+            const calculatedFy = `${year}-${nextYear.toString().slice(-2)}`;
+            document.getElementById(fyInputId).value = calculatedFy;
+        }
+
+        function formatDate(dateStr) {
+            if(!dateStr) return '';
+            const [y, m, d] = dateStr.split('-');
+            return `${d}/${m}/${y}`;
+        }
+
+        function numberToBengaliWords(number) {
+            const words = {
+                0: 'শূন্য', 1: 'এক', 2: 'দুই', 3: 'তিন', 4: 'চার', 5: 'পাঁচ', 6: 'ছয়', 7: 'সাত', 8: 'আট', 9: 'নয়',
+                10: 'দশ', 11: 'এগারো', 12: 'বারো', 13: 'তেরো', 14: 'চোদ্দ', 15: 'পনেরো', 16: 'ষোলো', 17: 'সতেরো', 18: 'আঠারো', 19: 'উনিশ',
+                20: 'কুড়ি', 21: 'একুশ', 22: 'বাইশ', 23: 'তেইশ', 24: 'চব্বিশ', 25: 'পঁচিশ', 26: 'ছাব্বিশ', 27: 'সাতাশ', 28: 'আঠাশ', 29: 'উনত্রিশ',
+                30: 'ত্রিশ', 31: 'একত্রিশ', 32: 'বত্রিশ', 33: 'তেত্রিশ', 34: 'চৌত্রিশ', 35: 'পঁয়ত্রিশ', 36: 'ছত্রিশ', 37: 'সাঁইত্রিশ', 38: 'আটত্রিশ', 39: 'উনচল্লিশ',
+                40: 'চল্লিশ', 41: 'একচল্লিশ', 42: 'বিয়াল্লিশ', 43: 'তেতাল্লিশ', 44: 'চুয়াল্লিশ', 45: 'পঁয়তাল্লিশ', 46: 'ছেচল্লিশ', 47: 'সাতচল্লিশ', 48: 'আটচল্লিশ', 49: 'উনপঞ্চাশ',
+                50: 'পঞ্চাশ', 51: 'একান্ন', 52: 'বায়ান্ন', 53: 'তিপ্পান্ন', 54: 'চুয়ান্ন', 55: 'পঞ্চান্ন', 56: 'ছাপ্পান্ন', 57: 'সাতান্ন', 58: 'আটান্ন', 59: 'উনষাট',
+                60: 'ষাট', 61: 'একষট্টি', 62: 'বাষট্টি', 63: 'তেষট্টি', 64: 'চৌষট্টি', 65: 'পঁয়ষট্টি', 66: 'ছেষট্টি', 67: 'সাতষট্টি', 68: 'আটষট্টি', 69: 'উনসত্তর',
+                70: 'সত্তর', 71: 'একাত্তর', 72: 'বাহাত্তর', 73: 'তিয়াত্তর', 74: 'চুয়াত্তর', 75: 'পঁচাত্তর', 76: 'ছিয়াত্তর', 77: 'সাতাত্তর', 78: 'আটাত্তর', 79: 'উনআশি',
+                80: 'আশি', 81: 'একাশি', 82: 'বিরাশি', 83: 'তিরাশি', 84: 'চুরাশি', 85: 'পঁচাশি', 86: 'ছিয়াশি', 87: 'সাতাশি', 88: 'অষ্টআশি', 89: 'উননব্বই',
+                90: 'নব্বই', 91: 'একানব্বই', 92: 'বিরানব্বই', 93: 'তিরানব্বই', 94: 'চুরানব্বই', 95: 'পঁচানব্বই', 96: 'ছিয়ানব্বই', 97: 'সাতানব্বই', 98: 'আটানব্বই', 99: 'নিরানব্বই'
+            };
+
+            if (number === 0) return words[0];
+
+            let str = '';
+            let n = parseInt(number);
+
+            let crore = Math.floor(n / 10000000);
+            n -= crore * 10000000;
+            let lakh = Math.floor(n / 100000);
+            n -= lakh * 100000;
+            let thousand = Math.floor(n / 1000);
+            n -= thousand * 1000;
+            let hundred = Math.floor(n / 100);
+            n -= hundred * 100;
+            let tens = n;
+
+            if (crore > 0) { str += (crore > 99 ? numberToBengaliWords(crore) : words[crore]) + ' কোটি '; }
+            if (lakh > 0) { str += words[lakh] + ' লক্ষ '; }
+            if (thousand > 0) { str += words[thousand] + ' হাজার '; }
+            if (hundred > 0) { str += words[hundred] + ' শত '; }
+            if (tens > 0) { str += words[tens]; }
+
+            return str.trim();
+        }
     </script>
 </body>
 </html>

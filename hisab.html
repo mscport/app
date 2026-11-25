@@ -174,10 +174,30 @@
                         <input type="hidden" id="billNameBangla">
                         <input type="hidden" id="billNameEnglish">
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 bg-purple-50 p-4 rounded border border-purple-100">
-                        <div><label class="block text-sm mb-1 text-gray-600 font-bold">ধার্য চাঁদা (Amount)</label><input type="number" id="billAmount" class="w-full border p-2 rounded text-lg font-mono focus:border-purple-500" placeholder="0"></div>
-                        <div><label class="block text-sm mb-1 text-gray-600 font-bold">অগ্রিম দান (Advance)</label><input type="number" id="billAdvance" class="w-full border p-2 rounded text-lg font-mono focus:border-purple-500" placeholder="0"></div>
-                        <div><label class="block text-sm mb-1 text-gray-600 font-bold">মন্তব্য (Remarks)</label><input type="text" id="billRemarks" list="remarksSuggestionList" class="w-full border p-2 rounded text-sm sm:text-base focus:border-purple-500" placeholder="মন্তব্য লিখুন বা সিলেক্ট করুন..."></div>
+                    <div class="mb-6 bg-purple-50 p-4 rounded border border-purple-100 space-y-4">
+                        <div class="flex flex-wrap items-center gap-3 sm:gap-6 pb-3 border-b border-purple-200">
+                            <span class="text-xs sm:text-sm font-bold text-purple-900">প্রদানের মাধ্যম:</span>
+                            <label class="flex items-center gap-1.5 cursor-pointer font-bold text-sm text-gray-800 bg-white px-3 py-1.5 rounded-full border border-purple-200 shadow-sm">
+                                <input type="radio" name="billPayMode" value="cash" checked onchange="handleBillPayModeChange()" class="w-4 h-4 accent-purple-700"> ক্যাশ
+                            </label>
+                            <label class="flex items-center gap-1.5 cursor-pointer font-bold text-sm text-gray-800 bg-white px-3 py-1.5 rounded-full border border-purple-200 shadow-sm">
+                                <input type="radio" name="billPayMode" value="samagri" onchange="handleBillPayModeChange()" class="w-4 h-4 accent-orange-600"> সামগ্রী
+                            </label>
+                            <label class="flex items-center gap-1.5 cursor-pointer font-bold text-sm text-gray-800 bg-white px-3 py-1.5 rounded-full border border-purple-200 shadow-sm">
+                                <input type="radio" name="billPayMode" value="online" onchange="handleBillPayModeChange()" class="w-4 h-4 accent-blue-600"> অনলাইন
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                            <div><label class="block text-sm mb-1 text-gray-600 font-bold">ধার্য চাঁদা (Amount)</label><input type="number" id="billAmount" inputmode="numeric" class="w-full border p-2 rounded text-lg font-mono focus:border-purple-500 bg-white" placeholder="0"></div>
+                            <div>
+                                <label id="billAdvanceLabel" class="block text-sm mb-1 text-gray-600 font-bold">অগ্রিম দান (Advance - ক্যাশ)</label>
+                                <input type="number" id="billAdvance" inputmode="numeric" class="w-full border p-2 rounded text-lg font-mono focus:border-purple-500 bg-white" placeholder="0">
+                            </div>
+                            <div>
+                                <label id="billRemarksLabel" class="block text-sm mb-1 text-gray-600 font-bold">মন্তব্য (Remarks)</label>
+                                <input type="text" id="billRemarks" list="remarksSuggestionList" class="w-full border p-2 rounded text-sm sm:text-base focus:border-purple-500 bg-white" placeholder="মন্তব্য লিখুন বা সিলেক্ট করুন...">
+                            </div>
+                        </div>
                     </div>
                     <div class="flex gap-3 sm:gap-4 flex-col sm:flex-row border-t pt-4">
                         <button onclick="saveBill()" class="flex-1 bg-purple-700 hover:bg-purple-800 text-white px-8 py-3 rounded shadow font-bold text-lg">Save Bill</button>
@@ -197,6 +217,15 @@
                                 <label class="block text-xs font-bold text-gray-500 mb-1">ফিল্টার (পাড়া)</label>
                                 <select id="colParaSelect" onchange="renderCollectionTable()" class="w-full border p-2 rounded font-bold text-purple-800"><option value="all">সব পাড়া</option></select>
                             </div>
+                            <div class="w-full md:flex-1">
+                                <label class="block text-xs font-bold text-gray-500 mb-1">মাধ্যম (Mode)</label>
+                                <select id="colModeFilter" onchange="renderCollectionTable()" class="w-full border p-2 rounded font-bold text-gray-700 bg-white">
+                                    <option value="all">সব মাধ্যম</option>
+                                    <option value="cash">ক্যাশ (Cash)</option>
+                                    <option value="samagri">সামগ্রী (Goods)</option>
+                                    <option value="online">অনলাইন (Online)</option>
+                                </select>
+                            </div>
                             <div class="w-full md:flex-[2]">
                                 <label class="block text-xs font-bold text-gray-500 mb-1">খুঁজুন (Search)</label>
                                 <input type="text" id="colSearch" onkeyup="renderCollectionTable()" class="w-full border p-2 rounded" placeholder="নাম বা ক্রমিক দিয়ে খুঁজুন...">
@@ -206,7 +235,7 @@
                     <div class="bg-white rounded shadow overflow-hidden w-full">
                         <div class="overflow-x-auto w-full">
                             <table class="w-full spreadsheet-table text-xs sm:text-sm min-w-[700px]">
-                                <thead><tr><th>Date</th><th>ক্রমিক</th><th>পাড়া</th><th>ইংরেজী নাম</th><th>বাংলা নাম</th><th class="text-right">ধার্য</th><th class="text-right">প্রদেয়</th><th class="text-right">বাকী</th><th class="text-center">Action</th></tr></thead>
+                                <thead><tr><th>Date</th><th>ক্রমিক</th><th>পাড়া</th><th>ইংরেজী নাম</th><th>বাংলা নাম</th><th class="text-right">ধার্য</th><th class="text-right">প্রদেয়</th><th class="text-right">বাকী</th><th>মন্তব্য</th><th class="text-center">Action</th></tr></thead>
                                 <tbody id="collectionTableBody"></tbody>
                             </table>
                         </div>
@@ -431,20 +460,55 @@
                             </div>
                         </div>
 
-   <div id="repSubFilters" class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                            <div id="repParaListBox" class="w-full">
-                                <label class="text-xs font-bold text-gray-500 block mb-1">পাড়া নির্বাচন (একাধিক করা যাবে)</label>
-                                <div id="repParaCheckboxList" class="w-full border p-2 rounded h-32 overflow-y-auto bg-white flex flex-col gap-2 shadow-inner">
+   <div id="repSubFilters" class="space-y-3 sm:space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                                <div id="repParaListBox" class="w-full">
+                                    <div class="flex justify-between items-center mb-1">
+                                        <label class="text-xs font-bold text-gray-500">পাড়া নির্বাচন (একাধিক করা যাবে)</label>
+                                        <div class="flex gap-2 text-[11px] font-bold">
+                                            <button type="button" onclick="toggleAllRepParas(true)" class="text-blue-600 hover:underline">সব</button>
+                                            <button type="button" onclick="toggleAllRepParas(false)" class="text-red-500 hover:underline">রিসেট</button>
+                                        </div>
                                     </div>
+                                    <div id="repParaCheckboxList" class="w-full border p-2 rounded h-32 overflow-y-auto bg-white flex flex-col gap-2 shadow-inner"></div>
+                                </div>
+                                <div class="space-y-3">
+                                    <div id="repRealStatusBox" class="w-full">
+                                        <label class="text-xs font-bold text-gray-500 block mb-1">অবস্থা (Status)</label>
+                                        <select id="repActiveStatus" class="w-full border p-2 rounded bg-white font-bold text-gray-700">
+                                            <option value="all">সব (All)</option>
+                                            <option value="paid">সম্পূর্ণ জমা (Paid)</option>
+                                            <option value="due">সম্পূর্ণ বাকী (Due)</option>
+                                            <option value="partial_due">আংশিক বাকী (Partial Due)</option>
+                                        </select>
+                                    </div>
+                                    <div id="repGroupByBox" class="w-full">
+                                        <label class="text-xs font-bold text-gray-500 block mb-1">রিপোর্ট সাজানোর ধরন (Group By / Format)</label>
+                                        <select id="repGroupBy" class="w-full border p-2 rounded bg-white font-bold text-purple-800">
+                                            <option value="source">পাড়া / উৎস অনুযায়ী (Source Wise)</option>
+                                            <option value="date">তারিখ অনুযায়ী (Date Wise)</option>
+                                            <option value="mode">মাধ্যম অনুযায়ী (Cash / সামগ্রী / Online)</option>
+                                            <option value="summary_only">শুধুমাত্র সামারী (Summary Only)</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
-                            <div id="repRealStatusBox" class="w-full">
-                                <label class="text-xs font-bold text-gray-500 block mb-1">অবস্থা (Status)</label>
-                                <select id="repActiveStatus" class="w-full border p-2 rounded bg-white font-bold text-gray-700">
-                                    <option value="all">সব (All)</option>
-                                    <option value="paid">সম্পূর্ণ জমা (Paid)</option>
-                                    <option value="due">সম্পূর্ণ বাকী (Due)</option>
-                                    <option value="partial_due">আংশিক বাকী (Partial Due)</option>
-                                </select>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 bg-white p-2.5 rounded border border-blue-200">
+                                <div id="repPayModeFilterBox">
+                                    <label class="text-xs font-bold text-gray-500 block mb-1.5">প্রদানের মাধ্যম ফিল্টার (Multiple Select):</label>
+                                    <div class="flex flex-wrap gap-3 text-xs sm:text-sm font-bold text-gray-700">
+                                        <label class="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" value="cash" checked class="rep-mode-checkbox w-4 h-4 accent-green-600"> ক্যাশ (Cash)</label>
+                                        <label class="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" value="samagri" checked class="rep-mode-checkbox w-4 h-4 accent-orange-600"> সামগ্রী (Goods)</label>
+                                        <label class="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" value="online" checked class="rep-mode-checkbox w-4 h-4 accent-blue-600"> অনলাইন (Online)</label>
+                                    </div>
+                                </div>
+                                <div id="repCarTypeFilterBox">
+                                    <label class="text-xs font-bold text-gray-500 block mb-1.5">গাড়ীর ধরন ফিল্টার (Car Type):</label>
+                                    <div class="flex flex-wrap gap-3 text-xs sm:text-sm font-bold text-gray-700">
+                                        <label class="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" value="Coal" checked class="rep-car-checkbox w-4 h-4 accent-blue-600"> কয়লার গাড়ী (Coal)</label>
+                                        <label class="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" value="Local" checked class="rep-car-checkbox w-4 h-4 accent-blue-600"> লোকাল গাড়ী (Local)</label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <button onclick="generateReport()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded font-bold shadow mt-2 text-base">রিপোর্ট দেখুন (Generate)</button>
@@ -471,6 +535,7 @@
                                 <tbody id="repTableBody"></tbody>
                             </table>
                         </div>
+                        <div id="repExpenseDetailSection" class="hidden mt-8 pt-6 border-t-2 border-red-200"></div>
                     </div>
                 </div>
             </div>
@@ -622,14 +687,34 @@
     </div>
     <!-- COLLECTION PAYMENT -->
        <div id="collectionModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white p-5 sm:p-6 rounded-lg shadow-2xl w-full max-w-md">
+        <div class="bg-white p-5 sm:p-6 rounded-lg shadow-2xl w-full max-w-md border-t-4 border-green-600">
             <h3 class="text-lg sm:text-xl font-bold mb-1 text-puja-red">চাঁদা জমা নিন</h3>
             <p id="colModalName" class="text-xs sm:text-sm text-gray-500 font-bold border-b pb-3 mb-3"></p>
             <input type="hidden" id="colModalId">
+            <div class="mb-3 bg-gray-50 p-2.5 rounded border border-gray-200">
+                <label class="block text-xs font-bold text-gray-600 mb-1.5">প্রদানের মাধ্যম:</label>
+                <div class="flex flex-wrap gap-3">
+                    <label class="flex items-center gap-1.5 cursor-pointer font-bold text-sm text-gray-800">
+                        <input type="radio" name="colPayMode" value="cash" checked onchange="handleColPayModeChange()" class="w-4 h-4 accent-green-600"> ক্যাশ
+                    </label>
+                    <label class="flex items-center gap-1.5 cursor-pointer font-bold text-sm text-gray-800">
+                        <input type="radio" name="colPayMode" value="samagri" onchange="handleColPayModeChange()" class="w-4 h-4 accent-orange-600"> সামগ্রী
+                    </label>
+                    <label class="flex items-center gap-1.5 cursor-pointer font-bold text-sm text-gray-800">
+                        <input type="radio" name="colPayMode" value="online" onchange="handleColPayModeChange()" class="w-4 h-4 accent-blue-600"> অনলাইন
+                    </label>
+                </div>
+            </div>
             <div class="mb-3"><label class="block text-sm font-bold mb-1">জমার তারিখ</label><input type="date" id="colModalDate" class="w-full border p-2 rounded text-green-800 font-bold"></div>
-            <div class="mb-3"><label class="block text-sm font-bold mb-1">নতুন জমা</label><input type="number" id="colModalPay" class="w-full border-2 border-green-100 p-2 rounded focus:border-green-500 text-lg"></div>
-            <div class="mb-5"><label class="block text-sm font-bold mb-1">মন্তব্য</label><input type="text" id="colModalRemarks" list="remarksSuggestionList" class="w-full border p-2 rounded" placeholder="মন্তব্য লিখুন বা সিলেক্ট করুন..."></div>
-            <div class="flex justify-end gap-2 sm:gap-3"><button onclick="closeModal('collectionModal')" class="px-4 py-2 border rounded">Cancel</button><button onclick="saveCollectionPayment()" class="px-5 sm:px-6 py-2 bg-green-600 text-white rounded font-bold">Deposit</button></div>
+            <div class="mb-3">
+                <label id="colModalPayLabel" class="block text-sm font-bold mb-1">নতুন জমা (ক্যাশ)</label>
+                <input type="number" id="colModalPay" inputmode="numeric" class="w-full border-2 border-green-100 p-2 rounded focus:border-green-500 text-lg font-mono" placeholder="0">
+            </div>
+            <div class="mb-5">
+                <label id="colModalRemarksLabel" class="block text-sm font-bold mb-1">মন্তব্য</label>
+                <input type="text" id="colModalRemarks" list="remarksSuggestionList" class="w-full border p-2 rounded" placeholder="মন্তব্য লিখুন বা সিলেক্ট করুন...">
+            </div>
+            <div class="flex justify-end gap-2 sm:gap-3"><button onclick="closeModal('collectionModal')" class="px-4 py-2 border rounded font-bold">Cancel</button><button onclick="saveCollectionPayment()" class="px-5 sm:px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-bold shadow">Deposit</button></div>
         </div>
     </div>
     <!-- FULL EDIT MODAL -->
@@ -643,10 +728,11 @@
                 <div><label class="text-xs font-bold">Bangla Name</label><input type="text" id="editFullBn" class="w-full border p-2 rounded"></div>
             </div>
             <div class="mb-3"><label class="text-xs font-bold">Para</label><select id="editFullPara" class="w-full border p-2 rounded"></select></div>
-            <div class="grid grid-cols-2 gap-3 mb-4">
+            <div class="grid grid-cols-2 gap-3 mb-3">
                 <div><label class="text-xs font-bold">ধার্য (Projected)</label><input type="number" id="editFullProj" class="w-full border p-2 rounded"></div>
                 <div><label class="text-xs font-bold">জমা (Paid)</label><input type="number" id="editFullPaid" class="w-full border p-2 rounded"></div>
             </div>
+            <div class="mb-4"><label class="text-xs font-bold">মন্তব্য (Remarks)</label><input type="text" id="editFullRemarks" list="remarksSuggestionList" class="w-full border p-2 rounded" placeholder="মন্তব্য লিখুন..."></div>
             <div class="flex justify-end gap-2"><button onclick="closeModal('fullEditModal')" class="px-4 py-2 border rounded">Cancel</button><button onclick="saveFullEdit()" class="px-5 py-2 bg-blue-600 text-white rounded font-bold">Update All</button></div>
         </div>
     </div>
@@ -2306,6 +2392,99 @@ function parseParaData(p) {
         document.getElementById('billNameSuggestions').classList.add('hidden');
     }
 
+    function getSelectedRadioVal(name, fallback = 'cash') {
+        const el = document.querySelector(`input[name="${name}"]:checked`);
+        return el ? el.value : fallback;
+    }
+
+    function setRadioVal(name, val) {
+        const el = document.querySelector(`input[name="${name}"][value="${val}"]`);
+        if (el) el.checked = true;
+    }
+
+    function parsePaymentModeFromItem(item) {
+        const rem = String((item && item.remarks) || '');
+        const hasSamagri = /\[সামগ্রী:([^\]]*)\]/.exec(rem);
+        const hasOnline = /\[অনলাইন:([^\]]*)\]/.exec(rem);
+        if (hasSamagri) {
+            return { mode: 'samagri', label: 'সামগ্রী', detail: safeTrim(hasSamagri[1]) };
+        }
+        if (hasOnline) {
+            return { mode: 'online', label: 'অনলাইন', detail: safeTrim(hasOnline[1]) };
+        }
+        return { mode: 'cash', label: 'ক্যাশ', detail: '' };
+    }
+
+    function handleBillPayModeChange() {
+        const mode = getSelectedRadioVal('billPayMode', 'cash');
+        const advInput = document.getElementById('billAdvance');
+        const advLabel = document.getElementById('billAdvanceLabel');
+        const remInput = document.getElementById('billRemarks');
+        const remLabel = document.getElementById('billRemarksLabel');
+
+        if (mode === 'samagri') {
+            advInput.type = 'text';
+            advInput.setAttribute('inputmode', 'text');
+            advInput.placeholder = 'যেমন: ৫ কেজি চাল / ২টি লাইট (@ 500)';
+            advLabel.innerText = 'অগ্রিম সামগ্রী (Text / Symbol / Number)';
+            remLabel.innerText = 'মন্তব্য (Remarks)';
+            remInput.placeholder = 'মন্তব্য লিখুন বা সিলেক্ট করুন...';
+            remInput.classList.remove('border-blue-500', 'ring-1', 'ring-blue-400');
+        } else if (mode === 'online') {
+            advInput.type = 'number';
+            advInput.setAttribute('inputmode', 'numeric');
+            advInput.placeholder = '0';
+            advLabel.innerText = 'অগ্রিম দান (Advance - অনলাইন)';
+            remLabel.innerHTML = 'কোন Account / কার অনলাইনে ঢুকেছে <span class="text-red-600">*</span>';
+            remInput.placeholder = 'যেমন: Samiran SBI / PhonePe / GPay...';
+            remInput.classList.add('border-blue-500', 'ring-1', 'ring-blue-400');
+        } else {
+            advInput.type = 'number';
+            advInput.setAttribute('inputmode', 'numeric');
+            if (advInput.value && isNaN(Number(advInput.value))) advInput.value = '';
+            advInput.placeholder = '0';
+            advLabel.innerText = 'অগ্রিম দান (Advance - ক্যাশ)';
+            remLabel.innerText = 'মন্তব্য (Remarks)';
+            remInput.placeholder = 'মন্তব্য লিখুন বা সিলেক্ট করুন...';
+            remInput.classList.remove('border-blue-500', 'ring-1', 'ring-blue-400');
+        }
+    }
+
+    function handleColPayModeChange() {
+        const mode = getSelectedRadioVal('colPayMode', 'cash');
+        const payInput = document.getElementById('colModalPay');
+        const payLabel = document.getElementById('colModalPayLabel');
+        const remInput = document.getElementById('colModalRemarks');
+        const remLabel = document.getElementById('colModalRemarksLabel');
+
+        if (mode === 'samagri') {
+            payInput.type = 'text';
+            payInput.setAttribute('inputmode', 'text');
+            payInput.placeholder = 'যেমন: ৫ কেজি চাল / ফুল / ১টি ফ্যান';
+            payLabel.innerText = 'নতুন সামগ্রী (Text / Symbol / Number)';
+            remLabel.innerText = 'মন্তব্য';
+            remInput.placeholder = 'মন্তব্য লিখুন বা সিলেক্ট করুন...';
+            remInput.classList.remove('border-blue-500', 'ring-1', 'ring-blue-400');
+        } else if (mode === 'online') {
+            payInput.type = 'number';
+            payInput.setAttribute('inputmode', 'numeric');
+            payInput.placeholder = '0';
+            payLabel.innerText = 'নতুন জমা (অনলাইন)';
+            remLabel.innerHTML = 'কোন Account / কার অনলাইনে ঢুকেছে <span class="text-red-600">*</span>';
+            remInput.placeholder = 'যেমন: Samiran SBI / PhonePe / GPay...';
+            remInput.classList.add('border-blue-500', 'ring-1', 'ring-blue-400');
+        } else {
+            payInput.type = 'number';
+            payInput.setAttribute('inputmode', 'numeric');
+            if (payInput.value && isNaN(Number(payInput.value))) payInput.value = '';
+            payInput.placeholder = '0';
+            payLabel.innerText = 'নতুন জমা (ক্যাশ)';
+            remLabel.innerText = 'মন্তব্য';
+            remInput.placeholder = 'মন্তব্য লিখুন বা সিলেক্ট করুন...';
+            remInput.classList.remove('border-blue-500', 'ring-1', 'ring-blue-400');
+        }
+    }
+
    function clearBillForm() {
         document.getElementById('billNameInput').value = ''; 
         document.getElementById('billNameEnglish').value = ''; 
@@ -2321,6 +2500,10 @@ function parseParaData(p) {
         
         document.getElementById('billAdvance').value = ''; 
         document.getElementById('billRemarks').value = '';
+
+        // সবসময় ক্যাশ ডিফল্ট থাকবে
+        setRadioVal('billPayMode', 'cash');
+        handleBillPayModeChange();
     }
 
 function saveBill() {
@@ -2338,6 +2521,16 @@ function saveBill() {
         const para = document.getElementById('billPara').value; 
         if (!para) { showPopup("দয়া করে পাড়া নির্বাচন করুন!"); return; } 
         if (!nameEn && !nameBn) { showPopup("নাম লিখুন!"); return; }
+
+        const payMode = getSelectedRadioVal('billPayMode', 'cash');
+        const rawAdvance = safeTrim(document.getElementById('billAdvance').value);
+        const rawRemarks = safeTrim(document.getElementById('billRemarks').value);
+
+        if (payMode === 'online' && Number(rawAdvance) > 0 && !rawRemarks) {
+            showPopup("অনলাইন পেমেন্টের ক্ষেত্রে Remarks-এ কোন Account বা কার অনলাইনে টাকা ঢুকেছে তা লিখুন!");
+            document.getElementById('billRemarks').focus();
+            return;
+        }
 
         const activePuja = document.getElementById('pujaSelect').value;
 
@@ -2370,7 +2563,27 @@ function saveBill() {
         // --- END DUPLICATE CHECK ---
 
         const projectedAmt = Number(document.getElementById('billAmount').value) || 0;
-        const advanceAmt = Number(document.getElementById('billAdvance').value) || 0;
+        let advanceAmt = 0;
+        let finalRemarks = rawRemarks;
+
+        if (payMode === 'samagri') {
+            if (!rawAdvance && projectedAmt === 0 && !rawRemarks) {
+                showPopup("সামগ্রীর বিবরণ লিখুন!");
+                document.getElementById('billAdvance').focus();
+                return;
+            }
+            const samagriVal = rawAdvance || rawRemarks;
+            const numericGuess = (!isNaN(Number(rawAdvance)) && rawAdvance !== '') ? Number(rawAdvance) : 0;
+            advanceAmt = numericGuess;
+            if (samagriVal) {
+                finalRemarks = `[সামগ্রী: ${samagriVal}]` + (rawRemarks && rawAdvance ? ` - ${rawRemarks}` : '');
+            }
+        } else if (payMode === 'online') {
+            advanceAmt = Number(rawAdvance) || 0;
+            finalRemarks = `[অনলাইন: ${rawRemarks || 'Account'}]`;
+        } else {
+            advanceAmt = Number(rawAdvance) || 0;
+        }
 
         const item = {
             id: Date.now().toString(), 
@@ -2381,8 +2594,8 @@ function saveBill() {
             bengali_name: nameBn, 
             projected: projectedAmt,
             paid: advanceAmt, 
-            due: projectedAmt - advanceAmt, 
-            remarks: document.getElementById('billRemarks').value
+            due: Math.max(0, projectedAmt - advanceAmt), 
+            remarks: finalRemarks
         };
         
         globalData.income.push(item); 
@@ -2450,6 +2663,7 @@ function saveDuplicateBillUpdate() {
         tbody.innerHTML = '';
         
         const filterPara = document.getElementById('colParaSelect').value; 
+        const filterMode = document.getElementById('colModeFilter') ? document.getElementById('colModeFilter').value : 'all';
         const search = document.getElementById('colSearch').value.toLowerCase();
         let serial = 1; 
         const sortedData = [...data].sort((a, b) => {
@@ -2461,7 +2675,9 @@ function saveDuplicateBillUpdate() {
 
         sortedData.forEach(row => {
             if (filterPara !== 'all' && row.para !== filterPara) return;
-            if (search && !row.english_name.toLowerCase().includes(search) && !row.bengali_name.includes(search) && !String(serial).includes(search)) return;
+            const modeInfo = parsePaymentModeFromItem(row);
+            if (filterMode !== 'all' && modeInfo.mode !== filterMode) return;
+            if (search && !row.english_name.toLowerCase().includes(search) && !row.bengali_name.includes(search) && !String(row.remarks || '').toLowerCase().includes(search) && !String(serial).includes(search)) return;
             
             const projectedAmt = Number(row.projected) || 0; 
             const paidAmt = Number(row.paid) || 0; 
@@ -2472,6 +2688,20 @@ function saveDuplicateBillUpdate() {
             else if (dueAmt > 0) { dueHtml = `<span class="text-red-600 font-bold">₹${dueAmt}</span>`; } 
             else { dueHtml = `<span class="text-green-600 font-bold">₹0</span>`; }
 
+            let modeBadge = `<span class="inline-block text-[10px] bg-green-50 text-green-700 border border-green-200 px-1.5 py-0.5 rounded font-bold">ক্যাশ</span>`;
+            if (modeInfo.mode === 'samagri') {
+                modeBadge = `<span class="inline-block text-[10px] bg-orange-50 text-orange-700 border border-orange-200 px-1.5 py-0.5 rounded font-bold">সামগ্রী</span>`;
+            } else if (modeInfo.mode === 'online') {
+                modeBadge = `<span class="inline-block text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded font-bold">অনলাইন</span>`;
+            }
+
+            let paidDisplayHtml = `₹${paidAmt} <div class="mt-0.5">${modeBadge}</div>`;
+            if (modeInfo.mode === 'samagri' && modeInfo.detail) {
+                paidDisplayHtml = `${paidAmt > 0 ? '₹' + paidAmt + '<br>' : ''}<span class="text-xs font-bold text-orange-700">${modeInfo.detail}</span><div class="mt-0.5">${modeBadge}</div>`;
+            } else if (modeInfo.mode === 'online' && modeInfo.detail) {
+                paidDisplayHtml = `₹${paidAmt}<br><span class="text-[10px] text-blue-700 font-semibold">${modeInfo.detail}</span><div class="mt-0.5">${modeBadge}</div>`;
+            }
+
             const tr = document.createElement('tr'); 
             tr.className = "hover:bg-purple-50 cursor-pointer transition";
             tr.onclick = (e) => { if(!e.target.closest('button')) openCollectionModal(row.id); };
@@ -2479,7 +2709,8 @@ function saveDuplicateBillUpdate() {
                <td class="text-gray-500">${formatDisplayDate(row.date)}</td><td class="text-center text-gray-500">${serial++}</td>
                 <td>${row.para}</td><td class="font-bold text-gray-700">${row.english_name}</td><td class="font-siliguri">${row.bengali_name}</td>
                 <td class="text-right font-mono text-gray-500 font-bold">${projectedAmt > 0 ? '₹'+projectedAmt : '-'}</td>
-                <td class="text-right font-mono text-green-600 font-bold">₹${paidAmt}</td><td class="text-right font-mono">${dueHtml}</td>
+                <td class="text-right font-mono text-green-600 font-bold">${paidDisplayHtml}</td><td class="text-right font-mono">${dueHtml}</td>
+                <td class="text-xs text-gray-600 max-w-[180px] break-words">${row.remarks ? row.remarks : '<span class="text-gray-300">-</span>'}</td>
                 <td class="text-center">
                     <div class="flex justify-center items-center gap-1 sm:gap-2">
                         <button onclick="previewReceipt('${row.id}')" class="bg-green-100 text-green-700 p-2 rounded hover:bg-green-600 hover:text-white transition" title="রিসিপ্ট প্রিন্ট"><i data-lucide="receipt" class="w-4 h-4"></i></button>
@@ -2498,31 +2729,73 @@ function saveDuplicateBillUpdate() {
         const item = store.getIncome().find(i => String(i.id) === String(id)); 
         if(!item) return; 
         document.getElementById('colModalId').value = id; 
-        document.getElementById('colModalName').innerText = `${item.english_name} (${item.bengali_name}) | Due: ₹${item.due}`; 
+        document.getElementById('colModalName').innerText = `${item.english_name} (${item.bengali_name}) | Due: ₹${item.due}${item.remarks ? ' | মন্তব্য: ' + item.remarks : ''}`; 
         document.getElementById('colModalPay').value = ''; 
+        document.getElementById('colModalRemarks').value = '';
+        setLocalTodayDate('colModalDate');
+        // সবসময় ক্যাশ ডিফল্ট থাকবে
+        setRadioVal('colPayMode', 'cash');
+        handleColPayModeChange();
         document.getElementById('collectionModal').classList.remove('hidden'); 
     }
 
     function saveCollectionPayment() { 
         const id = document.getElementById('colModalId').value; 
-        const pay = Number(document.getElementById('colModalPay').value); 
-        const rem = document.getElementById('colModalRemarks').value; 
-        const colDate = document.getElementById('collectionDate').value; 
+        const payMode = getSelectedRadioVal('colPayMode', 'cash');
+        const rawPay = safeTrim(document.getElementById('colModalPay').value);
+        const rem = safeTrim(document.getElementById('colModalRemarks').value); 
+        const colDate = document.getElementById('colModalDate').value || document.getElementById('collectionDate').value; 
         
         if(!colDate) { showPopup("তারিখ দিন!"); return; } 
+
+        if (payMode === 'online' && !rem) {
+            showPopup("অনলাইন পেমেন্টের ক্ষেত্রে Remarks-এ কোন Account বা কার অনলাইনে টাকা ঢুকেছে তা লিখুন!");
+            document.getElementById('colModalRemarks').focus();
+            return;
+        }
         
         let data = store.getIncome(); 
         const idx = data.findIndex(i => String(i.id) === String(id)); 
         if(idx !== -1) { 
-            data[idx].paid += pay; 
-            data[idx].due = data[idx].projected - data[idx].paid; 
+            let payNum = 0;
+            let addedRemark = rem;
+
+            if (payMode === 'samagri') {
+                if (!rawPay && !rem) {
+                    showPopup("সামগ্রীর বিবরণ লিখুন!");
+                    document.getElementById('colModalPay').focus();
+                    return;
+                }
+                const samagriText = rawPay || rem;
+                payNum = (!isNaN(Number(rawPay)) && rawPay !== '') ? Number(rawPay) : 0;
+                addedRemark = `[সামগ্রী: ${samagriText}]` + (rem && rawPay ? ` - ${rem}` : '');
+            } else if (payMode === 'online') {
+                payNum = Number(rawPay) || 0;
+                if (payNum <= 0) {
+                    showPopup("দয়া করে টাকার পরিমাণ দিন!");
+                    document.getElementById('colModalPay').focus();
+                    return;
+                }
+                addedRemark = `[অনলাইন: ${rem}]`;
+            } else {
+                payNum = Number(rawPay) || 0;
+                if (payNum <= 0 && !rem) {
+                    showPopup("দয়া করে টাকার পরিমাণ দিন!");
+                    document.getElementById('colModalPay').focus();
+                    return;
+                }
+            }
+
+            data[idx].paid += payNum; 
+            data[idx].due = Math.max(0, data[idx].projected - data[idx].paid); 
             data[idx].date = colDate; 
-            if(rem) data[idx].remarks = rem; 
+            if (addedRemark) {
+                data[idx].remarks = data[idx].remarks ? `${data[idx].remarks} | ${addedRemark}` : addedRemark;
+            }
             
             syncData('update', 'income', data[idx]); 
             
             closeModal('collectionModal'); 
-             
             showPopup("সফলভাবে টাকা জমা হয়েছে!"); 
         } 
     }
@@ -2548,6 +2821,7 @@ function saveDuplicateBillUpdate() {
         document.getElementById('editFullPara').value = item.para; 
         document.getElementById('editFullProj').value = item.projected; 
         document.getElementById('editFullPaid').value = item.paid; 
+        document.getElementById('editFullRemarks').value = item.remarks || '';
         document.getElementById('fullEditModal').classList.remove('hidden'); 
     }
 
@@ -2562,7 +2836,8 @@ function saveDuplicateBillUpdate() {
             data[idx].para = document.getElementById('editFullPara').value; 
             data[idx].projected = Number(document.getElementById('editFullProj').value); 
             data[idx].paid = Number(document.getElementById('editFullPaid').value); 
-            data[idx].due = data[idx].projected - data[idx].paid; 
+            data[idx].due = Math.max(0, data[idx].projected - data[idx].paid); 
+            data[idx].remarks = safeTrim(document.getElementById('editFullRemarks').value);
             
             syncData('update', 'income', data[idx]); 
             
@@ -3692,14 +3967,17 @@ dashExpList.innerHTML += `<li class="flex justify-between items-center bg-white 
 
 
 
+function toggleAllRepParas(checked) {
+        document.querySelectorAll('.para-filter-checkbox').forEach(cb => { cb.checked = checked; });
+    }
+
 function handleReportUI() {
         const type = document.getElementById('repType').value; 
         const source = document.getElementById('repSource').value;
         const sourceBox = document.getElementById('repSourceBox'); 
         const subFilters = document.getElementById('repSubFilters');
-        const paraListContainer = document.getElementById('repParaCheckboxList');
         const paraListBox = document.getElementById('repParaListBox');
-        const statusBox = document.getElementById('repRealStatusBox');
+        const carTypeBox = document.getElementById('repCarTypeFilterBox');
 
         populateReportParaCheckboxes();
 
@@ -3712,36 +3990,86 @@ function handleReportUI() {
             
             if (source === 'para') { 
                 paraListBox.classList.remove('hidden'); 
-                statusBox.className = "w-full"; 
-            } else { 
+                if (carTypeBox) carTypeBox.classList.add('hidden');
+            } else if (source === 'car') { 
                 paraListBox.classList.add('hidden'); 
-                statusBox.className = "w-full md:col-span-2"; 
+                if (carTypeBox) carTypeBox.classList.remove('hidden');
+            } else {
+                paraListBox.classList.remove('hidden'); 
+                if (carTypeBox) carTypeBox.classList.remove('hidden');
             }
         }
     }
 
-    function buildIncomeSourceSummaryList(incList, carList) {
-        const sourceMap = new Map();
-        store.getParas().forEach(p => {
-            const data = parseParaData(p);
-            if (data.name && !sourceMap.has(data.name)) {
-                sourceMap.set(data.name, 0);
+    function computeDonationVariantStats(itemsList) {
+        let cashAmt = 0, cashCount = 0;
+        let onlineAmt = 0, onlineCount = 0;
+        let samagriAmt = 0, samagriCount = 0;
+        let samagriDetails = [];
+
+        (itemsList || []).forEach(item => {
+            const mInfo = parsePaymentModeFromItem(item);
+            const paid = Number(item.paid) || 0;
+            if (mInfo.mode === 'samagri') {
+                samagriCount++;
+                samagriAmt += paid;
+                if (mInfo.detail) samagriDetails.push(mInfo.detail);
+            } else if (mInfo.mode === 'online') {
+                onlineCount++;
+                onlineAmt += paid;
+            } else {
+                cashCount++;
+                cashAmt += paid;
             }
         });
-        incList.forEach(item => {
-            const key = item.para || 'অন্যান্য উৎস';
-            sourceMap.set(key, (sourceMap.get(key) || 0) + (Number(item.paid) || 0));
+        return {
+            cashAmt, cashCount,
+            onlineAmt, onlineCount,
+            samagriAmt, samagriCount, samagriDetails,
+            totalAmt: cashAmt + onlineAmt + samagriAmt
+        };
+    }
+
+    function buildIncomeSourceSummaryList(incList, carList) {
+        const sourceMap = new Map();
+        const ensureEntry = (key) => {
+            if (!sourceMap.has(key)) {
+                sourceMap.set(key, { name: key, cash: 0, online: 0, samagriCount: 0, samagriAmt: 0, total: 0 });
+            }
+            return sourceMap.get(key);
+        };
+
+        store.getParas().forEach(p => {
+            const data = parseParaData(p);
+            if (data.name) ensureEntry(data.name);
         });
-        const coalTotal = carList.filter(c => c.type === 'Coal').reduce((s, c) => s + (Number(c.paid) || 0), 0);
-        const localTotal = carList.filter(c => c.type === 'Local').reduce((s, c) => s + (Number(c.paid) || 0), 0);
-        const otherCarTotal = carList.filter(c => c.type !== 'Coal' && c.type !== 'Local').reduce((s, c) => s + (Number(c.paid) || 0), 0);
-        if (coalTotal > 0 || carList.some(c => c.type === 'Coal')) sourceMap.set("গাড়ির চাঁদা (Coal)", coalTotal);
-        if (localTotal > 0 || carList.some(c => c.type === 'Local')) sourceMap.set("গাড়ির চাঁদা (Local)", localTotal);
-        if (otherCarTotal > 0) sourceMap.set("গাড়ির চাঁদা (অন্যান্য)", otherCarTotal);
+
+        const addEntryItem = (key, item) => {
+            const entry = ensureEntry(key);
+            const mInfo = parsePaymentModeFromItem(item);
+            const paid = Number(item.paid) || 0;
+            if (mInfo.mode === 'samagri') {
+                entry.samagriCount += 1;
+                entry.samagriAmt += paid;
+            } else if (mInfo.mode === 'online') {
+                entry.online += paid;
+            } else {
+                entry.cash += paid;
+            }
+            entry.total += paid;
+        };
+
+        incList.forEach(item => {
+            addEntryItem(item.para || 'অন্যান্য উৎস', item);
+        });
+        carList.forEach(c => {
+            const label = c.type === 'Coal' ? 'গাড়ির চাঁদা (Coal)' : (c.type === 'Local' ? 'গাড়ির চাঁদা (Local)' : 'গাড়ির চাঁদা (অন্যান্য)');
+            addEntryItem(label, c);
+        });
 
         const rows = [];
-        for (const [name, total] of sourceMap.entries()) {
-            if (total > 0) rows.push({ name, total });
+        for (const entry of sourceMap.values()) {
+            if (entry.total > 0 || entry.samagriCount > 0) rows.push(entry);
         }
         return rows;
     }
@@ -3767,37 +4095,224 @@ function handleReportUI() {
             pujaBadge.innerText = `${activePuja}${dateRangeStr}`;
         }
 
+        const expDetailSec = document.getElementById('repExpenseDetailSection');
+        if (expDetailSec) {
+            expDetailSec.innerHTML = '';
+            expDetailSec.classList.add('hidden');
+        }
+        const exportableTableEl = document.getElementById('exportableTable');
+        if (exportableTableEl) exportableTableEl.classList.remove('page-break-after');
+
         tbody.innerHTML = ''; 
         thead.innerHTML = ''; 
         if (prePages) prePages.innerHTML = '';
         let totalAmount = 0; 
         let columns = [];
 
+        const renderIncomeGroupedWithVariants = (targetTbody, groupedDataObj, colsArr, isCarOnlyFlag, groupByMode, repKind) => {
+            let grandTot = 0;
+            const variantOrder = [
+                { key: 'cash', title: 'ক্যাশ (Cash)', bg: 'bg-green-50', text: 'text-green-800', badge: '<span class="text-green-700 font-bold">[ক্যাশ]</span> ' },
+                { key: 'samagri', title: 'সামগ্রী (Goods)', bg: 'bg-orange-50', text: 'text-orange-800', badge: '<span class="text-orange-700 font-bold">[সামগ্রী]</span> ' },
+                { key: 'online', title: 'অনলাইন (Online)', bg: 'bg-blue-50', text: 'text-blue-800', badge: '<span class="text-blue-700 font-bold">[অনলাইন]</span> ' }
+            ];
+
+            for (let groupKey in groupedDataObj) {
+                let groupItems = groupedDataObj[groupKey];
+                let groupTotal = 0;
+                let groupDueTotal = 0;
+
+                const groupHeaderTitle = groupByMode === 'date' ? `তারিখ: ${groupKey}` : (groupByMode === 'mode' ? `মাধ্যম: ${groupKey}` : `উৎস/পাড়া: ${groupKey}`);
+                targetTbody.innerHTML += `<tr><td colspan="${colsArr.length}" class="border p-2 bg-blue-100 text-blue-900 font-bold text-base">${groupHeaderTitle}</td></tr>`;
+
+                const renderItemRow = (r, mInfo, modeBadgeHtml) => {
+                    let paidAmt = Number(r.paid) || 0;
+                    let dueAmt = Number(r.due) || 0;
+                    let projectedAmt = Number(r.projected) || (paidAmt + dueAmt);
+                    let remarks = r.remarks || '-';
+                    let displayDate = formatDisplayDate(r.date);
+
+                    groupTotal += paidAmt;
+                    groupDueTotal += dueAmt;
+                    grandTot += (repKind === 'due_list' ? dueAmt : paidAmt);
+
+                    if (isCarOnlyFlag) {
+                        let dueHtml = projectedAmt === 0 ? '-' : `₹${dueAmt}`;
+                        targetTbody.innerHTML += `<tr class="hover:bg-gray-50">
+                            <td class="border p-2 font-mono font-bold text-blue-800">${r.carNumber}</td>
+                            <td class="border p-2 text-xs text-gray-800 font-semibold">${r.type}</td>
+                            <td class="border p-2 text-right font-bold text-green-600 font-mono">₹${paidAmt}</td>
+                            <td class="border p-2 text-right font-bold text-red-600 font-mono">${dueHtml}</td>
+                            <td class="border p-2 text-xs">${modeBadgeHtml}${remarks}</td>
+                        </tr>`;
+                    } else {
+                        let name = r.t === 'para' ? `${r.english_name} <br><span class="text-xs text-gray-500">${r.bengali_name}</span>` : `<span class="font-mono font-bold text-blue-800">${r.carNumber}</span><br><span class="text-xs text-gray-500">${r.type}</span>`;
+                        if (groupByMode !== 'source' && r.para) {
+                            name += `<div class="text-[10px] text-purple-700 font-bold">${r.para}</div>`;
+                        }
+                        let dueHtml = projectedAmt === 0 ? '-' : `₹${dueAmt}`;
+                        let paidCellText = `₹${paidAmt}`;
+                        if (mInfo.mode === 'samagri' && mInfo.detail) {
+                            paidCellText = `${paidAmt > 0 ? '₹' + paidAmt + ' + ' : ''}${mInfo.detail}`;
+                        }
+                        targetTbody.innerHTML += `<tr class="hover:bg-gray-50">
+                            <td class="border p-2">${name}</td>
+                            <td class="border p-2 text-xs font-semibold text-gray-600">${displayDate}</td>
+                            <td class="border p-2 text-right text-gray-400 font-mono">₹${projectedAmt}</td>
+                            <td class="border p-2 text-right font-bold text-green-600 font-mono">${paidCellText}</td>
+                            <td class="border p-2 text-right font-bold text-red-600 font-mono">${dueHtml}</td>
+                            <td class="border p-2 text-xs">${modeBadgeHtml}${remarks}</td>
+                        </tr>`;
+                    }
+                };
+
+                if (groupByMode === 'mode') {
+                    groupItems.forEach(r => {
+                        const mInfo = parsePaymentModeFromItem(r);
+                        const vMeta = variantOrder.find(v => v.key === mInfo.mode) || variantOrder[0];
+                        renderItemRow(r, mInfo, vMeta.badge);
+                    });
+                } else {
+                    // প্রতিটি আয়ের উৎসের মধ্যে ক্যাশ, সামগ্রী ও অনলাইন ভাগে বিভক্ত থাকবে
+                    variantOrder.forEach(vMeta => {
+                        const vItems = groupItems.filter(r => parsePaymentModeFromItem(r).mode === vMeta.key);
+                        if (vItems.length === 0) return;
+
+                        targetTbody.innerHTML += `<tr><td colspan="${colsArr.length}" class="border px-3 py-1.5 ${vMeta.bg} ${vMeta.text} font-bold text-xs sm:text-sm">↳ ${vMeta.title} (${vItems.length} জন)</td></tr>`;
+                        let vPaidSum = 0;
+                        let vDueSum = 0;
+                        vItems.forEach(r => {
+                            const mInfo = parsePaymentModeFromItem(r);
+                            vPaidSum += Number(r.paid) || 0;
+                            vDueSum += Number(r.due) || 0;
+                            renderItemRow(r, mInfo, vMeta.badge);
+                        });
+                        const vTotalText = repKind === 'due_list'
+                            ? `₹${vDueSum}/- টাকা`
+                            : (vMeta.key === 'samagri' ? `${vItems.length} টি${vPaidSum > 0 ? ' (₹' + vPaidSum + ')' : ''}` : `₹${vPaidSum}/- টাকা`);
+                        targetTbody.innerHTML += `<tr>
+                            <td colspan="${colsArr.length - 2}" class="border px-3 py-1 text-right font-bold text-xs ${vMeta.text} ${vMeta.bg}">${groupKey} — ${vMeta.title} মোট:</td>
+                            <td colspan="2" class="border px-3 py-1 text-left font-bold text-xs ${vMeta.text} ${vMeta.bg}">${vTotalText}</td>
+                        </tr>`;
+                    });
+                }
+
+                const gVar = computeDonationVariantStats(groupItems);
+                let sumLabel = repKind === 'due_list' ? 'মোট বাকী' : 'মোট আয়';
+                let sumValue = repKind === 'due_list' ? groupDueTotal : groupTotal;
+                let variantNote = repKind === 'due_list' ? '' : ` <span class="text-xs font-semibold text-gray-600">(ক্যাশ: ₹${gVar.cashAmt} | সামগ্রী: ${gVar.samagriCount} টি | অনলাইন: ₹${gVar.onlineAmt})</span>`;
+                targetTbody.innerHTML += `<tr>
+                    <td colspan="${colsArr.length - 2}" class="border p-2 text-right font-bold text-gray-800 bg-purple-50">${groupKey} এর ${sumLabel}:</td>
+                    <td colspan="2" class="border p-2 text-left font-bold text-purple-800 bg-purple-50">${sumValue}/- টাকা${variantNote}</td>
+                </tr>`;
+            }
+            return grandTot;
+        };
+
         // ==========================================
-        // ১. All-in-One (Summary) Report
+        // ১. All-in-One (Summary) Report:
+        //    পৃষ্ঠা ১: ব্যালেন্স শীট -> পৃষ্ঠা ২: আয়ের সামারী -> আয়ের বিস্তারিত (ক্যাশ/সামগ্রী/অনলাইন বিভক্ত) -> তারপর ব্যয়ের বিস্তারিত
         // ==========================================
         if (type === 'summary') {
-            document.getElementById('repResultTitle').innerText = "আয়-ব্যায় বিস্তারিত হিসাব (All-in-One)";
-            columns = ["তারিখ", "বিবরণ (Description)", "উৎস/ধরন", "আয় (Income)", "ব্যয় (Expense)"];
+            document.getElementById('repResultTitle').innerText = "আয়ের বিস্তারিত হিসাব (উৎস অনুযায়ী ক্যাশ, সামগ্রী ও অনলাইন বিভক্ত)";
+            columns = ["নাম/গাড়ী", "জমার তারিখ", "ধার্য", "জমা (Paid)", "বাকী (Due)", "মাধ্যম ও Remarks"];
             
             const rawInc = store.getIncome().filter(d => getPuja(d) === activePuja && (!start || d.date >= start) && (!end || d.date <= end));
             const rawCar = store.getCar().filter(d => getPuja(d) === activePuja && (!start || d.date >= start) && (!end || d.date <= end));
             const rawExp = store.getExpense().filter(d => getPuja(d) === activePuja && (!start || d.date >= start) && (!end || d.date <= end));
 
-            let incData = rawInc.map(i => ({date: i.date, desc: i.english_name + ' / ' + i.bengali_name, ref: 'Para: '+i.para, income: Number(i.paid) || 0, expense: 0}));
-            let carData = rawCar.map(c => ({date: c.date, desc: 'গাড়ী: ' + c.carNumber, ref: 'Car: '+c.type, income: Number(c.paid) || 0, expense: 0}));
-            let expData = rawExp.map(e => ({date: e.date, desc: e.reason, ref: 'খরচ', income: 0, expense: Number(e.amount) || 0}));
-            
-            let combined = [...incData, ...carData, ...expData];
-            combined.sort((a,b) => new Date(a.date) - new Date(b.date));
-            
-            let headerRow = '<tr>'; columns.forEach(c => headerRow += `<th class="border p-2 text-left bg-gray-100">${c}</th>`); headerRow += '</tr>'; thead.innerHTML = headerRow;
-            let totalIn = 0, totalEx = 0;
-            
-            combined.forEach(r => {
-                totalIn += r.income; totalEx += r.expense;
-                tbody.innerHTML += `<tr><td class="border p-2">${formatDisplayDate(r.date)}</td><td class="border p-2 font-bold">${r.desc}</td><td class="border p-2 text-xs">${r.ref}</td><td class="border p-2 text-right text-green-600 font-bold">₹${r.income}</td><td class="border p-2 text-right text-red-600 font-bold">₹${r.expense}</td></tr>`;
+            const combinedIncomeItems = [
+                ...rawInc.map(i => ({...i, t: 'para'})),
+                ...rawCar.map(c => ({...c, t: 'car'}))
+            ].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            const groupedIncSummary = {};
+            combinedIncomeItems.forEach(r => {
+                const gKey = r.t === 'car' ? `গাড়ির চাঁদা (${r.type || 'Other'})` : (r.para || 'অন্যান্য উৎস');
+                if (!groupedIncSummary[gKey]) groupedIncSummary[gKey] = [];
+                groupedIncSummary[gKey].push(r);
             });
+
+            let headerRow = '<tr>'; columns.forEach(c => headerRow += `<th class="border p-2 text-left bg-gray-100">${c}</th>`); headerRow += '</tr>'; thead.innerHTML = headerRow;
+
+            const totalIn = renderIncomeGroupedWithVariants(tbody, groupedIncSummary, columns, false, 'source', 'income');
+            if (Object.keys(groupedIncSummary).length > 0) {
+                tbody.innerHTML += `<tr>
+                    <td colspan="${columns.length - 2}" class="border p-3 text-right font-bold text-lg text-green-900 bg-yellow-100">শেষে সর্বোমোট আয় :-</td>
+                    <td colspan="2" class="border p-3 text-left font-bold text-lg text-green-900 bg-yellow-100">₹${totalIn}/- টাকা</td>
+                </tr>`;
+            } else {
+                tbody.innerHTML = `<tr><td colspan="${columns.length}" class="border p-4 text-center text-gray-400">কোনো আয়ের তথ্য নেই</td></tr>`;
+            }
+
+            if (exportableTableEl) exportableTableEl.classList.add('page-break-after');
+
+            // আয়ের রিপোর্ট কমপ্লিট হওয়ার পর ব্যয়ের রিপোর্ট শুরু হবে
+            rawExp.sort((a, b) => new Date(a.date) - new Date(b.date));
+            const groupedExpSummary = {};
+            let totalEx = 0;
+            rawExp.forEach(r => {
+                if (!groupedExpSummary[r.date]) groupedExpSummary[r.date] = [];
+                groupedExpSummary[r.date].push(r);
+                totalEx += Number(r.amount) || 0;
+            });
+
+            let expBodyHtml = '';
+            for (let dateKey in groupedExpSummary) {
+                let dailyItems = groupedExpSummary[dateKey];
+                let dailyTotal = 0;
+                let displayDate = formatDisplayDate(dateKey);
+                expBodyHtml += `<tr><td colspan="4" class="border p-2 bg-red-100 text-red-900 font-bold text-base">তারিখ: ${displayDate}</td></tr>`;
+                dailyItems.forEach(r => {
+                    let amount = Number(r.amount) || 0;
+                    dailyTotal += amount;
+                    let proofHtml = '<span class="text-gray-400 text-xs">নাই</span>';
+                    if (r.images && r.images.length > 0) {
+                        proofHtml = `<a href="${r.images[0]}" download="Bill_${r.date}_${r.reason.substring(0,10)}.jpg" class="text-blue-600 underline font-bold cursor-pointer hover:text-blue-800">খরচের বিল</a>`;
+                    }
+                    expBodyHtml += `<tr class="hover:bg-gray-50">
+                        <td class="border p-2 font-bold text-gray-700">${r.reason}</td>
+                        <td class="border p-2 text-right font-mono font-bold text-red-600">₹${amount}</td>
+                        <td class="border p-2 text-xs text-gray-600">${r.remarks || '-'}</td>
+                        <td class="border p-2 text-center text-xs">${proofHtml}</td>
+                    </tr>`;
+                });
+                expBodyHtml += `<tr>
+                    <td colspan="2" class="border p-2 text-right font-bold text-gray-700">ঐ দিনের মোট খরচ:</td>
+                    <td colspan="2" class="border p-2 text-left font-bold text-red-700 bg-red-50">₹${dailyTotal}/- টাকা</td>
+                </tr>`;
+            }
+            if (Object.keys(groupedExpSummary).length > 0) {
+                expBodyHtml += `<tr>
+                    <td colspan="2" class="border p-3 text-right font-bold text-lg text-red-800 bg-red-100">শেষে সর্বমোট খরচ :-</td>
+                    <td colspan="2" class="border p-3 text-left font-bold text-lg text-red-800 bg-red-100">₹${totalEx}/- টাকা</td>
+                </tr>`;
+            } else {
+                expBodyHtml = `<tr><td colspan="4" class="border p-4 text-center text-gray-400">কোনো খরচের তথ্য নেই</td></tr>`;
+            }
+
+            if (expDetailSec) {
+                expDetailSec.classList.remove('hidden');
+                expDetailSec.innerHTML = `
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-2 gap-2">
+                        <h3 class="font-bold text-base sm:text-lg underline text-red-800">ব্যয়ের বিস্তারিত রিপোর্ট (Expense Report)</h3>
+                        <span class="text-xs sm:text-sm font-bold bg-red-100 text-red-800 px-2 py-1 rounded border border-red-300">মোট ব্যয়: ₹${totalEx}</span>
+                    </div>
+                    <div class="overflow-x-auto w-full">
+                        <table class="w-full spreadsheet-table text-xs sm:text-sm border min-w-[600px]" id="repExpenseDetailTable">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="border p-2 text-left bg-gray-100">খরচের কারণ</th>
+                                    <th class="border p-2 text-left bg-gray-100">খরচের পরিমাণ</th>
+                                    <th class="border p-2 text-left bg-gray-100">Remarks</th>
+                                    <th class="border p-2 text-left bg-gray-100">প্রমাণ</th>
+                                </tr>
+                            </thead>
+                            <tbody>${expBodyHtml}</tbody>
+                        </table>
+                    </div>
+                `;
+            }
 
             const balanceAmt = totalIn - totalEx;
             document.getElementById('repTotalDisplay').innerText = `আয়: ₹${totalIn} | ব্যয়: ₹${totalEx} | স্থিতি: ₹${balanceAmt}`;
@@ -3833,16 +4348,20 @@ function handleReportUI() {
                 expSumRowsHtml = `<tr><td colspan="2" class="border p-2 text-center text-gray-400">কোনো খরচের তথ্য নেই</td></tr>`;
             }
 
+            const allVarStats = computeDonationVariantStats([...rawInc, ...rawCar]);
             let sourceSummaryPageRows = '';
             sourceSummaryList.forEach((s, idx) => {
                 sourceSummaryPageRows += `<tr class="hover:bg-green-50">
-                    <td class="border p-2.5 text-center font-bold text-gray-600 w-16">${idx + 1}</td>
+                    <td class="border p-2.5 text-center font-bold text-gray-600 w-12">${idx + 1}</td>
                     <td class="border p-2.5 font-bold text-gray-800">${s.name}</td>
-                    <td class="border p-2.5 text-right font-mono font-bold text-green-700">₹${s.total}</td>
+                    <td class="border p-2.5 text-right font-mono text-green-700">₹${s.cash}</td>
+                    <td class="border p-2.5 text-right font-mono text-blue-700">₹${s.online}</td>
+                    <td class="border p-2.5 text-center font-mono text-orange-700 font-bold">${s.samagriCount > 0 ? s.samagriCount + ' টি' + (s.samagriAmt > 0 ? ' (₹'+s.samagriAmt+')' : '') : '-'}</td>
+                    <td class="border p-2.5 text-right font-mono font-bold text-green-800">₹${s.total}</td>
                 </tr>`;
             });
             if (!sourceSummaryPageRows) {
-                sourceSummaryPageRows = `<tr><td colspan="3" class="border p-3 text-center text-gray-400">কোনো আয়ের উৎস পাওয়া যায়নি</td></tr>`;
+                sourceSummaryPageRows = `<tr><td colspan="6" class="border p-3 text-center text-gray-400">কোনো আয়ের উৎস পাওয়া যায়নি</td></tr>`;
             }
 
             if (prePages) {
@@ -3894,21 +4413,41 @@ function handleReportUI() {
                         <p class="text-xs font-bold text-gray-600 mt-3 text-right">কথায় (স্থিতি): ${numberToBengaliWords(Math.abs(balanceAmt))} টাকা মাত্র</p>
                     </div>
 
-                    <!-- ২য় পৃষ্ঠা: আয়ের সামারী (চাঁদার উৎসের নাম - মোট চাঁদা) -->
+                    <!-- ২য় পৃষ্ঠা: আয়ের সামারী (চাঁদার উৎসের নাম - ক্যাশ, অনলাইন, সামগ্রী ও মোট চাঁদা) -->
                     <div id="repIncomeSummarySection" class="border-2 border-green-200 rounded-lg p-4 bg-white shadow-sm page-break-after">
-                        <h3 class="text-center font-extrabold text-lg sm:text-xl text-green-900 underline mb-3">আয়ের সামারী (চাঁদার উৎসের নাম - মোট চাঁদা)</h3>
+                        <h3 class="text-center font-extrabold text-lg sm:text-xl text-green-900 underline mb-3">আয়ের সামারী (ক্যাশ, অনলাইন ও সামগ্রী সহ)</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-3">
+                            <div class="bg-green-50 border border-green-200 p-2.5 rounded text-center">
+                                <div class="text-xs font-bold text-green-800">ক্যাশ (Cash)</div>
+                                <div class="text-base font-extrabold text-green-700">₹${allVarStats.cashAmt} <span class="text-xs font-semibold">(${allVarStats.cashCount} জন)</span></div>
+                            </div>
+                            <div class="bg-blue-50 border border-blue-200 p-2.5 rounded text-center">
+                                <div class="text-xs font-bold text-blue-800">অনলাইন (Online)</div>
+                                <div class="text-base font-extrabold text-blue-700">₹${allVarStats.onlineAmt} <span class="text-xs font-semibold">(${allVarStats.onlineCount} জন)</span></div>
+                            </div>
+                            <div class="bg-orange-50 border border-orange-200 p-2.5 rounded text-center">
+                                <div class="text-xs font-bold text-orange-800">সামগ্রী (Goods)</div>
+                                <div class="text-base font-extrabold text-orange-700">${allVarStats.samagriCount} জন ${allVarStats.samagriAmt > 0 ? '(₹' + allVarStats.samagriAmt + ')' : ''}</div>
+                            </div>
+                        </div>
                         <table class="w-full text-xs sm:text-sm border-collapse border">
                             <thead>
                                 <tr class="bg-green-100 text-green-900">
-                                    <th class="border p-2.5 text-center w-16">ক্রমিক</th>
-                                    <th class="border p-2.5 text-left">চাঁদার উৎসের নাম</th>
-                                    <th class="border p-2.5 text-right">মোট চাঁদা</th>
+                                    <th class="border p-2 text-center w-12">ক্রমিক</th>
+                                    <th class="border p-2 text-left">চাঁদার উৎসের নাম</th>
+                                    <th class="border p-2 text-right">ক্যাশ</th>
+                                    <th class="border p-2 text-right">অনলাইন</th>
+                                    <th class="border p-2 text-center">সামগ্রী</th>
+                                    <th class="border p-2 text-right">মোট চাঁদা</th>
                                 </tr>
                             </thead>
                             <tbody>${sourceSummaryPageRows}</tbody>
                             <tfoot>
                                 <tr class="bg-yellow-100 font-extrabold text-red-800 text-sm sm:text-base">
                                     <td colspan="2" class="border p-3 text-right">সর্বমোট আদায়কৃত চাঁদা :-</td>
+                                    <td class="border p-3 text-right text-green-700">₹${allVarStats.cashAmt}</td>
+                                    <td class="border p-3 text-right text-blue-700">₹${allVarStats.onlineAmt}</td>
+                                    <td class="border p-3 text-center text-orange-700">${allVarStats.samagriCount} টি</td>
                                     <td class="border p-3 text-right">₹${totalIn}/- টাকা</td>
                                 </tr>
                             </tfoot>
@@ -3979,24 +4518,33 @@ function handleReportUI() {
             safeCreateIcons();
         } 
         // ==========================================
-        // ৩. Income (আয়ের) Report 
+        // ৩. Income (আয়ের) Report (Enhanced Multiple Modes & Groupings)
         // ==========================================
         else {
             const source = document.getElementById('repSource').value; 
             const statusFilter = document.getElementById('repActiveStatus').value; 
+            const groupBy = document.getElementById('repGroupBy') ? document.getElementById('repGroupBy').value : 'source';
             
-            // Get Multiple Selected Paras
+            // Multiple Selected Paras, Payment Modes & Car Types
             const selectedParas = Array.from(document.querySelectorAll('.para-filter-checkbox:checked')).map(cb => cb.value);
+            const selectedModes = Array.from(document.querySelectorAll('.rep-mode-checkbox:checked')).map(cb => cb.value);
+            const selectedCarTypes = Array.from(document.querySelectorAll('.rep-car-checkbox:checked')).map(cb => cb.value);
 
             let sourceText = source === 'all' ? 'সব উৎস' : (source === 'para' ? 'পাড়া কালেকশন' : 'গাড়ির চাঁদা');
+            if (groupBy === 'date') sourceText += ' (তারিখ অনুযায়ী)';
+            else if (groupBy === 'mode') sourceText += ' (মাধ্যম অনুযায়ী)';
+            else if (groupBy === 'summary_only') sourceText += ' (শুধুমাত্র সামারী)';
+
             document.getElementById('repResultTitle').innerText = type === 'due_list' ? `চাঁদা বাকী রিপোর্ট - ${sourceText}` : `আয়ের রিপোর্ট - ${sourceText}`; 
             
             let isCarOnly = (source === 'car');
 
-            if (isCarOnly) {
+            if (groupBy === 'summary_only') {
+                columns = ["ক্রমিক", "উৎস / গ্রুপ", "দাতা", "ক্যাশ", "অনলাইন", "সামগ্রী", type === 'due_list' ? "মোট বাকী" : "মোট জমা (Paid)"];
+            } else if (isCarOnly) {
                 columns = ["গাড়ীর নং", "ধরন (কয়লা/লোকাল)", "মোট চাঁদা দান", "বাকী", "Remarks"];
             } else {
-                columns = ["নাম/গাড়ী", "জমার তারিখ", "ধার্য", "জমা (Paid)", "বাকী (Due)", "Remarks"]; 
+                columns = ["নাম/গাড়ী", "জমার তারিখ", "ধার্য", "জমা (Paid)", "বাকী (Due)", "মাধ্যম ও Remarks"]; 
             }
             
             let rawData = []; 
@@ -4011,8 +4559,17 @@ function handleReportUI() {
                 if(start && item.date < start) return false; 
                 if(end && item.date > end) return false;
                 
-                if (source === 'para' && selectedParas.length > 0) {
+                if (item.t === 'para' && selectedParas.length > 0) {
                     if (!selectedParas.includes(item.para)) return false;
+                }
+                if (item.t === 'car' && selectedCarTypes.length > 0) {
+                    if (!selectedCarTypes.includes(item.type)) return false;
+                }
+
+                // Payment Mode filter (ক্যাশ / সামগ্রী / অনলাইন)
+                const modeInfo = parsePaymentModeFromItem(item);
+                if (selectedModes.length > 0 && !selectedModes.includes(modeInfo.mode)) {
+                    return false;
                 }
 
                 const projected = Number(item.projected) || 0; 
@@ -4023,13 +4580,13 @@ function handleReportUI() {
                     if (projected <= 0 || due <= 0) return false;
                 }
 
-                // Status Filter Logic (Paid, Due, Partial Due, All)
+                // Status Filter Logic (Paid, Due, Partial Due, All) - সামগ্রী দান Paid হিসেবে গণ্য হবে
                 if (statusFilter === 'paid') {
-                    if (due > 0 || paid === 0) return false; 
+                    if (due > 0 || (paid === 0 && modeInfo.mode !== 'samagri')) return false; 
                 } else if (statusFilter === 'due') {
-                    if (paid > 0) return false; 
+                    if (paid > 0 || modeInfo.mode === 'samagri') return false; 
                 } else if (statusFilter === 'partial_due') {
-                    if (paid === 0 || due <= 0) return false; 
+                    if ((paid === 0 && modeInfo.mode !== 'samagri') || due <= 0) return false; 
                 }
 
                 return true;
@@ -4040,59 +4597,38 @@ function handleReportUI() {
 
             let groupedData = {};
             results.forEach(r => {
-                let groupKey = isCarOnly ? (r.type || 'Unknown Car Type') : (r.para || 'অন্যান্য উৎস');
+                let groupKey = '';
+                if (groupBy === 'date') {
+                    groupKey = formatDisplayDate(r.date) || 'তারিখ নেই';
+                } else if (groupBy === 'mode') {
+                    const mInfo = parsePaymentModeFromItem(r);
+                    groupKey = mInfo.mode === 'samagri' ? 'সামগ্রী (Goods)' : (mInfo.mode === 'online' ? 'অনলাইন (Online)' : 'ক্যাশ (Cash)');
+                } else {
+                    groupKey = r.t === 'car' ? (isCarOnly ? (r.type || 'Unknown Car Type') : `গাড়ির চাঁদা (${r.type || 'Other'})`) : (r.para || 'অন্যান্য উৎস');
+                }
                 if (!groupedData[groupKey]) groupedData[groupKey] = [];
                 groupedData[groupKey].push(r);
             });
 
-            for (let groupKey in groupedData) {
-                let groupItems = groupedData[groupKey];
-                let groupTotal = 0;
-                let groupDueTotal = 0;
-
-                tbody.innerHTML += `<tr><td colspan="${columns.length}" class="border p-2 bg-blue-100 text-blue-900 font-bold text-base">উৎস/পাড়া: ${groupKey}</td></tr>`;
-
-                groupItems.forEach(r => {
-                    let paidAmt = Number(r.paid) || 0; 
-                    let dueAmt = Number(r.due) || 0; 
-                    let projectedAmt = Number(r.projected) || (paidAmt + dueAmt);
-                    let remarks = r.remarks || '-';
-                    let displayDate = formatDisplayDate(r.date);
-                    
-                    groupTotal += paidAmt;
-                    groupDueTotal += dueAmt;
-                    totalAmount += (type === 'due_list' ? dueAmt : paidAmt);
-
-                    if (isCarOnly) {
-                        let dueHtml = projectedAmt === 0 ? '-' : `₹${dueAmt}`; 
-                        tbody.innerHTML += `<tr class="hover:bg-gray-50">
-                            <td class="border p-2 font-mono font-bold text-blue-800">${r.carNumber}</td>
-                            <td class="border p-2 text-xs text-gray-800 font-semibold">${r.type}</td>
-                            <td class="border p-2 text-right font-bold text-green-600 font-mono">₹${paidAmt}</td>
-                            <td class="border p-2 text-right font-bold text-red-600 font-mono">${dueHtml}</td>
-                            <td class="border p-2 text-xs">${remarks}</td>
-                        </tr>`;
-                    } else {
-                        let name = r.t === 'para' ? `${r.english_name} <br><span class="text-xs text-gray-500">${r.bengali_name}</span>` : `<span class="font-mono font-bold text-blue-800">${r.carNumber}</span><br><span class="text-xs text-gray-500">${r.type}</span>`;
-                        let dueHtml = projectedAmt === 0 ? '-' : `₹${dueAmt}`; 
-
-                        tbody.innerHTML += `<tr class="hover:bg-gray-50">
-                            <td class="border p-2">${name}</td>
-                            <td class="border p-2 text-xs font-semibold text-gray-600">${displayDate}</td>
-                            <td class="border p-2 text-right text-gray-400 font-mono">₹${projectedAmt}</td>
-                            <td class="border p-2 text-right font-bold text-green-600 font-mono">₹${paidAmt}</td>
-                            <td class="border p-2 text-right font-bold text-red-600 font-mono">${dueHtml}</td>
-                            <td class="border p-2 text-xs">${remarks}</td>
-                        </tr>`;
-                    }
-                });
-
-                let sumLabel = type === 'due_list' ? 'মোট বাকী' : 'মোট আয়';
-                let sumValue = type === 'due_list' ? groupDueTotal : groupTotal;
-                tbody.innerHTML += `<tr>
-                    <td colspan="${columns.length - 2}" class="border p-2 text-right font-bold text-gray-700">${groupKey} এর ${sumLabel}:</td>
-                    <td colspan="2" class="border p-2 text-left font-bold text-purple-700 bg-purple-50">${sumValue}/- টাকা</td>
-                </tr>`;
+            if (groupBy === 'summary_only') {
+                let sIdx = 1;
+                for (let groupKey in groupedData) {
+                    const gItems = groupedData[groupKey];
+                    const gVar = computeDonationVariantStats(gItems);
+                    const gVal = gItems.reduce((s, r) => s + (Number(type === 'due_list' ? r.due : r.paid) || 0), 0);
+                    totalAmount += gVal;
+                    tbody.innerHTML += `<tr class="hover:bg-gray-50">
+                        <td class="border p-2.5 text-center font-bold text-gray-600">${sIdx++}</td>
+                        <td class="border p-2.5 font-bold text-gray-800">${groupKey}</td>
+                        <td class="border p-2.5 text-center font-mono font-bold">${gItems.length}</td>
+                        <td class="border p-2.5 text-right font-mono text-green-700">₹${gVar.cashAmt}</td>
+                        <td class="border p-2.5 text-right font-mono text-blue-700">₹${gVar.onlineAmt}</td>
+                        <td class="border p-2.5 text-center font-mono text-orange-700 font-bold">${gVar.samagriCount > 0 ? gVar.samagriCount + ' টি' + (gVar.samagriAmt > 0 ? ' (₹'+gVar.samagriAmt+')' : '') : '-'}</td>
+                        <td class="border p-2.5 text-right font-mono font-bold text-green-800">₹${gVal}</td>
+                    </tr>`;
+                }
+            } else {
+                totalAmount += renderIncomeGroupedWithVariants(tbody, groupedData, columns, isCarOnly, groupBy, type);
             }
 
             if (Object.keys(groupedData).length > 0) {
@@ -4102,28 +4638,51 @@ function handleReportUI() {
                     <td colspan="2" class="border p-3 text-left font-bold text-lg text-red-800 bg-yellow-100">${totalAmount}/- টাকা</td>
                 </tr>`;
 
-                // আয়ের ক্ষেত্রে সামারী টেবিল: চাঁদার উৎসের নাম - মোট চাঁদা
+                // আয়ের ক্ষেত্রে সামারী টেবিল: ক্যাশ, অনলাইন ও সামগ্রী সহ
+                const repVarStats = computeDonationVariantStats(results);
                 if (prePages) {
                     let summaryRowsHtml = '';
                     let sIdx = 1;
                     for (let groupKey in groupedData) {
-                        const grpSum = groupedData[groupKey].reduce((acc, item) => acc + (Number(type === 'due_list' ? item.due : item.paid) || 0), 0);
+                        const grpItems = groupedData[groupKey];
+                        const grpVar = computeDonationVariantStats(grpItems);
+                        const grpSum = grpItems.reduce((acc, item) => acc + (Number(type === 'due_list' ? item.due : item.paid) || 0), 0);
                         summaryRowsHtml += `<tr class="hover:bg-green-50">
-                            <td class="border p-2 text-center font-bold text-gray-600 w-16">${sIdx++}</td>
+                            <td class="border p-2 text-center font-bold text-gray-600 w-12">${sIdx++}</td>
                             <td class="border p-2 font-bold text-gray-800">${groupKey}</td>
-                            <td class="border p-2 text-right font-mono font-bold text-green-700">₹${grpSum}</td>
+                            <td class="border p-2 text-right font-mono text-green-700">₹${grpVar.cashAmt}</td>
+                            <td class="border p-2 text-right font-mono text-blue-700">₹${grpVar.onlineAmt}</td>
+                            <td class="border p-2 text-center font-mono text-orange-700 font-bold">${grpVar.samagriCount > 0 ? grpVar.samagriCount + ' টি' + (grpVar.samagriAmt > 0 ? ' (₹'+grpVar.samagriAmt+')' : '') : '-'}</td>
+                            <td class="border p-2 text-right font-mono font-bold text-green-800">₹${grpSum}</td>
                         </tr>`;
                     }
-                    const sumHeading = type === 'due_list' ? 'বাকী চাঁদার সামারী (চাঁদার উৎসের নাম - মোট বাকী)' : 'আয়ের সামারী (চাঁদার উৎসের নাম - মোট চাঁদা)';
+                    const sumHeading = type === 'due_list' ? 'বাকী চাঁদার সামারী (চাঁদার উৎসের নাম - মোট বাকী)' : 'আয়ের সামারী (ক্যাশ, অনলাইন ও সামগ্রী সহ)';
                     const sumColTitle = type === 'due_list' ? 'মোট বাকী' : 'মোট চাঁদা';
                     prePages.innerHTML = `
                         <div id="repIncomeSummarySection" class="border-2 border-green-200 rounded-lg p-4 bg-white shadow-sm page-break-after">
                             <h3 class="text-center font-extrabold text-base sm:text-lg text-green-900 underline mb-3">${sumHeading}</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-3">
+                                <div class="bg-green-50 border border-green-200 p-2 rounded text-center">
+                                    <div class="text-xs font-bold text-green-800">ক্যাশ (Cash)</div>
+                                    <div class="text-sm sm:text-base font-extrabold text-green-700">₹${repVarStats.cashAmt} <span class="text-xs font-semibold">(${repVarStats.cashCount} জন)</span></div>
+                                </div>
+                                <div class="bg-blue-50 border border-blue-200 p-2 rounded text-center">
+                                    <div class="text-xs font-bold text-blue-800">অনলাইন (Online)</div>
+                                    <div class="text-sm sm:text-base font-extrabold text-blue-700">₹${repVarStats.onlineAmt} <span class="text-xs font-semibold">(${repVarStats.onlineCount} জন)</span></div>
+                                </div>
+                                <div class="bg-orange-50 border border-orange-200 p-2 rounded text-center">
+                                    <div class="text-xs font-bold text-orange-800">সামগ্রী (Goods)</div>
+                                    <div class="text-sm sm:text-base font-extrabold text-orange-700">${repVarStats.samagriCount} জন ${repVarStats.samagriAmt > 0 ? '(₹' + repVarStats.samagriAmt + ')' : ''}</div>
+                                </div>
+                            </div>
                             <table class="w-full text-xs sm:text-sm border-collapse border">
                                 <thead>
                                     <tr class="bg-green-100 text-green-900">
-                                        <th class="border p-2 text-center w-16">ক্রমিক</th>
+                                        <th class="border p-2 text-center w-12">ক্রমিক</th>
                                         <th class="border p-2 text-left">চাঁদার উৎসের নাম</th>
+                                        <th class="border p-2 text-right">ক্যাশ</th>
+                                        <th class="border p-2 text-right">অনলাইন</th>
+                                        <th class="border p-2 text-center">সামগ্রী</th>
                                         <th class="border p-2 text-right">${sumColTitle}</th>
                                     </tr>
                                 </thead>
@@ -4131,6 +4690,9 @@ function handleReportUI() {
                                 <tfoot>
                                     <tr class="bg-yellow-100 font-extrabold text-red-800">
                                         <td colspan="2" class="border p-2.5 text-right">${grandSumLabel}</td>
+                                        <td class="border p-2.5 text-right text-green-700">₹${repVarStats.cashAmt}</td>
+                                        <td class="border p-2.5 text-right text-blue-700">₹${repVarStats.onlineAmt}</td>
+                                        <td class="border p-2.5 text-center text-orange-700">${repVarStats.samagriCount} টি</td>
                                         <td class="border p-2.5 text-right">₹${totalAmount}/- টাকা</td>
                                     </tr>
                                 </tfoot>
@@ -4141,7 +4703,12 @@ function handleReportUI() {
             }
         }
         
-        if(type !== 'summary') document.getElementById('repTotalDisplay').innerText = '₹' + totalAmount;
+        if(type === 'expense') {
+            document.getElementById('repTotalDisplay').innerText = '₹' + totalAmount;
+        } else if(type !== 'summary') {
+            const tv = computeDonationVariantStats(results);
+            document.getElementById('repTotalDisplay').innerText = `₹${totalAmount} (ক্যাশ: ₹${tv.cashAmt} | অনলাইন: ₹${tv.onlineAmt} | সামগ্রী: ${tv.samagriCount} টি)`;
+        }
     }
   
      // ==========================================
@@ -4435,7 +5002,12 @@ function handleReportUI() {
 
         try {
             // টেবিল থেকে এক্সেল ওয়ার্কবুক তৈরি
-            const wb = XLSX.utils.table_to_book(table, {sheet: "Report"});
+            const wb = XLSX.utils.table_to_book(table, {sheet: "Income_Report"});
+            const expDetailTbl = document.getElementById('repExpenseDetailTable');
+            if (expDetailTbl) {
+                const expWs = XLSX.utils.table_to_sheet(expDetailTbl);
+                XLSX.utils.book_append_sheet(wb, expWs, "Expense_Report");
+            }
             const title = document.getElementById('repResultTitle').innerText.replace(/\s+/g, '_');
             const dateStr = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
             
@@ -4687,10 +5259,21 @@ function handleReportUI() {
                         }
                     }
 
-                    // PAGE 3+: DETAILED ALL-IN-ONE TABLE
-                    content.push(...makeClubHeaderBlock(rawTitle));
+                    // PAGE 3+: DETAILED INCOME REPORT (উৎস অনুযায়ী ক্যাশ, সামগ্রী ও অনলাইন বিভক্ত)
+                    content.push(...makeClubHeaderBlock('৩য় পৃষ্ঠা: ' + rawTitle));
                     const mainPdfTable = domTableToPdfMakeBody(table);
                     if (mainPdfTable) content.push(mainPdfTable);
+
+                    // NEXT PAGE+: EXPENSE REPORT (আয়ের রিপোর্ট শেষ হলে ব্যয়ের রিপোর্ট শুরু)
+                    const expDetailTableEl = document.getElementById('repExpenseDetailTable');
+                    if (expDetailTableEl) {
+                        const expPdfTable = domTableToPdfMakeBody(expDetailTableEl);
+                        if (expPdfTable) {
+                            content.push({ text: '', pageBreak: 'after' });
+                            content.push(...makeClubHeaderBlock('ব্যয়ের বিস্তারিত রিপোর্ট (Expense Report)'));
+                            content.push(expPdfTable);
+                        }
+                    }
                 } else {
                     // For Income or Due List: Page 1 is Income Source Summary (চাঁদার উৎসের নাম - মোট চাঁদা), Page 2+ is Detailed Breakdown
                     if (incSumSec) {
@@ -4816,6 +5399,14 @@ function handleReportUI() {
                     <h3 style="font-size:17px; font-weight:700; text-decoration:underline; margin-bottom:6px;">${title}</h3>
                     <div class="total-box">Total: ${totalDisplay}</div>
                     ${tableContent}
+                    ${(document.getElementById('repExpenseDetailSection') && !document.getElementById('repExpenseDetailSection').classList.contains('hidden')) ? `
+                        <div class="club-header" style="margin-top:20px;">
+                            <h1>মডার্ণ স্পোর্টিং ক্লাব</h1>
+                            <p>ঠিকানা: ধলতিথা, বসিরহাট, উত্তর ২৪ পরগনা, ৭৪৩৪১২</p>
+                            <div class="puja-badge">${activePuja} — ব্যয়ের বিস্তারিত রিপোর্ট</div>
+                        </div>
+                        ${document.getElementById('repExpenseDetailSection').innerHTML}
+                    ` : ''}
                 </body>
             </html>
         `);

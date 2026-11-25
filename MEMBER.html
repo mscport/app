@@ -400,7 +400,7 @@
     </div>
 
     <!-- ইমেজ ও সিগনেচার ক্রপার মডাল -->
-    <div id="cropperModal" class="fixed inset-0 z-[110] bg-gray-900 bg-opacity-90 flex items-center justify-center hidden">
+    <div id="cropperModal" class="fixed inset-0 z-[170] bg-gray-900 bg-opacity-90 flex items-center justify-center hidden">
         <div class="bg-white p-4 rounded-xl shadow-2xl w-full max-w-lg transform transition-all">
             <div class="flex justify-between items-center mb-4">
                 <h3 id="cropperModalTitle" class="text-lg font-bold text-gray-900">Crop Photo</h3>
@@ -527,19 +527,219 @@
         <img id="fullImagePreview" src="" class="max-w-[95%] max-h-[95vh] object-contain rounded shadow-2xl border border-gray-700">
     </div>
 
+    <!-- ইন-পেজ কনফার্মেশন মডাল -->
+    <div id="confirmActionModal" class="fixed inset-0 z-[160] bg-black bg-opacity-70 flex items-center justify-center hidden backdrop-blur-sm p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 text-center border-t-4 border-red-600">
+            <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-3 text-xl">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">Confirm Action</h3>
+            <p id="confirmActionMessage" class="text-sm text-gray-600 mb-5">Are you sure?</p>
+            <div class="flex justify-center gap-3">
+                <button type="button" onclick="closeConfirmModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md text-sm font-semibold">Cancel</button>
+                <button type="button" id="confirmActionOkBtn" class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm font-semibold shadow">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DOCUMENT READY STUDIO MODAL (Integrated from apydocument.github.io/php without intro title, without KB/File Name, and with SAVE button) -->
+    <div id="docReadyModal" class="fixed inset-0 z-[140] bg-gray-900 bg-opacity-95 flex flex-col hidden select-none">
+        <!-- Top Toolbar -->
+        <div class="bg-white border-b border-gray-200 px-2 sm:px-4 py-2 flex flex-wrap items-center justify-between gap-1.5 shadow-sm z-20">
+            <div class="flex flex-wrap items-center gap-1 sm:gap-1.5">
+                <button type="button" id="drBtnUndo" onclick="docReadyUndo()" class="px-2.5 py-1.5 rounded text-xs font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 disabled:opacity-40 flex items-center gap-1" title="Undo">
+                    <i class="fas fa-undo"></i> <span>UNDO</span>
+                </button>
+                <button type="button" id="drBtnRedo" onclick="docReadyRedo()" class="px-2.5 py-1.5 rounded text-xs font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 disabled:opacity-40 flex items-center gap-1" title="Redo">
+                    <i class="fas fa-redo"></i> <span>REDO</span>
+                </button>
+                <button type="button" onclick="docReadyClearPage()" class="px-2.5 py-1.5 rounded text-xs font-bold bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 flex items-center gap-1" title="Clear Page">
+                    <i class="fas fa-trash-alt"></i> <span>CLEAR PAGE</span>
+                </button>
+                <button type="button" onclick="document.getElementById('drAddImgInput').click()" class="px-2.5 py-1.5 rounded text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex items-center gap-1" title="Add Image">
+                    <i class="fas fa-upload"></i> <span>ADD IMG</span>
+                </button>
+                <input type="file" id="drAddImgInput" accept="image/*" multiple class="hidden" onchange="docReadyHandleAddImages(event)">
+                
+                <button type="button" onclick="docReadyOpenCamera()" class="px-2.5 py-1.5 rounded text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white shadow-sm flex items-center gap-1" title="Capture Photo">
+                    <i class="fas fa-camera"></i> <span>CAPTURE</span>
+                </button>
+                <input type="file" id="drNativeCameraInput" accept="image/*" capture="environment" class="hidden" onchange="docReadyHandleAddImages(event)">
+
+                <button type="button" onclick="document.getElementById('drAddPdfInput').click()" class="px-2.5 py-1.5 rounded text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm flex items-center gap-1" title="Add PDF">
+                    <i class="fas fa-file-pdf"></i> <span>ADD PDF</span>
+                </button>
+                <input type="file" id="drAddPdfInput" accept="application/pdf" class="hidden" onchange="docReadyHandleAddPdf(event)">
+
+                <button type="button" onclick="docReadyToggleAdjust()" class="px-2.5 py-1.5 rounded text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-sm flex items-center gap-1" title="Adjust Brightness / Contrast / Filter">
+                    <i class="fas fa-sliders-h"></i> <span>ADJUST</span>
+                </button>
+                <button type="button" onclick="docReadyOpenDotCrop()" class="px-2.5 py-1.5 rounded text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-sm flex items-center gap-1" title="4-Point Perspective Dot Crop">
+                    <i class="fas fa-vector-square"></i> <span>DOT CROP</span>
+                </button>
+                <button type="button" onclick="docReadyOpenSqCrop()" class="px-2.5 py-1.5 rounded text-xs font-bold bg-gray-800 hover:bg-black text-white shadow-sm flex items-center gap-1" title="Square / Free Crop">
+                    <i class="fas fa-crop-alt"></i> <span>SQ. CROP</span>
+                </button>
+                <button type="button" onclick="docReadyFinalSet()" class="px-2.5 py-1.5 rounded text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1" title="Final Set">
+                    <i class="fas fa-check"></i> <span>FINAL SET</span>
+                </button>
+            </div>
+            <button type="button" onclick="closeDocReadyModal()" class="text-gray-500 hover:text-red-600 px-2 py-1 text-lg font-bold" title="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Floating Adjust Panel (Shown when ADJUST is clicked on a selected image) -->
+        <div id="drAdjustPanel" class="hidden bg-white border-b border-purple-200 px-4 py-2.5 shadow-md z-20 flex flex-wrap items-center justify-center gap-4 text-xs">
+            <div class="flex items-center gap-2">
+                <span class="font-bold text-gray-700">Brightness:</span>
+                <input type="range" id="drBrightness" min="-100" max="100" value="0" oninput="docReadyPreviewAdjust()" class="w-24 sm:w-28 accent-purple-600">
+                <span id="drBrightnessVal" class="font-mono w-8">0</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="font-bold text-gray-700">Contrast:</span>
+                <input type="range" id="drContrast" min="-100" max="100" value="0" oninput="docReadyPreviewAdjust()" class="w-24 sm:w-28 accent-purple-600">
+                <span id="drContrastVal" class="font-mono w-8">0</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <button type="button" onclick="docReadySetFilter('none')" class="px-2 py-1 rounded border text-gray-700 bg-gray-50 hover:bg-gray-100 font-semibold">Original</button>
+                <button type="button" onclick="docReadySetFilter('magic')" class="px-2 py-1 rounded border border-purple-300 text-purple-800 bg-purple-50 hover:bg-purple-100 font-bold">Magic Scan</button>
+                <button type="button" onclick="docReadySetFilter('bw')" class="px-2 py-1 rounded border border-gray-400 text-gray-900 bg-gray-200 hover:bg-gray-300 font-bold">B&amp;W</button>
+                <button type="button" onclick="docReadyRotateSelected(-90)" class="px-2 py-1 rounded border bg-blue-50 text-blue-700 font-bold" title="Rotate Left"><i class="fas fa-undo"></i> 90°</button>
+                <button type="button" onclick="docReadyRotateSelected(90)" class="px-2 py-1 rounded border bg-blue-50 text-blue-700 font-bold" title="Rotate Right"><i class="fas fa-redo"></i> 90°</button>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="docReadyApplyAdjust()" class="px-3 py-1 rounded bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-sm">Apply</button>
+                <button type="button" onclick="document.getElementById('drAdjustPanel').classList.add('hidden')" class="px-2 py-1 rounded bg-gray-200 text-gray-700 font-semibold">Close</button>
+            </div>
+        </div>
+
+        <!-- Center Multi-Page Workspace -->
+        <div id="drWorkspaceArea" class="flex-1 overflow-auto p-4 sm:p-8 flex items-center justify-start sm:justify-center gap-4" style="background-color: #e5e7eb; background-image: radial-gradient(#cbd5e1 1.5px, transparent 1.5px); background-size: 18px 18px;">
+            <div id="drPagesContainer" class="flex items-center gap-4 mx-auto">
+                <!-- Dynamic A4 Pages and '+' buttons rendered here -->
+            </div>
+        </div>
+
+        <!-- Bottom Bar (Without File Name or Max KB, and with SAVE instead of DOWNLOAD) -->
+        <div class="bg-white border-t border-gray-200 px-4 py-3 flex items-center justify-center gap-4 shadow-lg z-20">
+            <div class="flex items-center gap-2">
+                <label for="docReadyFormat" class="text-xs font-bold text-gray-600 uppercase">Format:</label>
+                <select id="docReadyFormat" class="border border-gray-300 rounded-md px-3 py-2 text-sm font-bold text-gray-800 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                    <option value="pdf">PDF Format</option>
+                    <option value="jpg">JPG Image</option>
+                </select>
+            </div>
+            <button type="button" id="drSaveBtn" onclick="docReadySaveToForm()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-2.5 rounded-md shadow-md text-sm flex items-center gap-2 transition-colors">
+                <i class="fas fa-save"></i> <span>SAVE</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- CAMERA CAPTURE MODAL FOR DOCUMENT READY -->
+    <div id="drCameraModal" class="fixed inset-0 z-[155] bg-black bg-opacity-95 hidden flex flex-col items-center justify-between p-4">
+        <div class="w-full flex justify-between items-center text-white px-2">
+            <span class="text-sm font-bold"><i class="fas fa-camera mr-1"></i> Capture Document Photo</span>
+            <button type="button" onclick="docReadyCloseCamera()" class="w-9 h-9 rounded-full bg-gray-800 hover:bg-red-600 text-white flex items-center justify-center text-xl font-bold">&times;</button>
+        </div>
+        <div class="flex-1 w-full max-w-2xl flex items-center justify-center overflow-hidden my-2 bg-gray-900 rounded-lg border border-gray-700 relative">
+            <video id="drCameraVideo" autoplay playsinline class="max-w-full max-h-full object-contain"></video>
+        </div>
+        <div class="w-full flex items-center justify-center gap-6 pb-4">
+            <button type="button" onclick="document.getElementById('drNativeCameraInput').click(); docReadyCloseCamera();" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-full text-xs font-bold">
+                <i class="fas fa-mobile-alt mr-1"></i> Phone Camera App
+            </button>
+            <button type="button" onclick="docReadyCaptureFrame()" class="w-16 h-16 rounded-full bg-white border-4 border-gray-400 hover:border-blue-500 shadow-xl flex items-center justify-center active:scale-95 transition-transform" title="Capture"></button>
+        </div>
+    </div>
+
+    <!-- 4-POINT PERSPECTIVE DOT CROP MODAL -->
+    <div id="drDotCropModal" class="fixed inset-0 z-[155] bg-gray-900 bg-opacity-95 hidden flex flex-col p-4">
+        <div class="flex justify-between items-center text-white pb-3 border-b border-gray-700">
+            <h3 class="text-sm sm:text-base font-bold flex items-center gap-2"><i class="fas fa-vector-square text-rose-500"></i> 4-Point Dot Crop (৪টি কোণা ড্র্যাগ করে ডকুমেন্টের কোণায় মেলান)</h3>
+            <button type="button" onclick="docReadyCloseDotCrop()" class="text-gray-300 hover:text-red-500 text-2xl font-bold">&times;</button>
+        </div>
+        <div class="flex-1 overflow-auto flex items-center justify-center relative my-2 bg-black rounded-lg" id="drDotCropWrapper">
+            <div class="relative inline-block" id="drDotCropStage">
+                <canvas id="drDotCropCanvas" class="max-w-full max-h-[75vh] block"></canvas>
+                <svg id="drDotCropSvg" class="absolute inset-0 w-full h-full pointer-events-none">
+                    <polygon id="drDotCropPoly" points="0,0 100,0 100,100 0,100" fill="rgba(59, 130, 246, 0.22)" stroke="#ef4444" stroke-width="2.5"></polygon>
+                </svg>
+                <div id="drDot0" data-idx="0" class="w-7 h-7 -ml-3.5 -mt-3.5 rounded-full bg-red-600 border-2 border-white shadow-lg absolute cursor-move touch-none flex items-center justify-center text-[9px] text-white font-bold">1</div>
+                <div id="drDot1" data-idx="1" class="w-7 h-7 -ml-3.5 -mt-3.5 rounded-full bg-red-600 border-2 border-white shadow-lg absolute cursor-move touch-none flex items-center justify-center text-[9px] text-white font-bold">2</div>
+                <div id="drDot2" data-idx="2" class="w-7 h-7 -ml-3.5 -mt-3.5 rounded-full bg-red-600 border-2 border-white shadow-lg absolute cursor-move touch-none flex items-center justify-center text-[9px] text-white font-bold">3</div>
+                <div id="drDot3" data-idx="3" class="w-7 h-7 -ml-3.5 -mt-3.5 rounded-full bg-red-600 border-2 border-white shadow-lg absolute cursor-move touch-none flex items-center justify-center text-[9px] text-white font-bold">4</div>
+            </div>
+        </div>
+        <div class="flex justify-end gap-3 pt-2 border-t border-gray-700">
+            <button type="button" onclick="docReadyCloseDotCrop()" class="px-4 py-2 bg-gray-700 text-white rounded font-bold text-xs">Cancel</button>
+            <button type="button" onclick="docReadyApplyDotCrop()" class="px-6 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded font-bold text-xs shadow-lg flex items-center gap-1">
+                <i class="fas fa-check"></i> Apply Dot Crop
+            </button>
+        </div>
+    </div>
+
     <script>
         // ✅ আপনার দেওয়া GOOGLE APPS SCRIPT URL এখানে রাখা হয়েছে
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyL11WS-_EXaAVbprFp5ETGpILm7qWh7Qwc956nj7W0mXKkMrrev0FL4AqFRMxctByVow/exec";
         
         const geminiApiKey = "";
 
-        let userRole = localStorage.getItem('clubUserRole') || null;
+        function safeGetItem(k) {
+            try { return localStorage.getItem(k); } catch (e) { return null; }
+        }
+        function safeSetItem(k, v) {
+            try { localStorage.setItem(k, v); } catch (e) {}
+        }
+        function safeRemoveItem(k) {
+            try { localStorage.removeItem(k); } catch (e) {}
+        }
+
+        let userRole = safeGetItem('clubUserRole') || null;
+
+        let pendingConfirmCallback = null;
+        function showConfirmModal(message, onConfirm) {
+            const modal = document.getElementById('confirmActionModal');
+            const msgEl = document.getElementById('confirmActionMessage');
+            const okBtn = document.getElementById('confirmActionOkBtn');
+            if (!modal || !msgEl || !okBtn) {
+                if (typeof onConfirm === 'function') onConfirm();
+                return;
+            }
+            msgEl.innerText = message;
+            pendingConfirmCallback = onConfirm;
+            modal.classList.remove('hidden');
+            okBtn.onclick = function() {
+                modal.classList.add('hidden');
+                const cb = pendingConfirmCallback;
+                pendingConfirmCallback = null;
+                if (typeof cb === 'function') cb();
+            };
+        }
+        function closeConfirmModal() {
+            const modal = document.getElementById('confirmActionModal');
+            if (modal) modal.classList.add('hidden');
+            pendingConfirmCallback = null;
+        }
+
+        function toInputDateStr(val) {
+            if (!val) return '';
+            const s = String(val).trim();
+            if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+            const d = new Date(val);
+            if (isNaN(d.getTime())) return s.split('T')[0];
+            const ist = new Date(d.getTime() + (5.5 * 60 * 60 * 1000));
+            const yyyy = ist.getUTCFullYear();
+            const mm = String(ist.getUTCMonth() + 1).padStart(2, '0');
+            const dd = String(ist.getUTCDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
 
         function validateFileSize(input, maxSizeMB) {
             if (input.files && input.files[0]) {
                 const fileSize = input.files[0].size / 1024 / 1024; 
                 if (fileSize > maxSizeMB) {
-                    alert(`File size exceeds limit. Maximum allowed size is ${maxSizeMB} MB.`);
+                    showToast(`File size exceeds limit. Maximum allowed size is ${maxSizeMB} MB.`, true);
                     input.value = ''; 
                     return false;
                 }
@@ -647,18 +847,18 @@
             const pass = document.getElementById('loginPassword').value;
             
             if (role === 'admin' && pass !== 'admin123') {
-                alert('Incorrect Admin Password!');
+                showToast('Incorrect Admin Password!', true);
                 return;
             }
             
-            localStorage.setItem('clubUserRole', role);
+            safeSetItem('clubUserRole', role);
             userRole = role;
             checkLogin();
             if(membersData && membersData.length > 0) { renderTable(); }
         }
 
         function logout() {
-            localStorage.removeItem('clubUserRole');
+            safeRemoveItem('clubUserRole');
             userRole = null;
             const loginPasswordEl = document.getElementById('loginPassword');
             const loginRoleEl = document.getElementById('loginRole');
@@ -725,6 +925,9 @@
                         }
                         if (typeof m.idProofs === 'string') {
                             try { m.idProofs = JSON.parse(m.idProofs); } catch(e) { m.idProofs = []; }
+                        }
+                        if (typeof m.sirDetails === 'string') {
+                            try { m.sirDetails = JSON.parse(m.sirDetails); } catch(e) { m.sirDetails = null; }
                         }
                         if (m.dob) {
                             let dobStr = m.dob.toString();
@@ -960,11 +1163,12 @@
                     
                     const image = document.getElementById('imageToCrop');
                     if (image) {
+                        if(cropper) { cropper.destroy(); cropper = null; }
+                        image.onload = function() {
+                            const ratio = target === 'profile' ? (3.5 / 4.5) : NaN;
+                            cropper = new Cropper(image, { aspectRatio: ratio, viewMode: 1, autoCropArea: 1 });
+                        };
                         image.src = event.target.result;
-                        if(cropper) { cropper.destroy(); }
-                        
-                        const ratio = target === 'profile' ? (3.5 / 4.5) : NaN;
-                        cropper = new Cropper(image, { aspectRatio: ratio, viewMode: 1, autoCropArea: 1 });
                     }
                 };
                 reader.readAsDataURL(file);
@@ -990,6 +1194,7 @@
             if (!cropper) return;
             if (cropTarget === 'profile') applyProfileCrop();
             else if (cropTarget === 'signature') applySignatureCropAndEnhance();
+            else if (cropTarget === 'docReadySq') applyDocReadySqCrop();
         }
 
         function applyProfileCrop() {
@@ -1054,55 +1259,84 @@
             showToast("Signature Cropped & Cleaned in High Quality!");
         }
 
-        function addIdProofRow(type = '', num = '', existingUrl = null) {
-    const container = document.getElementById('idProofsContainer');
-    if(!container) return;
-    
-    const rowCount = container.children.length;
-    const row = document.createElement('div');
-    row.className = 'id-proof-row grid grid-cols-1 md:grid-cols-4 gap-4 mb-3 pb-3 border-b border-gray-200 last:border-0';
-    
-    let base64InputHtml = '';
-    let fileInputClass = 'idImage mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-gray-100 hover:file:bg-gray-200';
-    
-    if (existingUrl) {
-        fileInputClass += ' hidden'; 
-        base64InputHtml = `
-            <div class="existing-doc-container mt-2 flex items-center justify-between bg-gray-50 p-2 rounded border w-full">
-                <input type="hidden" class="existingBase64" value="${existingUrl}">
-                <span class="text-[10px] text-green-600 block truncate w-3/4"><i class="fas fa-check"></i> Saved - <a href="#" onclick="viewDoc('${existingUrl}'); return false;" class="text-blue-600 underline hover:text-blue-800">View</a></span>
+        function setIdProofRowAttachment(row, docUrlOrBase64) {
+            if (!row) return;
+            const uploadCol = row.querySelector('.id-upload-col');
+            if (!uploadCol) return;
+            const fileInput = uploadCol.querySelector('.idImage');
+            if (fileInput) {
+                fileInput.value = '';
+                fileInput.classList.add('hidden');
+            }
+            let existingContainer = uploadCol.querySelector('.existing-doc-container');
+            if (!existingContainer) {
+                existingContainer = document.createElement('div');
+                existingContainer.className = 'existing-doc-container mt-2 flex items-center justify-between bg-gray-50 p-2 rounded border w-full';
+                uploadCol.appendChild(existingContainer);
+            }
+            existingContainer.innerHTML = `
+                <input type="hidden" class="existingBase64" value="">
+                <span class="text-[10px] text-green-600 font-semibold block truncate w-3/4"><i class="fas fa-check-circle"></i> Saved - <a href="#" onclick="viewDocFromRow(this); return false;" class="text-blue-600 underline hover:text-blue-800 font-bold">View</a></span>
                 <button type="button" onclick="removeIdProofDoc(this)" class="text-xs text-red-600 hover:text-red-800 font-semibold" title="Remove Attachment"><i class="fas fa-trash"></i></button>
-            </div>
-        `;
-    }
+            `;
+            const hiddenInp = existingContainer.querySelector('.existingBase64');
+            if (hiddenInp) hiddenInp.value = docUrlOrBase64;
+        }
 
-    row.innerHTML = `
-        <div>
-            <label class="block text-sm font-medium text-gray-700 ${rowCount === 0 ? 'required-asterisk' : ''}">ID Proof Type</label>
-            <select class="idType mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" ${rowCount === 0 ? 'required' : ''}>
-                <option value="">--Select--</option>
-                <option value="Aadhaar" ${type === 'Aadhaar' ? 'selected' : ''}>Aadhaar</option>
-                <option value="Pan" ${type === 'Pan' ? 'selected' : ''}>PAN</option>
-                <option value="Voter" ${type === 'Voter' ? 'selected' : ''}>Voter ID</option>
-                <option value="Passport" ${type === 'Passport' ? 'selected' : ''}>Passport</option>
-                <option value="Driving Licence" ${type === 'Driving Licence' ? 'selected' : ''}>Driving Licence</option>
-            </select>
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700 ${rowCount === 0 ? 'required-asterisk' : ''}">ID Number</label>
-            <input type="text" class="idProofNumber mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" value="${num}" ${rowCount === 0 ? 'required' : ''}>
-        </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700">Upload ID (Max 100MB)</label>
-            <input type="file" class="${fileInputClass}" accept="image/jpeg, image/png, image/gif, application/pdf" onchange="validateFileSize(this, 100)">
-            ${base64InputHtml}
-        </div>
-        <div class="flex items-center">
-            <button type="button" onclick="this.closest('.id-proof-row').remove()" class="mt-4 text-sm text-red-500 hover:text-red-700 font-medium ${rowCount === 0 ? 'hidden' : ''}"><i class="fas fa-trash"></i> Remove Row</button>
-        </div>
-    `;
-    container.appendChild(row);
-}
+        function viewDocFromRow(linkEl) {
+            const container = linkEl.closest('.existing-doc-container');
+            if (!container) return;
+            const hiddenInp = container.querySelector('.existingBase64');
+            if (hiddenInp && hiddenInp.value) {
+                viewDoc(hiddenInp.value);
+            }
+        }
+
+        function addIdProofRow(type = '', num = '', existingUrl = null) {
+            const container = document.getElementById('idProofsContainer');
+            if(!container) return;
+            
+            const rowCount = container.children.length;
+            const row = document.createElement('div');
+            row.className = 'id-proof-row grid grid-cols-1 md:grid-cols-4 gap-4 mb-3 pb-3 border-b border-gray-200 last:border-0';
+            
+            let fileInputClass = 'idImage mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:bg-gray-100 hover:file:bg-gray-200';
+            if (existingUrl) {
+                fileInputClass += ' hidden';
+            }
+
+            row.innerHTML = `
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 ${rowCount === 0 ? 'required-asterisk' : ''}">ID Proof Type</label>
+                    <select class="idType mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" ${rowCount === 0 ? 'required' : ''}>
+                        <option value="">--Select--</option>
+                        <option value="Aadhaar" ${type === 'Aadhaar' ? 'selected' : ''}>Aadhaar</option>
+                        <option value="Pan" ${type === 'Pan' ? 'selected' : ''}>PAN</option>
+                        <option value="Voter" ${type === 'Voter' ? 'selected' : ''}>Voter ID</option>
+                        <option value="Passport" ${type === 'Passport' ? 'selected' : ''}>Passport</option>
+                        <option value="Driving Licence" ${type === 'Driving Licence' ? 'selected' : ''}>Driving Licence</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 ${rowCount === 0 ? 'required-asterisk' : ''}">ID Number</label>
+                    <input type="text" class="idProofNumber mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" value="${num || ''}" ${rowCount === 0 ? 'required' : ''}>
+                </div>
+                <div class="id-upload-col">
+                    <label class="block text-sm font-medium text-gray-700">Upload ID / Document Ready</label>
+                    <input type="file" class="${fileInputClass}" accept="image/jpeg, image/png, image/gif, application/pdf" onchange="validateFileSize(this, 100)">
+                    <button type="button" onclick="openDocReadyForIdRow(this)" class="mt-1.5 inline-flex items-center px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded shadow-sm transition-colors">
+                        <i class="fas fa-magic mr-1.5"></i> Document Ready করুন
+                    </button>
+                </div>
+                <div class="flex items-center">
+                    <button type="button" onclick="this.closest('.id-proof-row').remove()" class="mt-4 text-sm text-red-500 hover:text-red-700 font-medium ${rowCount === 0 ? 'hidden' : ''}"><i class="fas fa-trash"></i> Remove Row</button>
+                </div>
+            `;
+            container.appendChild(row);
+            if (existingUrl) {
+                setIdProofRowAttachment(row, existingUrl);
+            }
+        }
 
         function removeIdProofDoc(btn) {
             const container = btn.closest('.existing-doc-container');
@@ -1171,6 +1405,11 @@
             if(profileImage) { profileImage.classList.remove('hidden'); profileImage.setAttribute('required', 'true'); }
             if(signatureImagePreviewContainer) signatureImagePreviewContainer.classList.add('hidden');
             if(signatureImage) signatureImage.classList.remove('hidden');
+
+            if (document.getElementById('sirStatus')) {
+                document.getElementById('sirStatus').value = 'No';
+                toggleSIRFields();
+            }
             
             clearIdProofRows(); addIdProofRow(); handleLocalityChange();
             if(addMemberModal) addMemberModal.classList.remove('hidden');
@@ -1198,131 +1437,185 @@
         }
 
         async function handleFormSubmit(e) {
-    e.preventDefault();
-    if (userRole !== 'admin') return;
-
-    const saveBtn = document.getElementById('saveBtn');
-    if(saveBtn) { 
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Syncing to Google Drive & Sheet...'; 
-        saveBtn.disabled = true; 
-    }
-
-    try {
-        const prefix = document.getElementById('idPrefixDisplay') ? document.getElementById('idPrefixDisplay').innerText : '';
-        const fullId = prefix + (document.getElementById('idNumber') ? document.getElementById('idNumber').value : '');
-        const locType = document.getElementById('localityType') ? document.getElementById('localityType').value : '';
-        
-        const addrObj = {
-            road: document.getElementById('road') ? document.getElementById('road').value : '',
-            vill: document.getElementById('vill') ? document.getElementById('vill').value : '',
-            po: document.getElementById('po') ? document.getElementById('po').value : '',
-            ps: document.getElementById('ps') ? document.getElementById('ps').value : '',
-            district: document.getElementById('district') ? document.getElementById('district').value : '',
-            pincode: document.getElementById('pincode') ? document.getElementById('pincode').value : '',
-            localityType: locType,
-            wardNo: (locType === 'Municipality' && document.getElementById('wardNo')) ? document.getElementById('wardNo').value : '',
-            panchayetName: (locType === 'Panchayet' && document.getElementById('panchayetName')) ? document.getElementById('panchayetName').value : ''
-        };
-
-        let localityStr = '';
-        if(locType === 'Municipality') localityStr = `(Muni: Ward ${addrObj.wardNo})`;
-        if(locType === 'Panchayet') localityStr = `(Panchayet: ${addrObj.panchayetName})`;
-        const fullAddress = `${addrObj.road}, ${addrObj.vill}, P.O. ${addrObj.po}, P.S. ${addrObj.ps}, ${addrObj.district}, ${addrObj.pincode} ${localityStr}`;
-
-        let finalProfileData = croppedProfileData ? croppedProfileData : (existingProfilePic || '');
-        let finalSignatureData = processedSignatureData ? processedSignatureData : (existingSignature || '');
-
-        const idProofRows = document.querySelectorAll('.id-proof-row');
-        const idProofsArray = [];
-        for (let row of idProofRows) {
-            const typeEl = row.querySelector('.idType');
-            const numEl = row.querySelector('.idProofNumber');
-            const fileInput = row.querySelector('.idImage');
-            const existingInput = row.querySelector('.existingBase64');
-            const type = typeEl ? typeEl.value : ''; const num = numEl ? numEl.value : '';
-
-            let docData = null;
-            if (fileInput && fileInput.files && fileInput.files[0]) {
-                docData = await new Promise(resolve => getFileBase64(fileInput.files[0], resolve));
-            } else if (existingInput) { docData = existingInput.value; }
-
-            if (type && num) { idProofsArray.push({ type: type, number: num, docBase64: docData }); }
-        }
-
-        // --- নতুন কোড: Last SIR Status ও ভোটার লিস্টের ডেটা প্রসেসিং ---
-        const sirStatusValue = document.getElementById('sirStatus') ? document.getElementById('sirStatus').value : 'No';
-        const sirData = sirStatusValue === 'Yes' ? {
-            acName: document.getElementById('sirAcName') ? document.getElementById('sirAcName').value.toUpperCase() : '',
-            partNo: document.getElementById('sirPartNo') ? document.getElementById('sirPartNo').value : '',
-            serialNo: document.getElementById('sirSerialNo') ? document.getElementById('sirSerialNo').value : '',
-            voterId: document.getElementById('sirVoterId') ? document.getElementById('sirVoterId').value.toUpperCase() : '',
-            docBase64: document.getElementById('finalVoterDocBase64') ? document.getElementById('finalVoterDocBase64').value : ''
-        } : null;
-
-        let syncAction = isEditMode ? 'update' : 'create';
-        
-        const memberDataPayload = {
-            id: isEditMode ? editingMemberId : Date.now().toString(), 
-            tabCategory: currentTab, 
-            fullId: fullId,
-            resolutionNo: document.getElementById('resolutionNo') ? document.getElementById('resolutionNo').value : '',
-            resolutionDate: document.getElementById('resolutionDate') ? document.getElementById('resolutionDate').value : '',
-            joinDate: document.getElementById('joinDate') ? document.getElementById('joinDate').value : '',
-            designation: document.getElementById('designation') ? document.getElementById('designation').value.toUpperCase() : '',
-            fullName: document.getElementById('fullName') ? document.getElementById('fullName').value.toUpperCase() : '',
-            gender: document.getElementById('gender') ? document.getElementById('gender').value : '',
-            dob: document.getElementById('dob') ? document.getElementById('dob').value : '',
-            guardianName: document.getElementById('guardianName') ? document.getElementById('guardianName').value : '',
-            profession: document.getElementById('profession') ? document.getElementById('profession').value.toUpperCase() : '',
-            mobile: document.getElementById('mobile') ? document.getElementById('mobile').value : '',
-            email: document.getElementById('email') ? document.getElementById('email').value : '',
-            address: fullAddress, 
-            addressObj: addrObj, 
-            idProofs: idProofsArray,
-            profilePicBase64: finalProfileData, 
-            signatureBase64: finalSignatureData, 
-            sirStatus: sirStatusValue,       // ডেটাবেসে পাঠানোর জন্য নতুন ফিল্ড ১
-            sirDetails: sirData,             // ডেটাবেসে পাঠানোর জন্য নতুন ফিল্ড ২
-            resignDate: null, 
-            resignReason: ''
-        };
-
-        const result = await apiSyncAction(syncAction, memberDataPayload);
-        if (result.status === "success") {
-            if (isEditMode) {
-                const idx = membersData.findIndex(m => m.id.toString() === editingMemberId.toString());
-                if (idx > -1) membersData[idx] = memberDataPayload;
-            } else { 
-                membersData.push(memberDataPayload); 
-            }
-            showToast(`Profile ${isEditMode ? 'updated' : 'saved'} successfully!`);
-            await fetchDatabaseData(); 
-            closeModal();
-        } else { 
-            throw new Error(result.message); 
-        }
-    } catch (err) { 
-        console.error(err); 
-        showToast('Database Error: Check connection.', true); 
-    } finally { 
-        if(saveBtn) { 
-            saveBtn.innerHTML = isEditMode ? '<i class="fas fa-save mr-2 mt-1"></i> Update Profile' : '<i class="fas fa-save mr-2 mt-1"></i> Save Profile'; 
-            saveBtn.disabled = false; 
-        } 
-    }
-}
-
-        async function deleteMember(id) {
+            e.preventDefault();
             if (userRole !== 'admin') return;
-            if(!confirm("Are you sure you want to completely delete this member from the database?")) return;
-            showToast("Deleting...", false);
+
+            const saveBtn = document.getElementById('saveBtn');
+            if(saveBtn) { 
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Syncing to Google Drive & Sheet...'; 
+                saveBtn.disabled = true; 
+            }
+
             try {
-                const result = await apiSyncAction('delete', { id: id });
+                const existingMember = isEditMode
+                    ? (membersData.find(m => m.id.toString() === editingMemberId.toString()) || {})
+                    : {};
+
+                const prefix = document.getElementById('idPrefixDisplay') ? document.getElementById('idPrefixDisplay').innerText : '';
+                const idNumVal = document.getElementById('idNumber') ? document.getElementById('idNumber').value : '';
+                const fullId = idNumVal ? (prefix + idNumVal) : (existingMember.fullId || '');
+                const locType = document.getElementById('localityType') ? document.getElementById('localityType').value : (existingMember.addressObj ? existingMember.addressObj.localityType : '');
+                
+                const prevAddrObj = existingMember.addressObj || {};
+                const addrObj = {
+                    ...prevAddrObj,
+                    road: document.getElementById('road') ? document.getElementById('road').value : (prevAddrObj.road || ''),
+                    vill: document.getElementById('vill') ? document.getElementById('vill').value : (prevAddrObj.vill || ''),
+                    po: document.getElementById('po') ? document.getElementById('po').value : (prevAddrObj.po || ''),
+                    ps: document.getElementById('ps') ? document.getElementById('ps').value : (prevAddrObj.ps || ''),
+                    district: document.getElementById('district') ? document.getElementById('district').value : (prevAddrObj.district || ''),
+                    pincode: document.getElementById('pincode') ? document.getElementById('pincode').value : (prevAddrObj.pincode || ''),
+                    localityType: locType,
+                    wardNo: (locType === 'Municipality' && document.getElementById('wardNo')) ? document.getElementById('wardNo').value : (locType === 'Municipality' ? (prevAddrObj.wardNo || '') : ''),
+                    panchayetName: (locType === 'Panchayet' && document.getElementById('panchayetName')) ? document.getElementById('panchayetName').value : (locType === 'Panchayet' ? (prevAddrObj.panchayetName || '') : '')
+                };
+
+                let localityStr = '';
+                if(locType === 'Municipality') localityStr = `(Muni: Ward ${addrObj.wardNo})`;
+                if(locType === 'Panchayet') localityStr = `(Panchayet: ${addrObj.panchayetName})`;
+                const fullAddress = (addrObj.road || addrObj.vill)
+                    ? `${addrObj.road}, ${addrObj.vill}, P.O. ${addrObj.po}, P.S. ${addrObj.ps}, ${addrObj.district}, ${addrObj.pincode} ${localityStr}`
+                    : (existingMember.address || '');
+
+                // Preserve both Url and Base64 fields so existing attachments are NEVER wiped out on update
+                const hasNewProfile = Boolean(croppedProfileData && croppedProfileData.startsWith('data:'));
+                const finalProfileBase64 = hasNewProfile
+                    ? croppedProfileData
+                    : (existingProfilePic ? (existingMember.profilePicBase64 || existingProfilePic) : '');
+                const finalProfileUrl = hasNewProfile
+                    ? (existingMember.profilePicUrl || '')
+                    : (existingProfilePic ? (existingMember.profilePicUrl || existingProfilePic) : '');
+
+                const hasNewSignature = Boolean(processedSignatureData && processedSignatureData.startsWith('data:'));
+                const finalSignatureBase64 = hasNewSignature
+                    ? processedSignatureData
+                    : (existingSignature ? (existingMember.signatureBase64 || existingSignature) : '');
+                const finalSignatureUrl = hasNewSignature
+                    ? (existingMember.signatureUrl || '')
+                    : (existingSignature ? (existingMember.signatureUrl || existingSignature) : '');
+
+                const idProofRows = document.querySelectorAll('.id-proof-row');
+                const idProofsArray = [];
+                const prevProofs = Array.isArray(existingMember.idProofs) ? existingMember.idProofs : [];
+
+                for (let idx = 0; idx < idProofRows.length; idx++) {
+                    const row = idProofRows[idx];
+                    const typeEl = row.querySelector('.idType');
+                    const numEl = row.querySelector('.idProofNumber');
+                    const fileInput = row.querySelector('.idImage');
+                    const existingInput = row.querySelector('.existingBase64');
+                    const type = typeEl ? typeEl.value : '';
+                    const num = numEl ? numEl.value : '';
+
+                    let docData = null;
+                    if (fileInput && fileInput.files && fileInput.files[0]) {
+                        docData = await new Promise(resolve => getFileBase64(fileInput.files[0], resolve));
+                    } else if (existingInput && existingInput.value) {
+                        docData = existingInput.value;
+                    } else if (isEditMode && prevProofs[idx] && prevProofs[idx].type === type && prevProofs[idx].number === num) {
+                        // Fallback if existing input was untouched
+                        docData = prevProofs[idx].docUrl || prevProofs[idx].docBase64 || null;
+                    }
+
+                    if (type && num) {
+                        const isNewBase64 = Boolean(docData && String(docData).startsWith('data:'));
+                        const matchingPrev = prevProofs.find(p => p.type === type && p.number === num) || prevProofs[idx] || {};
+                        idProofsArray.push({
+                            ...matchingPrev,
+                            type: type,
+                            number: num,
+                            docBase64: docData || '',
+                            docUrl: isNewBase64 ? (matchingPrev.docUrl || '') : (docData || matchingPrev.docUrl || '')
+                        });
+                    }
+                }
+
+                // Last SIR Status & 2026 Voter List Document Preservation
+                const sirStatusValue = document.getElementById('sirStatus') ? document.getElementById('sirStatus').value : (existingMember.sirStatus || 'No');
+                const prevSir = (existingMember.sirDetails && typeof existingMember.sirDetails === 'object') ? existingMember.sirDetails : {};
+                let rawVoterDoc = document.getElementById('finalVoterDocBase64') ? document.getElementById('finalVoterDocBase64').value : '';
+                if (!rawVoterDoc && isEditMode && sirStatusValue === 'Yes' && !window._sirDocExplicitlyRemoved) {
+                    rawVoterDoc = prevSir.docUrl || prevSir.docBase64 || '';
+                }
+                const isNewSirBase64 = Boolean(rawVoterDoc && String(rawVoterDoc).startsWith('data:'));
+                const sirData = sirStatusValue === 'Yes' ? {
+                    ...prevSir,
+                    acName: document.getElementById('sirAcName') ? document.getElementById('sirAcName').value.toUpperCase() : (prevSir.acName || ''),
+                    partNo: document.getElementById('sirPartNo') ? document.getElementById('sirPartNo').value : (prevSir.partNo || ''),
+                    serialNo: document.getElementById('sirSerialNo') ? document.getElementById('sirSerialNo').value : (prevSir.serialNo || ''),
+                    voterId: document.getElementById('sirVoterId') ? document.getElementById('sirVoterId').value.toUpperCase() : (prevSir.voterId || ''),
+                    docBase64: rawVoterDoc || '',
+                    docUrl: isNewSirBase64 ? (prevSir.docUrl || '') : (rawVoterDoc || prevSir.docUrl || '')
+                } : null;
+
+                let syncAction = isEditMode ? 'update' : 'create';
+                
+                const memberDataPayload = {
+                    ...existingMember,
+                    id: isEditMode ? editingMemberId : Date.now().toString(), 
+                    tabCategory: isEditMode ? (existingMember.tabCategory || currentTab) : currentTab, 
+                    fullId: fullId,
+                    resolutionNo: document.getElementById('resolutionNo') ? document.getElementById('resolutionNo').value : (existingMember.resolutionNo || ''),
+                    resolutionDate: document.getElementById('resolutionDate') ? document.getElementById('resolutionDate').value : (existingMember.resolutionDate || ''),
+                    joinDate: document.getElementById('joinDate') ? document.getElementById('joinDate').value : (existingMember.joinDate || ''),
+                    designation: document.getElementById('designation') ? document.getElementById('designation').value.toUpperCase() : (existingMember.designation || ''),
+                    fullName: document.getElementById('fullName') ? document.getElementById('fullName').value.toUpperCase() : (existingMember.fullName || ''),
+                    gender: document.getElementById('gender') ? document.getElementById('gender').value : (existingMember.gender || ''),
+                    dob: document.getElementById('dob') ? document.getElementById('dob').value : (existingMember.dob || ''),
+                    guardianName: document.getElementById('guardianName') ? document.getElementById('guardianName').value : (existingMember.guardianName || ''),
+                    profession: document.getElementById('profession') ? document.getElementById('profession').value.toUpperCase() : (existingMember.profession || ''),
+                    mobile: document.getElementById('mobile') ? document.getElementById('mobile').value : (existingMember.mobile || ''),
+                    email: document.getElementById('email') ? document.getElementById('email').value : (existingMember.email || ''),
+                    address: fullAddress, 
+                    addressObj: addrObj, 
+                    idProofs: idProofsArray,
+                    profilePicBase64: finalProfileBase64, 
+                    profilePicUrl: finalProfileUrl,
+                    signatureBase64: finalSignatureBase64, 
+                    signatureUrl: finalSignatureUrl,
+                    sirStatus: sirStatusValue,
+                    sirDetails: sirData,
+                    resignDate: existingMember.resignDate !== undefined ? existingMember.resignDate : null, 
+                    resignReason: existingMember.resignReason !== undefined ? existingMember.resignReason : ''
+                };
+
+                const result = await apiSyncAction(syncAction, memberDataPayload);
                 if (result.status === "success") {
-                    membersData = membersData.filter(m => m.id.toString() !== id.toString());
-                    renderTable(); showToast("Member securely deleted.");
-                } else { throw new Error(result.message); }
-            } catch (err) { console.error(err); showToast("Failed to delete.", true); }
+                    if (isEditMode) {
+                        const idx = membersData.findIndex(m => m.id.toString() === editingMemberId.toString());
+                        if (idx > -1) membersData[idx] = { ...membersData[idx], ...memberDataPayload };
+                    } else { 
+                        membersData.push(memberDataPayload); 
+                    }
+                    showToast(`Profile ${isEditMode ? 'updated' : 'saved'} successfully!`);
+                    await fetchDatabaseData(); 
+                    closeModal();
+                } else { 
+                    throw new Error(result.message); 
+                }
+            } catch (err) { 
+                console.error(err); 
+                showToast('Database Error: Check connection.', true); 
+            } finally { 
+                if(saveBtn) { 
+                    saveBtn.innerHTML = isEditMode ? '<i class="fas fa-save mr-2 mt-1"></i> Update Profile' : '<i class="fas fa-save mr-2 mt-1"></i> Save Profile'; 
+                    saveBtn.disabled = false; 
+                } 
+            }
+        }
+
+        function deleteMember(id) {
+            if (userRole !== 'admin') return;
+            showConfirmModal("Are you sure you want to completely delete this member from the database?", async function() {
+                showToast("Deleting...", false);
+                try {
+                    const result = await apiSyncAction('delete', { id: id });
+                    if (result.status === "success") {
+                        membersData = membersData.filter(m => m.id.toString() !== id.toString());
+                        renderTable(); showToast("Member securely deleted.");
+                    } else { throw new Error(result.message); }
+                } catch (err) { console.error(err); showToast("Failed to delete.", true); }
+            });
         }
 
         function editMember(id) {
@@ -1331,6 +1624,7 @@
             if(!member) return;
             
             isEditMode = true; editingMemberId = id; croppedProfileData = null; processedSignatureData = null;
+            window._sirDocExplicitlyRemoved = false;
             const modalTitle = document.getElementById('modal-title'); const saveBtn = document.getElementById('saveBtn');
             if(modalTitle) modalTitle.innerText = 'Edit Member Profile';
             if(saveBtn) saveBtn.innerHTML = '<i class="fas fa-save mr-2 mt-1"></i> Update Profile';
@@ -1342,8 +1636,8 @@
             if (existingProfilePic) {
                 const profileImgEl = document.getElementById('profileImagePreview');
                 if(profileImgEl) {
+                    profileImgEl.onerror = null;
                     profileImgEl.src = getValidImageUrl(existingProfilePic);
-                    profileImgEl.onerror = function() { this.outerHTML = '<div class="h-12 w-12 rounded border bg-gray-100 flex items-center justify-center text-gray-400 text-[10px]">Error</div>'; };
                 }
                 if(profileImagePreviewContainer) profileImagePreviewContainer.classList.remove('hidden');
                 if(profileImageInputEl) { profileImageInputEl.classList.add('hidden'); profileImageInputEl.removeAttribute('required'); }
@@ -1359,8 +1653,8 @@
             if (existingSignature) {
                 const sigImgEl = document.getElementById('signatureImagePreview');
                 if(sigImgEl) {
+                    sigImgEl.onerror = null;
                     sigImgEl.src = getValidImageUrl(existingSignature);
-                    sigImgEl.onerror = function() { this.outerHTML = '<div class="h-10 border bg-gray-100 px-2 flex items-center justify-center text-gray-400 text-[10px]">Error</div>'; };
                 }
                 if(signatureImagePreviewContainer) signatureImagePreviewContainer.classList.remove('hidden');
                 if(signatureImageInputEl) signatureImageInputEl.classList.add('hidden');
@@ -1369,12 +1663,12 @@
                 if(signatureImageInputEl) signatureImageInputEl.classList.remove('hidden');
             }
 
-            const prefix = idPrefixes[member.tabCategory];
+            const prefix = idPrefixes[member.tabCategory] || idPrefixes[currentTab];
             if(document.getElementById('idPrefixDisplay')) document.getElementById('idPrefixDisplay').innerText = prefix;
-            if(document.getElementById('idNumber')) document.getElementById('idNumber').value = member.fullId.replace(prefix, '');
+            if(document.getElementById('idNumber')) document.getElementById('idNumber').value = (member.fullId || '').replace(prefix, '');
             if(document.getElementById('resolutionNo')) document.getElementById('resolutionNo').value = member.resolutionNo || '';
-            if(document.getElementById('resolutionDate')) document.getElementById('resolutionDate').value = member.resolutionDate ? member.resolutionDate.split('T')[0] : '';
-            if(document.getElementById('joinDate')) document.getElementById('joinDate').value = member.joinDate ? member.joinDate.split('T')[0] : '';
+            if(document.getElementById('resolutionDate')) document.getElementById('resolutionDate').value = toInputDateStr(member.resolutionDate);
+            if(document.getElementById('joinDate')) document.getElementById('joinDate').value = toInputDateStr(member.joinDate);
             if(document.getElementById('designation')) document.getElementById('designation').value = member.designation || '';
             if(document.getElementById('fullName')) document.getElementById('fullName').value = member.fullName || '';
             if(document.getElementById('gender')) document.getElementById('gender').value = member.gender || '';
@@ -1399,8 +1693,46 @@
             
             clearIdProofRows();
             if (member.idProofs && member.idProofs.length > 0) {
-                member.idProofs.forEach(proof => { let existingDocUrl = proof.docUrl || proof.docBase64; addIdProofRow(proof.type, proof.number, existingDocUrl); });
-            } else { addIdProofRow(); }
+                member.idProofs.forEach(proof => {
+                    let existingDocUrl = proof.docUrl || proof.docBase64 || null;
+                    addIdProofRow(proof.type, proof.number, existingDocUrl);
+                });
+            } else {
+                addIdProofRow();
+            }
+
+            // Populate Last SIR Status & 2026 Voter List details + attachment when editing!
+            const sirSelect = document.getElementById('sirStatus');
+            const sirContainer = document.getElementById('sirFieldsContainer');
+            if (sirSelect && sirContainer) {
+                const isSirYes = (member.sirStatus === 'Yes');
+                sirSelect.value = isSirYes ? 'Yes' : 'No';
+                if (isSirYes) {
+                    sirContainer.classList.remove('hidden');
+                    const sirDet = (member.sirDetails && typeof member.sirDetails === 'object') ? member.sirDetails : {};
+                    if (document.getElementById('sirAcName')) document.getElementById('sirAcName').value = sirDet.acName || '';
+                    if (document.getElementById('sirPartNo')) document.getElementById('sirPartNo').value = sirDet.partNo || '';
+                    if (document.getElementById('sirSerialNo')) document.getElementById('sirSerialNo').value = sirDet.serialNo || '';
+                    if (document.getElementById('sirVoterId')) document.getElementById('sirVoterId').value = sirDet.voterId || '';
+                    const existingSirDoc = sirDet.docUrl || sirDet.docBase64 || '';
+                    if (existingSirDoc) {
+                        if (document.getElementById('finalVoterDocBase64')) document.getElementById('finalVoterDocBase64').value = existingSirDoc;
+                        if (document.getElementById('voterFinalImage')) document.getElementById('voterFinalImage').src = getValidImageUrl(existingSirDoc);
+                        if (document.getElementById('voterFinalPreviewContainer')) document.getElementById('voterFinalPreviewContainer').classList.remove('hidden');
+                    } else {
+                        if (document.getElementById('finalVoterDocBase64')) document.getElementById('finalVoterDocBase64').value = '';
+                        if (document.getElementById('voterFinalPreviewContainer')) document.getElementById('voterFinalPreviewContainer').classList.add('hidden');
+                    }
+                } else {
+                    sirContainer.classList.add('hidden');
+                    if (document.getElementById('sirAcName')) document.getElementById('sirAcName').value = '';
+                    if (document.getElementById('sirPartNo')) document.getElementById('sirPartNo').value = '';
+                    if (document.getElementById('sirSerialNo')) document.getElementById('sirSerialNo').value = '';
+                    if (document.getElementById('sirVoterId')) document.getElementById('sirVoterId').value = '';
+                    if (document.getElementById('finalVoterDocBase64')) document.getElementById('finalVoterDocBase64').value = '';
+                    if (document.getElementById('voterFinalPreviewContainer')) document.getElementById('voterFinalPreviewContainer').classList.add('hidden');
+                }
+            }
 
             const addMemberModal = document.getElementById('addMemberModal');
             if(addMemberModal) addMemberModal.classList.remove('hidden');
@@ -1423,8 +1755,20 @@
 
         function viewDoc(urlOrBase64) {
             if (!urlOrBase64) return;
-            if (urlOrBase64.startsWith('http')) { window.open(urlOrBase64, '_blank'); } 
-            else { const win = window.open(); win.document.write(`<iframe src="${urlOrBase64}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`); }
+            if (urlOrBase64.startsWith('data:image')) {
+                openImagePreview(urlOrBase64);
+                return;
+            }
+            if (urlOrBase64.startsWith('http')) {
+                window.open(urlOrBase64, '_blank');
+                return;
+            }
+            const win = window.open();
+            if (win) {
+                win.document.write(`<iframe src="${urlOrBase64}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
+            } else {
+                openImagePreview(urlOrBase64);
+            }
         }
 
         function openAIAssistant(id) {
@@ -1763,7 +2107,7 @@ async function downloadCategoryPDF() {
     } catch(error) {
         console.error("PDF Fatal Error:", error);
         showToast("PDF Generate Error", true);
-        alert("Generation Error: " + (error.message || error) + "\nPlease verify console for trace.");
+        showToast("Generation Error: " + (error.message || error), true);
     }
 }
 
@@ -1787,6 +2131,7 @@ function toggleSIRFields() {
 }
 
 function removeVoterDoc() {
+    window._sirDocExplicitlyRemoved = true;
     document.getElementById('voterPdfInput').value = '';
     document.getElementById('finalVoterDocBase64').value = '';
     document.getElementById('voterFinalPreviewContainer').classList.add('hidden');
@@ -2436,6 +2781,992 @@ function closeImagePreview() {
     }
 }
         
+    
+        // ============================================================================
+        // ✨ DOCUMENT READY STUDIO ENGINE (Integrated from apydocument.github.io/php)
+        // ============================================================================
+        let drTargetMode = null; // 'idRow' or 'sir'
+        let drTargetRow = null;
+        let drPages = []; // Array of pages: [{ id, items: [{ id, src, originalSrc, x, y, w, h, brightness, contrast, filter, rotation }] }]
+        let drActivePageIdx = 0;
+        let drSelectedItemId = null;
+        let drHistory = [];
+        let drHistoryIdx = -1;
+        let drCameraStream = null;
+        let drDragState = null;
+        let drDotPoints = [];
+        let drDotDraggingIdx = -1;
+        let drDotSourceImg = null;
+
+        const DR_PAGE_W = 360;
+        const DR_PAGE_H = 509;
+
+        function createBlankDrPage() {
+            return { id: 'page_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), items: [] };
+        }
+
+        function drPushHistory() {
+            const snapshot = JSON.stringify({ pages: drPages, activePageIdx: drActivePageIdx });
+            if (drHistoryIdx >= 0 && drHistory[drHistoryIdx] === snapshot) return;
+            drHistory = drHistory.slice(0, drHistoryIdx + 1);
+            drHistory.push(snapshot);
+            if (drHistory.length > 25) drHistory.shift();
+            drHistoryIdx = drHistory.length - 1;
+            drUpdateUndoRedoBtns();
+        }
+
+        function drUpdateUndoRedoBtns() {
+            const uBtn = document.getElementById('drBtnUndo');
+            const rBtn = document.getElementById('drBtnRedo');
+            if (uBtn) uBtn.disabled = (drHistoryIdx <= 0);
+            if (rBtn) rBtn.disabled = (drHistoryIdx >= drHistory.length - 1);
+        }
+
+        function docReadyUndo() {
+            if (drHistoryIdx <= 0) return;
+            drHistoryIdx--;
+            const state = JSON.parse(drHistory[drHistoryIdx]);
+            drPages = state.pages;
+            drActivePageIdx = Math.min(state.activePageIdx, drPages.length - 1);
+            drSelectedItemId = null;
+            drRenderWorkspace();
+            drUpdateUndoRedoBtns();
+        }
+
+        function docReadyRedo() {
+            if (drHistoryIdx >= drHistory.length - 1) return;
+            drHistoryIdx++;
+            const state = JSON.parse(drHistory[drHistoryIdx]);
+            drPages = state.pages;
+            drActivePageIdx = Math.min(state.activePageIdx, drPages.length - 1);
+            drSelectedItemId = null;
+            drRenderWorkspace();
+            drUpdateUndoRedoBtns();
+        }
+
+        function openDocReadyForIdRow(btn) {
+            const row = btn.closest('.id-proof-row');
+            if (!row) return;
+            drTargetMode = 'idRow';
+            drTargetRow = row;
+            initDocReadyWorkspace();
+        }
+
+        function openDocReadyForSIR() {
+            drTargetMode = 'sir';
+            drTargetRow = null;
+            initDocReadyWorkspace();
+        }
+
+        function initDocReadyWorkspace() {
+            drPages = [createBlankDrPage()];
+            drActivePageIdx = 0;
+            drSelectedItemId = null;
+            drHistory = [];
+            drHistoryIdx = -1;
+            document.getElementById('drAdjustPanel').classList.add('hidden');
+            document.getElementById('docReadyModal').classList.remove('hidden');
+            drPushHistory();
+            drRenderWorkspace();
+        }
+
+        function closeDocReadyModal() {
+            docReadyCloseCamera();
+            docReadyCloseDotCrop();
+            document.getElementById('docReadyModal').classList.add('hidden');
+        }
+
+        function docReadyAddPage(insertIdx) {
+            const newPage = createBlankDrPage();
+            drPages.splice(insertIdx, 0, newPage);
+            drActivePageIdx = insertIdx;
+            drSelectedItemId = null;
+            drPushHistory();
+            drRenderWorkspace();
+        }
+
+        function docReadyClearPage() {
+            const activePage = drPages[drActivePageIdx];
+            if (!activePage) return;
+            if (activePage.items.length > 0) {
+                activePage.items = [];
+                drSelectedItemId = null;
+                document.getElementById('drAdjustPanel').classList.add('hidden');
+                drPushHistory();
+                drRenderWorkspace();
+                showToast("Page cleared.");
+            } else if (drPages.length > 1) {
+                drPages.splice(drActivePageIdx, 1);
+                drActivePageIdx = Math.max(0, drActivePageIdx - 1);
+                drSelectedItemId = null;
+                drPushHistory();
+                drRenderWorkspace();
+                showToast("Blank page removed.");
+            } else {
+                showToast("Page is already blank.");
+            }
+        }
+
+        function drGetSelectedItem() {
+            const page = drPages[drActivePageIdx];
+            if (!page) return null;
+            if (!drSelectedItemId && page.items.length === 1) {
+                drSelectedItemId = page.items[0].id;
+            }
+            return page.items.find(it => it.id === drSelectedItemId) || null;
+        }
+
+        function drAddImageToActivePage(dataUrl) {
+            const img = new Image();
+            img.onload = function() {
+                const page = drPages[drActivePageIdx];
+                if (!page) return;
+                const maxW = DR_PAGE_W - 40;
+                const maxH = (DR_PAGE_H / 2) - 30;
+                let w = img.width;
+                let h = img.height;
+                const ratio = Math.min(maxW / w, maxH / h, 1);
+                w = Math.round(w * ratio);
+                h = Math.round(h * ratio);
+                if (w < 120) {
+                    const up = 220 / Math.max(w, 1);
+                    w = Math.round(w * up);
+                    h = Math.round(h * up);
+                }
+                const existingCount = page.items.length;
+                const x = Math.max(10, Math.round((DR_PAGE_W - w) / 2));
+                const y = existingCount === 0 ? 20 : Math.min(DR_PAGE_H - h - 10, 35 + existingCount * (maxH + 15));
+
+                const newItem = {
+                    id: 'item_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+                    src: dataUrl,
+                    originalSrc: dataUrl,
+                    x: x,
+                    y: y,
+                    w: w,
+                    h: h,
+                    brightness: 0,
+                    contrast: 0,
+                    filter: 'none',
+                    rotation: 0
+                };
+                page.items.push(newItem);
+                drSelectedItemId = newItem.id;
+                drPushHistory();
+                drRenderWorkspace();
+            };
+            img.src = dataUrl;
+        }
+
+        function docReadyHandleAddImages(e) {
+            const files = e.target.files;
+            if (!files || files.length === 0) return;
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    drAddImageToActivePage(ev.target.result);
+                };
+                reader.readAsDataURL(file);
+            });
+            e.target.value = '';
+        }
+
+        async function docReadyHandleAddPdf(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            showToast("Loading PDF pages...");
+            try {
+                const buf = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument(new Uint8Array(buf)).promise;
+                for (let p = 1; p <= pdf.numPages; p++) {
+                    const page = await pdf.getPage(p);
+                    const vp = page.getViewport({ scale: 2.0 });
+                    const c = document.createElement('canvas');
+                    c.width = vp.width;
+                    c.height = vp.height;
+                    await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+                    const imgData = c.toDataURL('image/jpeg', 0.92);
+                    if (p > 1) {
+                        drPages.push(createBlankDrPage());
+                        drActivePageIdx = drPages.length - 1;
+                    }
+                    drAddImageToActivePage(imgData);
+                }
+                showToast(`Added ${pdf.numPages} page(s) from PDF.`);
+            } catch (err) {
+                console.error(err);
+                showToast("Failed to read PDF file.", true);
+            }
+            e.target.value = '';
+        }
+
+        async function docReadyOpenCamera() {
+            const modal = document.getElementById('drCameraModal');
+            const video = document.getElementById('drCameraVideo');
+            modal.classList.remove('hidden');
+            try {
+                drCameraStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+                    audio: false
+                });
+                video.srcObject = drCameraStream;
+            } catch (err) {
+                console.warn("WebRTC Camera unavailable, falling back to native camera input:", err);
+                docReadyCloseCamera();
+                document.getElementById('drNativeCameraInput').click();
+            }
+        }
+
+        function docReadyCloseCamera() {
+            const modal = document.getElementById('drCameraModal');
+            const video = document.getElementById('drCameraVideo');
+            if (drCameraStream) {
+                drCameraStream.getTracks().forEach(t => t.stop());
+                drCameraStream = null;
+            }
+            if (video) video.srcObject = null;
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function docReadyCaptureFrame() {
+            const video = document.getElementById('drCameraVideo');
+            if (!video || !video.videoWidth) {
+                showToast("Camera not ready yet.", true);
+                return;
+            }
+            const c = document.createElement('canvas');
+            c.width = video.videoWidth;
+            c.height = video.videoHeight;
+            c.getContext('2d').drawImage(video, 0, 0);
+            const dataUrl = c.toDataURL('image/jpeg', 0.92);
+            docReadyCloseCamera();
+            drAddImageToActivePage(dataUrl);
+        }
+
+        // Update selection visuals in-place without rebuilding DOM so touch/mouse dragging never stutters
+        function drUpdateSelectionDOM() {
+            const container = document.getElementById('drPagesContainer');
+            if (!container) return;
+
+            container.querySelectorAll('[data-page-idx]').forEach(pageEl => {
+                const pIdx = parseInt(pageEl.getAttribute('data-page-idx'), 10);
+                const badgeEl = pageEl.parentElement ? pageEl.parentElement.querySelector('.dr-page-badge') : null;
+                if (pIdx === drActivePageIdx) {
+                    pageEl.classList.add('ring-4', 'ring-blue-600');
+                    pageEl.classList.remove('ring-1', 'ring-gray-300', 'opacity-90');
+                    if (badgeEl) {
+                        badgeEl.className = 'dr-page-badge text-[11px] font-bold mb-1.5 px-2.5 py-0.5 rounded-full bg-blue-600 text-white';
+                    }
+                } else {
+                    pageEl.classList.remove('ring-4', 'ring-blue-600');
+                    pageEl.classList.add('ring-1', 'ring-gray-300', 'opacity-90');
+                    if (badgeEl) {
+                        badgeEl.className = 'dr-page-badge text-[11px] font-bold mb-1.5 px-2.5 py-0.5 rounded-full bg-gray-300 text-gray-700';
+                    }
+                }
+            });
+
+            container.querySelectorAll('[data-item-id]').forEach(itemEl => {
+                const itemId = itemEl.getAttribute('data-item-id');
+                const pIdx = parseInt(itemEl.getAttribute('data-item-page'), 10);
+                const isSelected = (pIdx === drActivePageIdx && itemId === drSelectedItemId);
+                const ctrlWrap = itemEl.querySelector('.dr-item-controls');
+                if (isSelected) {
+                    itemEl.classList.add('ring-2', 'ring-blue-600', 'z-10');
+                    itemEl.classList.remove('hover:ring-1', 'hover:ring-blue-300');
+                    if (ctrlWrap) ctrlWrap.classList.remove('hidden');
+                } else {
+                    itemEl.classList.remove('ring-2', 'ring-blue-600', 'z-10');
+                    itemEl.classList.add('hover:ring-1', 'hover:ring-blue-300');
+                    if (ctrlWrap) ctrlWrap.classList.add('hidden');
+                }
+            });
+        }
+
+        function drRenderWorkspace() {
+            const container = document.getElementById('drPagesContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            // Left '+' button before page 0
+            container.appendChild(drCreateAddPageBtn(0));
+
+            drPages.forEach((page, pIdx) => {
+                const pageWrap = document.createElement('div');
+                pageWrap.className = 'flex flex-col items-center';
+
+                const badge = document.createElement('div');
+                badge.className = 'dr-page-badge text-[11px] font-bold mb-1.5 px-2.5 py-0.5 rounded-full ' + (pIdx === drActivePageIdx ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-700');
+                badge.innerText = `Page ${pIdx + 1}`;
+                pageWrap.appendChild(badge);
+
+                const pageEl = document.createElement('div');
+                pageEl.setAttribute('data-page-idx', String(pIdx));
+                pageEl.className = 'relative bg-white shadow-xl ' + (pIdx === drActivePageIdx ? 'ring-4 ring-blue-600' : 'ring-1 ring-gray-300 opacity-90');
+                pageEl.style.width = DR_PAGE_W + 'px';
+                pageEl.style.height = DR_PAGE_H + 'px';
+                pageEl.style.overflow = 'hidden';
+
+                const onPageBgTap = (ev) => {
+                    if (ev.target === pageEl) {
+                        drActivePageIdx = pIdx;
+                        drSelectedItemId = null;
+                        drUpdateSelectionDOM();
+                    }
+                };
+                pageEl.addEventListener('mousedown', onPageBgTap);
+                pageEl.addEventListener('touchstart', onPageBgTap, { passive: true });
+
+                page.items.forEach(item => {
+                    const isSelected = (pIdx === drActivePageIdx && item.id === drSelectedItemId);
+                    const itemEl = document.createElement('div');
+                    itemEl.setAttribute('data-item-id', item.id);
+                    itemEl.setAttribute('data-item-page', String(pIdx));
+                    itemEl.className = 'absolute select-none ' + (isSelected ? 'ring-2 ring-blue-600 z-10' : 'hover:ring-1 hover:ring-blue-300');
+                    itemEl.style.left = item.x + 'px';
+                    itemEl.style.top = item.y + 'px';
+                    itemEl.style.width = item.w + 'px';
+                    itemEl.style.height = item.h + 'px';
+                    itemEl.style.cursor = 'move';
+                    itemEl.style.touchAction = 'none';
+                    itemEl.style.willChange = 'left, top, width, height';
+
+                    const imgEl = document.createElement('img');
+                    imgEl.src = item.src;
+                    imgEl.draggable = false;
+                    imgEl.className = 'w-full h-full object-fill pointer-events-none block select-none';
+                    itemEl.appendChild(imgEl);
+
+                    const startDragItem = (e) => {
+                        if (e.target.closest('.dr-control-handle')) return;
+                        e.stopPropagation();
+                        if (e.cancelable) e.preventDefault();
+                        drActivePageIdx = pIdx;
+                        drSelectedItemId = item.id;
+                        drUpdateSelectionDOM();
+
+                        const pt = drGetEventPoint(e);
+                        const pageRect = pageEl.getBoundingClientRect();
+                        const scaleX = pageRect.width > 0 ? (DR_PAGE_W / pageRect.width) : 1;
+                        const scaleY = pageRect.height > 0 ? (DR_PAGE_H / pageRect.height) : 1;
+
+                        drDragState = {
+                            mode: 'move',
+                            item: item,
+                            el: itemEl,
+                            scaleX: scaleX,
+                            scaleY: scaleY,
+                            startX: pt.x,
+                            startY: pt.y,
+                            origX: item.x,
+                            origY: item.y,
+                            origW: item.w,
+                            origH: item.h,
+                            hasMoved: false
+                        };
+                    };
+
+                    itemEl.addEventListener('mousedown', startDragItem);
+                    itemEl.addEventListener('touchstart', startDragItem, { passive: false });
+
+                    // Controls container (always in DOM so touch events never lose target)
+                    const ctrlWrap = document.createElement('div');
+                    ctrlWrap.className = 'dr-item-controls ' + (isSelected ? '' : 'hidden');
+
+                    // Delete button on selected item
+                    const delBtn = document.createElement('button');
+                    delBtn.type = 'button';
+                    delBtn.className = 'dr-control-handle absolute -top-3 -right-3 w-6 h-6 rounded-full bg-red-600 text-white text-xs font-bold shadow flex items-center justify-center z-20';
+                    delBtn.innerHTML = '&times;';
+                    const onDeleteItem = (ev) => {
+                        ev.stopPropagation();
+                        if (ev.cancelable) ev.preventDefault();
+                        page.items = page.items.filter(i => i.id !== item.id);
+                        drSelectedItemId = null;
+                        drPushHistory();
+                        drRenderWorkspace();
+                    };
+                    delBtn.addEventListener('mousedown', onDeleteItem);
+                    delBtn.addEventListener('touchstart', onDeleteItem, { passive: false });
+                    ctrlWrap.appendChild(delBtn);
+
+                    // Resize handles (nw, n, ne, e, se, s, sw, w) with generous touch area
+                    const handles = [
+                        { dir: 'nw', cls: '-top-2.5 -left-2.5 cursor-nwse-resize' },
+                        { dir: 'n',  cls: '-top-2.5 left-1/2 -ml-2.5 cursor-ns-resize' },
+                        { dir: 'ne', cls: '-top-2.5 -right-2.5 cursor-nesw-resize' },
+                        { dir: 'e',  cls: 'top-1/2 -mt-2.5 -right-2.5 cursor-ew-resize' },
+                        { dir: 'se', cls: '-bottom-2.5 -right-2.5 cursor-nwse-resize' },
+                        { dir: 's',  cls: '-bottom-2.5 left-1/2 -ml-2.5 cursor-ns-resize' },
+                        { dir: 'sw', cls: '-bottom-2.5 -left-2.5 cursor-nesw-resize' },
+                        { dir: 'w',  cls: 'top-1/2 -mt-2.5 -left-2.5 cursor-ew-resize' }
+                    ];
+                    handles.forEach(h => {
+                        const hEl = document.createElement('div');
+                        hEl.className = `dr-control-handle absolute w-5 h-5 bg-blue-600 border-2 border-white rounded-full shadow z-20 touch-none ${h.cls}`;
+                        const startResize = (ev) => {
+                            ev.stopPropagation();
+                            if (ev.cancelable) ev.preventDefault();
+                            drActivePageIdx = pIdx;
+                            drSelectedItemId = item.id;
+                            drUpdateSelectionDOM();
+
+                            const pt = drGetEventPoint(ev);
+                            const pageRect = pageEl.getBoundingClientRect();
+                            const scaleX = pageRect.width > 0 ? (DR_PAGE_W / pageRect.width) : 1;
+                            const scaleY = pageRect.height > 0 ? (DR_PAGE_H / pageRect.height) : 1;
+
+                            drDragState = {
+                                mode: 'resize',
+                                dir: h.dir,
+                                item: item,
+                                el: itemEl,
+                                scaleX: scaleX,
+                                scaleY: scaleY,
+                                startX: pt.x,
+                                startY: pt.y,
+                                origX: item.x,
+                                origY: item.y,
+                                origW: item.w,
+                                origH: item.h,
+                                hasMoved: false
+                            };
+                        };
+                        hEl.addEventListener('mousedown', startResize);
+                        hEl.addEventListener('touchstart', startResize, { passive: false });
+                        ctrlWrap.appendChild(hEl);
+                    });
+
+                    itemEl.appendChild(ctrlWrap);
+                    pageEl.appendChild(itemEl);
+                });
+
+                pageWrap.appendChild(pageEl);
+                container.appendChild(pageWrap);
+
+                // Right '+' button after this page
+                container.appendChild(drCreateAddPageBtn(pIdx + 1));
+            });
+        }
+
+        function drCreateAddPageBtn(insertIdx) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'w-9 h-9 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg shadow-lg flex items-center justify-center shrink-0 transition-transform active:scale-95';
+            btn.title = 'Add Blank Page Here';
+            btn.innerHTML = '<i class="fas fa-plus text-xs"></i>';
+            btn.onclick = () => docReadyAddPage(insertIdx);
+            return btn;
+        }
+
+        function drGetEventPoint(e) {
+            if (e.touches && e.touches.length > 0) {
+                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+            if (e.changedTouches && e.changedTouches.length > 0) {
+                return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+            }
+            return { x: e.clientX, y: e.clientY };
+        }
+
+        window.addEventListener('mousemove', drOnGlobalMove);
+        window.addEventListener('touchmove', drOnGlobalMove, { passive: false });
+        window.addEventListener('mouseup', drOnGlobalEnd);
+        window.addEventListener('touchend', drOnGlobalEnd);
+
+        function drOnGlobalMove(e) {
+            if (!drDragState) return;
+            if (e.cancelable) e.preventDefault();
+            const pt = drGetEventPoint(e);
+            const dx = (pt.x - drDragState.startX) * (drDragState.scaleX || 1);
+            const dy = (pt.y - drDragState.startY) * (drDragState.scaleY || 1);
+            const it = drDragState.item;
+            const el = drDragState.el;
+
+            if (drDragState.mode === 'move') {
+                it.x = Math.round(Math.max(-it.w + 30, Math.min(DR_PAGE_W - 30, drDragState.origX + dx)));
+                it.y = Math.round(Math.max(-it.h + 30, Math.min(DR_PAGE_H - 30, drDragState.origY + dy)));
+                drDragState.hasMoved = true;
+                if (el) {
+                    el.style.left = it.x + 'px';
+                    el.style.top = it.y + 'px';
+                }
+            } else if (drDragState.mode === 'resize') {
+                const dir = drDragState.dir;
+                let nx = drDragState.origX;
+                let ny = drDragState.origY;
+                let nw = drDragState.origW;
+                let nh = drDragState.origH;
+
+                if (dir.includes('e')) nw = Math.max(40, drDragState.origW + dx);
+                if (dir.includes('s')) nh = Math.max(40, drDragState.origH + dy);
+                if (dir.includes('w')) {
+                    const possibleW = drDragState.origW - dx;
+                    if (possibleW >= 40) { nw = possibleW; nx = drDragState.origX + dx; }
+                }
+                if (dir.includes('n')) {
+                    const possibleH = drDragState.origH - dy;
+                    if (possibleH >= 40) { nh = possibleH; ny = drDragState.origY + dy; }
+                }
+                it.x = Math.round(nx);
+                it.y = Math.round(ny);
+                it.w = Math.round(nw);
+                it.h = Math.round(nh);
+                drDragState.hasMoved = true;
+                if (el) {
+                    el.style.left = it.x + 'px';
+                    el.style.top = it.y + 'px';
+                    el.style.width = it.w + 'px';
+                    el.style.height = it.h + 'px';
+                }
+            }
+        }
+
+        function drOnGlobalEnd() {
+            if (drDragState) {
+                const moved = drDragState.hasMoved;
+                drDragState = null;
+                if (moved) {
+                    drPushHistory();
+                }
+            }
+        }
+
+        // --- ADJUST (Brightness, Contrast, Magic Scan, B&W, Rotate) ---
+        function docReadyToggleAdjust() {
+            const item = drGetSelectedItem();
+            if (!item) {
+                showToast("Select an image first!", true);
+                return;
+            }
+            const panel = document.getElementById('drAdjustPanel');
+            panel.classList.toggle('hidden');
+            document.getElementById('drBrightness').value = item.brightness || 0;
+            document.getElementById('drBrightnessVal').innerText = item.brightness || 0;
+            document.getElementById('drContrast').value = item.contrast || 0;
+            document.getElementById('drContrastVal').innerText = item.contrast || 0;
+        }
+
+        function docReadySetFilter(filterName) {
+            const item = drGetSelectedItem();
+            if (!item) return;
+            item.filter = filterName;
+            docReadyPreviewAdjust();
+        }
+
+        function docReadyRotateSelected(deg) {
+            const item = drGetSelectedItem();
+            if (!item) return;
+            item.rotation = ((item.rotation || 0) + deg + 360) % 360;
+            if (Math.abs(deg) === 90) {
+                const tmp = item.w;
+                item.w = item.h;
+                item.h = tmp;
+            }
+            docReadyPreviewAdjust(true);
+        }
+
+        function docReadyPreviewAdjust(commitHistory = false) {
+            const item = drGetSelectedItem();
+            if (!item) return;
+            const bVal = parseInt(document.getElementById('drBrightness').value || '0', 10);
+            const cVal = parseInt(document.getElementById('drContrast').value || '0', 10);
+            document.getElementById('drBrightnessVal').innerText = bVal;
+            document.getElementById('drContrastVal').innerText = cVal;
+            item.brightness = bVal;
+            item.contrast = cVal;
+
+            const img = new Image();
+            img.onload = function() {
+                const rot = ((item.rotation || 0) % 360 + 360) % 360;
+                const swapDims = (rot === 90 || rot === 270);
+                const c = document.createElement('canvas');
+                c.width = swapDims ? img.height : img.width;
+                c.height = swapDims ? img.width : img.height;
+                const ctx = c.getContext('2d');
+
+                ctx.save();
+                ctx.translate(c.width / 2, c.height / 2);
+                ctx.rotate((rot * Math.PI) / 180);
+                ctx.drawImage(img, -img.width / 2, -img.height / 2);
+                ctx.restore();
+
+                const imgData = ctx.getImageData(0, 0, c.width, c.height);
+                const d = imgData.data;
+                const factor = (259 * (cVal + 255)) / (255 * (259 - cVal));
+
+                for (let i = 0; i < d.length; i += 4) {
+                    let r = d[i] + bVal;
+                    let g = d[i + 1] + bVal;
+                    let b = d[i + 2] + bVal;
+
+                    r = factor * (r - 128) + 128;
+                    g = factor * (g - 128) + 128;
+                    b = factor * (b - 128) + 128;
+
+                    if (item.filter === 'magic') {
+                        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+                        if (lum > 165) {
+                            r = 255; g = 255; b = 255;
+                        } else {
+                            r = Math.max(0, (r - 30) * 1.15);
+                            g = Math.max(0, (g - 30) * 1.15);
+                            b = Math.max(0, (b - 30) * 1.15);
+                        }
+                    } else if (item.filter === 'bw') {
+                        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+                        const v = lum > 145 ? 255 : 0;
+                        r = v; g = v; b = v;
+                    }
+
+                    d[i] = Math.max(0, Math.min(255, r));
+                    d[i + 1] = Math.max(0, Math.min(255, g));
+                    d[i + 2] = Math.max(0, Math.min(255, b));
+                }
+                ctx.putImageData(imgData, 0, 0);
+                item.src = c.toDataURL('image/jpeg', 0.92);
+                if (commitHistory) drPushHistory();
+                drRenderWorkspace();
+            };
+            img.src = item.originalSrc;
+        }
+
+        function docReadyApplyAdjust() {
+            drPushHistory();
+            document.getElementById('drAdjustPanel').classList.add('hidden');
+            showToast("Image adjustments applied!");
+        }
+
+        // --- SQ. CROP (Free Rectangular Crop via Cropper.js) ---
+        function docReadyOpenSqCrop() {
+            const item = drGetSelectedItem();
+            if (!item) {
+                showToast("Select an image first!", true);
+                return;
+            }
+            cropTarget = 'docReadySq';
+            const cropperModal = document.getElementById('cropperModal');
+            if (cropperModal) cropperModal.classList.remove('hidden');
+            document.getElementById('cropperModalTitle').innerText = 'Square / Free Crop Document';
+            document.getElementById('cropperApplyBtnText').innerHTML = '<i class="fas fa-crop mr-2"></i> Apply Crop';
+            const image = document.getElementById('imageToCrop');
+            if (image) {
+                if (cropper) {
+                    cropper.destroy();
+                    cropper = null;
+                }
+                image.onload = function() {
+                    setTimeout(() => {
+                        if (cropper) cropper.destroy();
+                        cropper = new Cropper(image, {
+                            aspectRatio: NaN,
+                            viewMode: 1,
+                            dragMode: 'crop',
+                            autoCropArea: 0.9,
+                            responsive: true,
+                            background: true,
+                            movable: true,
+                            zoomable: true,
+                            cropBoxMovable: true,
+                            cropBoxResizable: true
+                        });
+                    }, 50);
+                };
+                image.src = item.src;
+            }
+        }
+
+        function applyDocReadySqCrop() {
+            const item = drGetSelectedItem();
+            if (!cropper || !item) return;
+            const canvas = cropper.getCroppedCanvas({ fillColor: '#FFFFFF' });
+            const croppedData = canvas.toDataURL('image/jpeg', 0.92);
+            item.src = croppedData;
+            item.originalSrc = croppedData;
+            item.brightness = 0;
+            item.contrast = 0;
+            item.rotation = 0;
+            const ratio = canvas.height / Math.max(canvas.width, 1);
+            item.h = Math.max(40, Math.min(DR_PAGE_H - 20, Math.round(item.w * ratio)));
+            drPushHistory();
+            closeCropper();
+            drRenderWorkspace();
+            showToast("Square crop applied!");
+        }
+
+        // --- DOT CROP (4-Point Perspective Homography Crop) ---
+        function docReadyOpenDotCrop() {
+            const item = drGetSelectedItem();
+            if (!item) {
+                showToast("Select an image first!", true);
+                return;
+            }
+            const modal = document.getElementById('drDotCropModal');
+            const canvas = document.getElementById('drDotCropCanvas');
+            modal.classList.remove('hidden');
+
+            drDotSourceImg = new Image();
+            drDotSourceImg.onload = function() {
+                const maxW = Math.min(window.innerWidth - 40, 680);
+                const maxH = Math.min(window.innerHeight - 160, 560);
+                const scale = Math.min(maxW / drDotSourceImg.width, maxH / drDotSourceImg.height, 1);
+                canvas.width = Math.round(drDotSourceImg.width * scale);
+                canvas.height = Math.round(drDotSourceImg.height * scale);
+                canvas.getContext('2d').drawImage(drDotSourceImg, 0, 0, canvas.width, canvas.height);
+
+                const padX = Math.round(canvas.width * 0.08);
+                const padY = Math.round(canvas.height * 0.08);
+                drDotPoints = [
+                    { x: padX, y: padY },
+                    { x: canvas.width - padX, y: padY },
+                    { x: canvas.width - padX, y: canvas.height - padY },
+                    { x: padX, y: canvas.height - padY }
+                ];
+                drUpdateDotCropUI();
+            };
+            drDotSourceImg.src = item.src;
+        }
+
+        function drUpdateDotCropUI() {
+            const poly = document.getElementById('drDotCropPoly');
+            const svg = document.getElementById('drDotCropSvg');
+            const canvas = document.getElementById('drDotCropCanvas');
+            if (!poly || !canvas) return;
+            svg.setAttribute('viewBox', `0 0 ${canvas.width} ${canvas.height}`);
+            poly.setAttribute('points', drDotPoints.map(p => `${p.x},${p.y}`).join(' '));
+            drDotPoints.forEach((p, idx) => {
+                const dotEl = document.getElementById('drDot' + idx);
+                if (dotEl) {
+                    dotEl.style.left = p.x + 'px';
+                    dotEl.style.top = p.y + 'px';
+                }
+            });
+        }
+
+        [0, 1, 2, 3].forEach(idx => {
+            const dotEl = document.getElementById('drDot' + idx);
+            if (!dotEl) return;
+            const startDot = (e) => {
+                e.stopPropagation();
+                if (e.cancelable) e.preventDefault();
+                drDotDraggingIdx = idx;
+            };
+            dotEl.addEventListener('mousedown', startDot);
+            dotEl.addEventListener('touchstart', startDot, { passive: false });
+        });
+
+        window.addEventListener('mousemove', drOnDotMove);
+        window.addEventListener('touchmove', drOnDotMove, { passive: false });
+        window.addEventListener('mouseup', () => { drDotDraggingIdx = -1; });
+        window.addEventListener('touchend', () => { drDotDraggingIdx = -1; });
+
+        function drOnDotMove(e) {
+            if (drDotDraggingIdx < 0) return;
+            if (e.cancelable) e.preventDefault();
+            const canvas = document.getElementById('drDotCropCanvas');
+            if (!canvas) return;
+            const rect = canvas.getBoundingClientRect();
+            const pt = drGetEventPoint(e);
+            const x = Math.max(0, Math.min(canvas.width, pt.x - rect.left));
+            const y = Math.max(0, Math.min(canvas.height, pt.y - rect.top));
+            drDotPoints[drDotDraggingIdx] = { x, y };
+            drUpdateDotCropUI();
+        }
+
+        function docReadyCloseDotCrop() {
+            drDotDraggingIdx = -1;
+            const modal = document.getElementById('drDotCropModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function docReadyApplyDotCrop() {
+            const item = drGetSelectedItem();
+            const canvas = document.getElementById('drDotCropCanvas');
+            if (!item || !drDotSourceImg || !canvas || drDotPoints.length !== 4) return;
+
+            const scaleX = drDotSourceImg.width / canvas.width;
+            const scaleY = drDotSourceImg.height / canvas.height;
+            const pts = drDotPoints.map(p => ({ x: p.x * scaleX, y: p.y * scaleY }));
+
+            const topW = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+            const botW = Math.hypot(pts[2].x - pts[3].x, pts[2].y - pts[3].y);
+            const leftH = Math.hypot(pts[3].x - pts[0].x, pts[3].y - pts[0].y);
+            const rightH = Math.hypot(pts[2].x - pts[1].x, pts[2].y - pts[1].y);
+
+            const dstW = Math.max(80, Math.round(Math.max(topW, botW)));
+            const dstH = Math.max(80, Math.round(Math.max(leftH, rightH)));
+
+            const srcCanvas = document.createElement('canvas');
+            srcCanvas.width = drDotSourceImg.width;
+            srcCanvas.height = drDotSourceImg.height;
+            const srcCtx = srcCanvas.getContext('2d');
+            srcCtx.drawImage(drDotSourceImg, 0, 0);
+            const srcData = srcCtx.getImageData(0, 0, srcCanvas.width, srcCanvas.height).data;
+
+            const dstCanvas = document.createElement('canvas');
+            dstCanvas.width = dstW;
+            dstCanvas.height = dstH;
+            const dstCtx = dstCanvas.getContext('2d');
+            const dstImgData = dstCtx.createImageData(dstW, dstH);
+            const dstData = dstImgData.data;
+
+            const sw = srcCanvas.width;
+            const sh = srcCanvas.height;
+
+            // Bilinear quadrilateral warp from 4 corner points to rectangular target
+            for (let y = 0; y < dstH; y++) {
+                const v = y / Math.max(dstH - 1, 1);
+                for (let x = 0; x < dstW; x++) {
+                    const u = x / Math.max(dstW - 1, 1);
+                    const sx = (1 - u) * (1 - v) * pts[0].x + u * (1 - v) * pts[1].x + u * v * pts[2].x + (1 - u) * v * pts[3].x;
+                    const sy = (1 - u) * (1 - v) * pts[0].y + u * (1 - v) * pts[1].y + u * v * pts[2].y + (1 - u) * v * pts[3].y;
+                    const ix = Math.min(sw - 1, Math.max(0, Math.round(sx)));
+                    const iy = Math.min(sh - 1, Math.max(0, Math.round(sy)));
+                    const sIdx = (iy * sw + ix) * 4;
+                    const dIdx = (y * dstW + x) * 4;
+                    dstData[dIdx] = srcData[sIdx];
+                    dstData[dIdx + 1] = srcData[sIdx + 1];
+                    dstData[dIdx + 2] = srcData[sIdx + 2];
+                    dstData[dIdx + 3] = 255;
+                }
+            }
+            dstCtx.putImageData(dstImgData, 0, 0);
+
+            const outUrl = dstCanvas.toDataURL('image/jpeg', 0.92);
+            item.src = outUrl;
+            item.originalSrc = outUrl;
+            item.brightness = 0;
+            item.contrast = 0;
+            item.rotation = 0;
+            const ratio = dstH / Math.max(dstW, 1);
+            item.h = Math.max(40, Math.min(DR_PAGE_H - 20, Math.round(item.w * ratio)));
+
+            drPushHistory();
+            docReadyCloseDotCrop();
+            drRenderWorkspace();
+            showToast("4-Point Dot Crop applied!");
+        }
+
+        function docReadyFinalSet() {
+            drSelectedItemId = null;
+            document.getElementById('drAdjustPanel').classList.add('hidden');
+            drRenderWorkspace();
+            showToast("Document layout finalized! Click SAVE to attach.");
+        }
+
+        // --- Render pages to high-res canvases and SAVE directly into Member Form ---
+        async function docReadySaveToForm() {
+            const nonEmptyPages = drPages.filter(p => p.items && p.items.length > 0);
+            if (nonEmptyPages.length === 0) {
+                showToast("Please add at least one image or PDF to the page before saving!", true);
+                return;
+            }
+
+            const saveBtn = document.getElementById('drSaveBtn');
+            const origHtml = saveBtn ? saveBtn.innerHTML : '';
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>SAVING...</span>';
+            }
+
+            try {
+                const format = document.getElementById('docReadyFormat').value || 'pdf';
+                const HI_W = 1240;
+                const HI_H = 1754;
+                const scaleX = HI_W / DR_PAGE_W;
+                const scaleY = HI_H / DR_PAGE_H;
+
+                const renderedCanvases = [];
+                for (let p of nonEmptyPages) {
+                    const c = document.createElement('canvas');
+                    c.width = HI_W;
+                    c.height = HI_H;
+                    const ctx = c.getContext('2d');
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, HI_W, HI_H);
+
+                    for (let item of p.items) {
+                        const img = await new Promise(res => {
+                            const im = new Image();
+                            im.onload = () => res(im);
+                            im.onerror = () => res(null);
+                            im.src = item.src;
+                        });
+                        if (img) {
+                            ctx.drawImage(
+                                img,
+                                Math.round(item.x * scaleX),
+                                Math.round(item.y * scaleY),
+                                Math.round(item.w * scaleX),
+                                Math.round(item.h * scaleY)
+                            );
+                        }
+                    }
+                    renderedCanvases.push(c);
+                }
+
+                let finalDataUri = '';
+                let previewImgUri = renderedCanvases[0].toDataURL('image/jpeg', 0.88);
+
+                if (format === 'pdf' && drTargetMode !== 'sir') {
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF('portrait', 'pt', 'a4');
+                    const pdfW = pdf.internal.pageSize.getWidth();
+                    const pdfH = pdf.internal.pageSize.getHeight();
+
+                    renderedCanvases.forEach((canvas, idx) => {
+                        if (idx > 0) pdf.addPage();
+                        const pageJpg = canvas.toDataURL('image/jpeg', 0.88);
+                        pdf.addImage(pageJpg, 'JPEG', 0, 0, pdfW, pdfH);
+                    });
+                    finalDataUri = pdf.output('datauristring');
+                } else {
+                    if (renderedCanvases.length === 1) {
+                        finalDataUri = previewImgUri;
+                    } else {
+                        const combined = document.createElement('canvas');
+                        combined.width = HI_W;
+                        combined.height = HI_H * renderedCanvases.length;
+                        const cCtx = combined.getContext('2d');
+                        cCtx.fillStyle = '#FFFFFF';
+                        cCtx.fillRect(0, 0, combined.width, combined.height);
+                        renderedCanvases.forEach((c, idx) => {
+                            cCtx.drawImage(c, 0, idx * HI_H);
+                        });
+                        finalDataUri = combined.toDataURL('image/jpeg', 0.88);
+                        previewImgUri = finalDataUri;
+                    }
+                }
+
+                if (drTargetMode === 'idRow' && drTargetRow) {
+                    setIdProofRowAttachment(drTargetRow, finalDataUri);
+                    showToast("Document Ready & Saved to ID Proof!");
+                } else if (drTargetMode === 'sir') {
+                    window._sirDocExplicitlyRemoved = false;
+                    if (document.getElementById('finalVoterDocBase64')) {
+                        document.getElementById('finalVoterDocBase64').value = previewImgUri;
+                    }
+                    if (document.getElementById('voterFinalImage')) {
+                        document.getElementById('voterFinalImage').src = previewImgUri;
+                    }
+                    if (document.getElementById('voterFinalPreviewContainer')) {
+                        document.getElementById('voterFinalPreviewContainer').classList.remove('hidden');
+                    }
+                    showToast("SIR Voter Document Ready & Saved!");
+                }
+
+                closeDocReadyModal();
+            } catch (err) {
+                console.error(err);
+                showToast("Failed to save prepared document.", true);
+            } finally {
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = origHtml;
+                }
+            }
+        }
+
     </script>
 </body>
 </html>

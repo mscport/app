@@ -216,11 +216,11 @@
                             </div>
                             <div class="w-full md:flex-1">
                                 <label class="block text-xs font-bold text-gray-500 mb-1">ফিল্টার (পাড়া)</label>
-                                <select id="colParaSelect" onchange="renderCollectionTable()" class="w-full border p-2 rounded font-bold text-purple-800"><option value="all">সব পাড়া</option></select>
+                                <select id="colParaSelect" onchange="colCurrentPage=1; renderCollectionTable()" class="w-full border p-2 rounded font-bold text-purple-800"><option value="all">সব পাড়া</option></select>
                             </div>
                             <div class="w-full md:flex-1">
                                 <label class="block text-xs font-bold text-gray-500 mb-1">মাধ্যম (Mode)</label>
-                                <select id="colModeFilter" onchange="renderCollectionTable()" class="w-full border p-2 rounded font-bold text-gray-700 bg-white">
+                                <select id="colModeFilter" onchange="colCurrentPage=1; renderCollectionTable()" class="w-full border p-2 rounded font-bold text-gray-700 bg-white">
                                     <option value="all">সব মাধ্যম</option>
                                     <option value="cash">ক্যাশ (Cash)</option>
                                     <option value="samagri">সামগ্রী (Goods)</option>
@@ -229,7 +229,7 @@
                             </div>
                             <div class="w-full md:flex-[2]">
                                 <label class="block text-xs font-bold text-gray-500 mb-1">খুঁজুন (Search)</label>
-                                <input type="text" id="colSearch" onkeyup="renderCollectionTable()" class="w-full border p-2 rounded" placeholder="নাম বা ক্রমিক দিয়ে খুঁজুন...">
+                                <input type="text" id="colSearch" onkeyup="colCurrentPage=1; renderCollectionTable()" class="w-full border p-2 rounded" placeholder="নাম বা ক্রমিক দিয়ে খুঁজুন...">
                             </div>
                         </div>
                     </div>
@@ -241,6 +241,7 @@
                             </table>
                         </div>
                     </div>
+                    <div id="colPaginationContainer" class="flex justify-center items-center gap-1 mt-4 pb-2"></div>
                 </div>
 
                 <!-- 3. CAR DONATION -->
@@ -285,7 +286,7 @@
                     <div class="bg-white rounded shadow p-3 sm:p-4 w-full">
                         <div class="mb-4 flex gap-2 items-center bg-blue-50 p-2 sm:p-3 rounded border border-blue-200">
                             <i data-lucide="search" class="w-5 h-5 text-blue-500"></i>
-                            <input type="text" id="carSearchInput" onkeyup="renderCarTable()" class="w-full bg-transparent outline-none font-bold text-gray-700 text-sm sm:text-base placeholder-gray-400" placeholder="Search by Date, Car No...">
+                            <input type="text" id="carSearchInput" onkeyup="carCurrentPage=1; renderCarTable()" class="w-full bg-transparent outline-none font-bold text-gray-700 text-sm sm:text-base placeholder-gray-400" placeholder="Search by Date, Car No...">
                         </div>
                         <div class="overflow-x-auto w-full">
                             <table class="w-full spreadsheet-table text-xs sm:text-sm min-w-[600px]">
@@ -294,8 +295,8 @@
                             </table>
                         </div>
                     </div>
+                    <div id="carPaginationContainer" class="flex justify-center items-center gap-1 mt-4 pb-4"></div>
                 </div>
-<div id="carPaginationContainer" class="flex justify-center items-center gap-1 mt-4 pb-4"></div>
                 <!-- 4. NEW DASHBOARD -->
                 <div id="sub-dashboard" class="sub-tab-content hidden space-y-4">
                     
@@ -504,10 +505,16 @@
                                     </div>
                                 </div>
                                 <div id="repCarTypeFilterBox">
-                                    <label class="text-xs font-bold text-gray-500 block mb-1.5">গাড়ীর ধরন ফিল্টার (Car Type):</label>
+                                    <div class="flex justify-between items-center mb-1.5">
+                                        <label class="text-xs font-bold text-gray-500">গাড়ীর ধরন ফিল্টার (Car Type):</label>
+                                        <div class="flex gap-2 text-[11px] font-bold">
+                                            <button type="button" onclick="toggleAllRepCars(true)" class="text-blue-600 hover:underline">সব</button>
+                                            <button type="button" onclick="toggleAllRepCars(false)" class="text-red-500 hover:underline">রিসেট</button>
+                                        </div>
+                                    </div>
                                     <div class="flex flex-wrap gap-3 text-xs sm:text-sm font-bold text-gray-700">
-                                        <label class="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" value="Coal" checked class="rep-car-checkbox w-4 h-4 accent-blue-600"> কয়লার গাড়ী (Coal)</label>
-                                        <label class="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" value="Local" checked class="rep-car-checkbox w-4 h-4 accent-blue-600"> লোকাল গাড়ী (Local)</label>
+                                        <label class="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" value="Coal" class="rep-car-checkbox w-4 h-4 accent-blue-600"> কয়লার গাড়ী (Coal)</label>
+                                        <label class="flex items-center gap-1.5 cursor-pointer"><input type="checkbox" value="Local" class="rep-car-checkbox w-4 h-4 accent-blue-600"> লোকাল গাড়ী (Local)</label>
                                     </div>
                                 </div>
                             </div>
@@ -1118,60 +1125,131 @@
         safeCreateIcons();
     });
 
-    function normalizeIncomeItem(i) {
+    function parseNumericAmount(val) {
+        if (val === null || val === undefined || val === '') return 0;
+        if (typeof val === 'number') return Number.isFinite(val) ? val : 0;
+        const bnDigits = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
+        let cleaned = String(val).replace(/[০-৯]/g, d => bnDigits.indexOf(d));
+        cleaned = cleaned.replace(/[₹,\s]/g, '').replace(/\/-$/g, '');
+        const num = Number(cleaned);
+        return Number.isFinite(num) ? num : 0;
+    }
+
+    function cleanSpaceText(val) {
+        if (val === null || val === undefined) return '';
+        let str = String(val);
+        if (typeof str.normalize === 'function') str = str.normalize('NFC');
+        return str.replace(/\u00A0/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    function normalizePujaKey(str) {
+        if (!str) return '';
+        const bnDigits = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
+        return cleanSpaceText(str)
+            .replace(/[০-৯]/g, d => bnDigits.indexOf(d))
+            .toLowerCase();
+    }
+
+    function isSamePuja(p1, p2) {
+        return normalizePujaKey(p1) === normalizePujaKey(p2);
+    }
+
+    function getLocalTodayYMD() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function compareDatesSafe(aDate, bDate, desc = true) {
+        const aNorm = fixDateOffset(aDate);
+        const bNorm = fixDateOffset(bDate);
+        if (aNorm === bNorm) return 0;
+        if (!aNorm) return desc ? 1 : -1;
+        if (!bNorm) return desc ? -1 : 1;
+        return desc ? (bNorm > aNorm ? 1 : -1) : (aNorm > bNorm ? 1 : -1);
+    }
+
+    function normalizeIncomeItem(i, idx = 0) {
         if (!i || typeof i !== 'object') return null;
+        const rawId = i.id ?? i.ID ?? i.Id;
+        const rawPuja = i.puja ?? i.Puja ?? i.PUJA;
+        const rawDate = i.date ?? i.Date ?? i.DATE;
+        const rawPara = i.para ?? i.Para ?? i.PARA;
+        const rawEn = i.english_name ?? i.englishName ?? i.English_Name ?? i.name;
+        const rawBn = i.bengali_name ?? i.bengaliName ?? i.Bengali_Name;
+        const rawProj = i.projected ?? i.Projected;
+        const rawPaid = i.paid ?? i.Paid;
+        const rawDue = i.due ?? i.Due;
+        const rawRem = i.remarks ?? i.Remarks;
         return {
             ...i,
-            id: String(i.id ?? Date.now()),
-            puja: safeTrim(String(i.puja || "কালী পূজা ২০২৫")),
-            date: fixDateOffset(i.date),
-            para: safeTrim(String(i.para ?? '')),
-            english_name: safeTrim(String(i.english_name ?? '')),
-            bengali_name: safeTrim(String(i.bengali_name ?? '')),
-            projected: Number(i.projected) || 0,
-            paid: Number(i.paid) || 0,
-            due: Number(i.due) || 0,
-            remarks: String(i.remarks ?? '')
+            id: (rawId !== null && rawId !== undefined && String(rawId).trim() !== '') ? String(rawId) : `inc_${idx}_${Date.now()}`,
+            puja: cleanSpaceText(rawPuja || "কালী পূজা ২০২৫"),
+            date: fixDateOffset(rawDate),
+            para: cleanSpaceText(rawPara ?? ''),
+            english_name: safeTrim(String(rawEn ?? '')),
+            bengali_name: safeTrim(String(rawBn ?? '')),
+            projected: parseNumericAmount(rawProj),
+            paid: parseNumericAmount(rawPaid),
+            due: parseNumericAmount(rawDue),
+            remarks: String(rawRem ?? '')
         };
     }
 
-    function normalizeExpenseItem(e) {
+    function normalizeExpenseItem(e, idx = 0) {
         if (!e || typeof e !== 'object') return null;
+        const rawImgs = e.images ?? e.Images;
         let imgs = [];
-        if (Array.isArray(e.images)) {
-            imgs = e.images.filter(Boolean);
-        } else if (typeof e.images === 'string' && e.images.trim()) {
+        if (Array.isArray(rawImgs)) {
+            imgs = rawImgs.filter(Boolean);
+        } else if (typeof rawImgs === 'string' && rawImgs.trim()) {
             try {
-                const parsed = JSON.parse(e.images);
-                imgs = Array.isArray(parsed) ? parsed.filter(Boolean) : [e.images.trim()];
+                const parsed = JSON.parse(rawImgs);
+                imgs = Array.isArray(parsed) ? parsed.filter(Boolean) : [rawImgs.trim()];
             } catch (err) {
-                imgs = [e.images.replace(/[\[\]"]/g, '').trim()].filter(Boolean);
+                imgs = [rawImgs.replace(/[\[\]"]/g, '').trim()].filter(Boolean);
             }
         }
+        const rawId = e.id ?? e.ID ?? e.Id;
+        const rawPuja = e.puja ?? e.Puja ?? e.PUJA;
+        const rawDate = e.date ?? e.Date ?? e.DATE;
+        const rawReason = e.reason ?? e.Reason;
+        const rawAmount = e.amount ?? e.Amount;
+        const rawRem = e.remarks ?? e.Remarks;
         return {
             ...e,
-            id: String(e.id ?? Date.now()),
-            puja: safeTrim(String(e.puja || "কালী পূজা ২০২৫")),
-            date: fixDateOffset(e.date),
-            reason: safeTrim(String(e.reason ?? '')),
-            amount: Number(e.amount) || 0,
-            remarks: safeTrim(String(e.remarks ?? '')),
+            id: (rawId !== null && rawId !== undefined && String(rawId).trim() !== '') ? String(rawId) : `exp_${idx}_${Date.now()}`,
+            puja: cleanSpaceText(rawPuja || "কালী পূজা ২০২৫"),
+            date: fixDateOffset(rawDate),
+            reason: safeTrim(String(rawReason ?? '')),
+            amount: parseNumericAmount(rawAmount),
+            remarks: safeTrim(String(rawRem ?? '')),
             images: imgs
         };
     }
 
-    function normalizeCarItem(c) {
+    function normalizeCarItem(c, idx = 0) {
         if (!c || typeof c !== 'object') return null;
+        const rawId = c.id ?? c.ID ?? c.Id;
+        const rawPuja = c.puja ?? c.Puja ?? c.PUJA;
+        const rawDate = c.date ?? c.Date ?? c.DATE;
+        const rawCarNo = c.carNumber ?? c.car_number ?? c.CarNumber ?? c.CarNo;
+        const rawType = c.type ?? c.Type;
+        const rawPaid = c.paid ?? c.Paid;
+        const rawDue = c.due ?? c.Due;
+        const rawRem = c.remarks ?? c.Remarks;
         return {
             ...c,
-            id: String(c.id ?? Date.now()),
-            puja: safeTrim(String(c.puja || "কালী পূজা ২০২৫")),
-            date: fixDateOffset(c.date),
-            carNumber: safeTrim(String(c.carNumber ?? '')),
-            type: safeTrim(String(c.type || 'Coal')),
-            paid: Number(c.paid) || 0,
-            due: Number(c.due) || 0,
-            remarks: String(c.remarks ?? '')
+            id: (rawId !== null && rawId !== undefined && String(rawId).trim() !== '') ? String(rawId) : `car_${idx}_${Date.now()}`,
+            puja: cleanSpaceText(rawPuja || "কালী পূজা ২০২৫"),
+            date: fixDateOffset(rawDate),
+            carNumber: safeTrim(String(rawCarNo ?? '')),
+            type: safeTrim(String(rawType || 'Coal')),
+            paid: parseNumericAmount(rawPaid),
+            due: parseNumericAmount(rawDue),
+            remarks: String(rawRem ?? '')
         };
     }
 
@@ -1384,41 +1462,97 @@
         refreshUI();
     }
 
-// ১. আপডেট করা fixDateOffset ফাংশন
+// ১. আপডেট করা fixDateOffset ফাংশন (YYYY-MM-DD, YYYY/MM/DD, DD/MM/YYYY, DD-MM-YYYY, ISO, Excel Serial সব সাপোর্ট করে)
 function fixDateOffset(dateStr) {
     if (dateStr === null || dateStr === undefined || dateStr === '') return '';
-    const str = String(dateStr).trim();
-    if (str.length === 10 && str.includes('-')) return str;
 
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return str.split('T')[0];
+    // Google Sheets / Excel numeric serial date handling (e.g., 46340)
+    if (typeof dateStr === 'number' && Number.isFinite(dateStr) && dateStr > 20000 && dateStr < 90000) {
+        const serialMs = Math.round((dateStr - 25569) * 86400 * 1000);
+        const sd = new Date(serialMs);
+        if (!isNaN(sd.getTime())) {
+            return `${sd.getUTCFullYear()}-${String(sd.getUTCMonth() + 1).padStart(2, '0')}-${String(sd.getUTCDate()).padStart(2, '0')}`;
+        }
+    }
 
-    const istTime = new Date(d.getTime() + (5.5 * 60 * 60 * 1000));
-    
-    const year = istTime.getUTCFullYear();
-    const month = String(istTime.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(istTime.getUTCDate()).padStart(2, '0');
+    const bnDigits = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
+    let str = String(dateStr).trim().replace(/[০-৯]/g, d => bnDigits.indexOf(d));
+    if (!str) return '';
 
-    return `${year}-${month}-${day}`;
+    // Numeric string serial date (e.g., "46340")
+    if (/^\d{5}(\.\d+)?$/.test(str)) {
+        const numSerial = Number(str);
+        if (numSerial > 20000 && numSerial < 90000) {
+            const serialMs = Math.round((numSerial - 25569) * 86400 * 1000);
+            const sd = new Date(serialMs);
+            if (!isNaN(sd.getTime())) {
+                return `${sd.getUTCFullYear()}-${String(sd.getUTCMonth() + 1).padStart(2, '0')}-${String(sd.getUTCDate()).padStart(2, '0')}`;
+            }
+        }
+    }
+
+    // Case A: ISO timestamp with timezone (e.g. "2026-11-13T18:30:00.000Z" from Apps Script) -> convert to IST (+5:30)
+    if (/^\d{4}-\d{2}-\d{2}T.+(Z|[+-]\d{2}:?\d{2})$/i.test(str)) {
+        const d = new Date(str);
+        if (!isNaN(d.getTime())) {
+            const istTime = new Date(d.getTime() + (5.5 * 60 * 60 * 1000));
+            return `${istTime.getUTCFullYear()}-${String(istTime.getUTCMonth() + 1).padStart(2, '0')}-${String(istTime.getUTCDate()).padStart(2, '0')}`;
+        }
+    }
+
+    // Case B: YYYY-MM-DD or YYYY/MM/DD or YYYY.MM.DD (with optional local time) -> direct canonical YYYY-MM-DD
+    const ymdMatch = str.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})(?:[\sT].*)?$/);
+    if (ymdMatch) {
+        const year = ymdMatch[1];
+        const month = ymdMatch[2].padStart(2, '0');
+        const day = ymdMatch[3].padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    // Case C: DD/MM/YYYY or DD-MM-YYYY or DD.MM.YYYY (also handles US MM/DD/YYYY when second part > 12)
+    const dmyMatch = str.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2}|\d{4})(?:[\sT].*)?$/);
+    if (dmyMatch) {
+        let p1 = parseInt(dmyMatch[1], 10);
+        let p2 = parseInt(dmyMatch[2], 10);
+        let year = dmyMatch[3];
+        if (year.length === 2) year = '20' + year;
+        let day = p1, month = p2;
+        if (p1 <= 12 && p2 > 12) {
+            month = p1;
+            day = p2;
+        }
+        return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+
+    // Case D: Fallback JS Date parsing (e.g. "Sat Nov 14 2026 00:00:00 GMT+0530")
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+        const istTime = new Date(d.getTime() + (5.5 * 60 * 60 * 1000));
+        return `${istTime.getUTCFullYear()}-${String(istTime.getUTCMonth() + 1).padStart(2, '0')}-${String(istTime.getUTCDate()).padStart(2, '0')}`;
+    }
+
+    return str.split('T')[0];
 }
 
-// ২. নতুন Date Formatter ফাংশন
+// ২. নতুন Date Formatter ফাংশন (সব ফরম্যাট থেকে নিরাপদে DD/MM/YYYY দেখায়)
 function formatDisplayDate(dateStr) {
     if (dateStr === null || dateStr === undefined || dateStr === '') return '';
-    const str = String(dateStr).trim();
-    if (str.length === 10 && str.includes('-')) {
-        const parts = str.split('-');
-        return `${parts[2]}/${parts[1]}/${parts[0]}`; 
+    const norm = fixDateOffset(dateStr);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(norm)) {
+        const parts = norm.split('-');
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
     }
-    try { return new Date(dateStr).toLocaleDateString('en-GB'); } catch(e) { return str; }
+    return String(dateStr).trim();
 }
 
     async function fetchAllData() {
         document.body.style.cursor = 'wait'; 
         try {
-            const response = await fetch(SCRIPT_URL, {
+            const fetchUrl = SCRIPT_URL + (SCRIPT_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
+            const response = await fetch(fetchUrl, {
                 method: "GET",
-                redirect: "follow"
+                redirect: "follow",
+                cache: "no-store"
             }); 
             
             if (!response.ok) {
@@ -1434,9 +1568,9 @@ function formatDisplayDate(dateStr) {
                 throw new Error("App Script থেকে ভুল ডাটা এসেছে। পারমিশন চেক করুন।");
             }
             
-            globalData.income = (data.income || []).map(normalizeIncomeItem).filter(Boolean); 
-            globalData.expense = (data.expense || []).map(normalizeExpenseItem).filter(Boolean); 
-            globalData.car = (data.car || []).map(normalizeCarItem).filter(Boolean);
+            globalData.income = (data.income || []).map((item, idx) => normalizeIncomeItem(item, idx)).filter(Boolean); 
+            globalData.expense = (data.expense || []).map((item, idx) => normalizeExpenseItem(item, idx)).filter(Boolean); 
+            globalData.car = (data.car || []).map((item, idx) => normalizeCarItem(item, idx)).filter(Boolean);
             
             if (data.defaultPuja && !isSyncingSettings) {
                 globalData.defaultPuja = String(data.defaultPuja);
@@ -1683,17 +1817,9 @@ function parseParaData(p) {
     }
 
     function normalizeDate(dateStr) {
-        if (!dateStr) return new Date().toISOString().split('T')[0];
-        if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) return dateStr;
-        const parts = dateStr.split(/[-/.]/);
-        if (parts.length === 3) { 
-            let day = parts[0].padStart(2, '0'); 
-            let month = parts[1].padStart(2, '0'); 
-            let year = parts[2]; 
-            if (year.length === 2) year = '20' + year; 
-            return `${year}-${month}-${day}`; 
-        }
-        try { return new Date(dateStr).toISOString().split('T')[0]; } catch (e) { return dateStr; }
+        if (!dateStr) return getLocalTodayYMD();
+        const fixed = fixDateOffset(dateStr);
+        return fixed || getLocalTodayYMD();
     }
 
     function isBangla(str) { 
@@ -1709,22 +1835,319 @@ function parseParaData(p) {
     }
 
  
+ // ==========================================
+ // PRO-LEVEL BIDIRECTIONAL EN <-> BN NAME & EXPENSE TRANSLITERATION ENGINE (GBoard EN•BN Style)
+ // ==========================================
+ const PRO_EN_TO_BN_DICT = {
+        // --- Surnames (পদবী - West Bengal & North 24 Parganas Comprehensive) ---
+        'adhya': 'আঢ্য', 'addhya': 'আঢ্য', 'adhyaa': 'আঢ্য', 'addya': 'আঢ্য', 'adya': 'আঢ্য',
+        'mondal': 'মণ্ডল', 'mandal': 'মণ্ডল', 'mandol': 'মণ্ডল',
+        'ghosh': 'ঘোষ', 'ghose': 'ঘোষ', 'ghoshal': 'ঘোষাল', 'ghosal': 'ঘোষাল',
+        'bose': 'বসু', 'basu': 'বসু', 'das': 'দাস', 'dass': 'দাস', 'dasgupta': 'দাসগুপ্ত',
+        'dey': 'দে', 'de': 'দে', 'roy': 'রায়', 'ray': 'রায়', 'roychoudhury': 'রায়চৌধুরী', 'raychoudhury': 'রায়চৌধুরী',
+        'sen': 'সেন', 'sengupta': 'সেনগুপ্ত', 'saha': 'সাহা', 'dutta': 'দত্ত', 'datta': 'দত্ত',
+        'pal': 'পাল', 'paul': 'পাল', 'mitra': 'মিত্র', 'mitro': 'মিত্র',
+        'mukherjee': 'মুখার্জী', 'mukherji': 'মুখার্জী', 'mukhopadhyay': 'মুখোপাধ্যায়', 'mukhopadhayay': 'মুখোপাধ্যায়',
+        'banerjee': 'ব্যানার্জী', 'banerji': 'ব্যানার্জী', 'bandyopadhyay': 'বন্দ্যোপাধ্যায়', 'bandopadhyay': 'বন্দ্যোপাধ্যায়',
+        'chatterjee': 'চ্যাটার্জী', 'chatterji': 'চ্যাটার্জী', 'chattopadhyay': 'চট্টোপাধ্যায়', 'chatopadhyay': 'চট্টোপাধ্যায়',
+        'ganguly': 'গাঙ্গুলী', 'ganguli': 'গাঙ্গুলী', 'gangopadhyay': 'গঙ্গোপাধ্যায়',
+        'bhattacharya': 'ভট্টাচার্য', 'bhattacharjee': 'ভট্টাচার্য', 'bhattacharyya': 'ভট্টাচার্য', 'bhatta': 'ভট্ট',
+        'chakraborty': 'চক্রবর্তী', 'chakrabarti': 'চক্রবর্তী', 'chakravarty': 'চক্রবর্তী', 'chakravorty': 'চক্রবর্তী',
+        'majumdar': 'মজুমদার', 'mazumdar': 'মজুমদার', 'majumder': 'মজুমদার', 'mazumder': 'মজুমদার',
+        'biswas': 'বিশ্বাস', 'sarkar': 'সরকার', 'sarker': 'সরকার', 'sirkar': 'সরকার',
+        'halder': 'হালদার', 'haldar': 'হালদার', 'naskar': 'নস্কর', 'nasker': 'নস্কর',
+        'pramanik': 'প্রামাণিক', 'pramanick': 'প্রামাণিক', 'paramanik': 'প্রামাণিক',
+        'karmakar': 'কর্মকার', 'karmokar': 'কর্মকার', 'kundu': 'কুণ্ডু', 'jana': 'জানা',
+        'maity': 'মাইতি', 'maiti': 'মাইতি', 'bera': 'বেরা', 'patra': 'পাত্র', 'patro': 'পাত্র',
+        'hazra': 'হাজরা', 'hajra': 'হাজরা', 'maji': 'মাঝি', 'majhi': 'মাঝি', 'mahato': 'মাহাতো', 'mahata': 'মাহাতো',
+        'bhowmik': 'ভৌমিক', 'bhowmick': 'ভৌমিক', 'bhaumik': 'ভৌমিক', 'guha': 'গুহ', 'kar': 'কর',
+        'nag': 'নাগ', 'nath': 'নাথ', 'sil': 'শীল', 'sheel': 'শীল', 'shil': 'শীল',
+        'sadhukhan': 'সাধুখাঁ', 'adhikary': 'অধিকারী', 'adhikari': 'অধিকারী', 'barman': 'বর্মণ', 'burman': 'বর্মণ',
+        'baidya': 'বৈদ্য', 'banik': 'বণিক', 'barik': 'বারিক', 'basak': 'বসাক', 'bhadra': 'ভদ্র',
+        'chanda': 'চন্দ', 'choudhury': 'চৌধুরী', 'chowdhury': 'চৌধুরী', 'chaudhuri': 'চৌধুরী',
+        'deb': 'দেব', 'dev': 'দেব', 'debnath': 'দেবনাথ', 'debbarma': 'দেববর্মা', 'dhar': 'ধর',
+        'giri': 'গিরি', 'goswami': 'গোস্বামী', 'koley': 'কোলে', 'kole': 'কোলে', 'lahiri': 'লাহিড়ী', 'laha': 'লাহা',
+        'malakar': 'মালাকার', 'mallick': 'মল্লিক', 'mallik': 'মল্লিক', 'manna': 'মান্না', 'modak': 'মোদক',
+        'mudi': 'মুদি', 'nandi': 'নন্দী', 'nandy': 'নন্দী', 'neogi': 'নিয়োগী', 'niyogi': 'নিয়োগী',
+        'panja': 'পাঁজা', 'poddar': 'পোদ্দার', 'podder': 'পোদ্দার', 'purkait': 'পুরকাইত', 'rakshit': 'রক্ষিত',
+        'rudra': 'রুদ্র', 'samanta': 'সামন্ত', 'sanyal': 'সান্যাল', 'sardar': 'সর্দার', 'sarder': 'সর্দার',
+        'sasmal': 'শাসমল', 'sett': 'শেঠ', 'seth': 'শেঠ', 'shaw': 'সাউ', 'sahu': 'সাহু', 'sau': 'সাউ',
+        'sikdar': 'সিকদার', 'sikder': 'সিকদার', 'singha': 'সিংহ', 'sinha': 'সিনহা', 'singh': 'সিং',
+        'sur': 'সুর', 'tarafdar': 'তরফদার', 'tarafder': 'তরফদার', 'thakur': 'ঠাকুর', 'tripathi': 'ত্রিপাঠী',
+        'khan': 'খান', 'sheikh': 'শেখ', 'sk': 'শেখ', 'shaikh': 'শেখ', 'molla': 'মোল্লা', 'mollah': 'মোল্লা',
+        'gazi': 'গাজী', 'kazi': 'কাজী', 'ali': 'আলী', 'islam': 'ইসলাম', 'rahman': 'রহমান', 'hossain': 'হোসেন',
+        'mondol': 'মণ্ডল', 'gain': 'গাইন', 'gayen': 'গায়েন', 'bairagi': 'বৈরাগী', 'bagchi': 'বাগচী',
+        'baksi': 'বক্সী', 'bakshi': 'বক্সী', 'bhunia': 'ভুঁইয়া', 'bhuiya': 'ভুঁইয়া', 'bhuiyan': 'ভুঁইয়া',
+        'chaki': 'চাকী', 'dalu': 'দালু', 'dolui': 'দোলুই', 'ghorai': 'ঘোড়াই', 'ghorui': 'ঘড়ুই',
+        'guin': 'গুইন', 'kayal': 'কয়াল', 'koyal': 'কয়াল', 'khatua': 'খাঁটুয়া', 'mahapatra': 'মহাপাত্র',
+        'maitra': 'মৈত্র', 'moitra': 'মৈত্র', 'mishra': 'মিশ্র', 'misra': 'মিশ্র', 'mullick': 'মল্লিক',
+        'nayak': 'নায়ক', 'nayek': 'নায়েক', 'ojha': 'ওঝা', 'pahari': 'পাহাড়ী', 'panda': 'পণ্ডা',
+        'paria': 'পড়িয়া', 'parui': 'পারুই', 'patel': 'প্যাটেল', 'pradhan': 'প্রধান', 'purohit': 'পুরোহিত',
+        'rakhit': 'রক্ষিত', 'roybarman': 'রায়বর্মণ', 'sadhukha': 'সাধুখাঁ', 'samaddar': 'সমাদ্দার',
+        'sant': 'সাঁত', 'santra': 'সাঁতরা', 'sharma': 'শর্মা', 'sarma': 'শর্মা', 'shome': 'সোম', 'som': 'সোম',
+        'talukdar': 'তালুকদার', 'talukder': 'তালুকদার', 'tiwari': 'তিওয়ারী', 'upadhyay': 'উপাধ্যায়',
+        'verma': 'বর্মা', 'varma': 'বর্মা', 'yadav': 'যাদব', 'mistri': 'মিস্ত্রী', 'mistry': 'মিস্ত্রী',
+
+        // --- Common Bengali First Names (পুরুষ ও মহিলা নাম - GBoard EN•BN Accurate) ---
+        'sayan': 'সায়ন', 'shayan': 'সায়ন', 'sayon': 'সায়ন', 'sayantan': 'সায়ন্তন', 'sayantani': 'সায়ন্তনী',
+        'samiran': 'সমীরণ', 'samir': 'সমীর', 'sameer': 'সমীর', 'samar': 'সমর', 'samaresh': 'সমরেশ',
+        'subhajit': 'শুভজিৎ', 'shubhajit': 'শুভজিৎ', 'subhojit': 'শুভজিৎ', 'subho': 'শুভ', 'shubho': 'শুভ',
+        'subham': 'শুভম', 'shubham': 'শুভম', 'subhankar': 'শুভঙ্কর', 'shubhankar': 'শুভঙ্কর',
+        'souvik': 'সৌভিক', 'sauvik': 'সৌভিক', 'soumya': 'সৌম্য', 'soumyajit': 'সৌম্যজিৎ', 'soumyadip': 'সৌম্যদীপ',
+        'sourav': 'সৌরভ', 'saurav': 'সৌরভ', 'sourabh': 'সৌরভ', 'sounak': 'সৌনক', 'soumen': 'সৌমেন', 'soumitra': 'সৌমিত্র',
+        'sujoy': 'সুজয়', 'sujay': 'সুজয়', 'sujit': 'সুজিৎ', 'suman': 'সুমন', 'sumon': 'সুমন', 'sumit': 'সুমিত',
+        'sumita': 'সুমিতা', 'sumitra': 'সুমিত্রা', 'sunil': 'সুনীল', 'sunita': 'সুনীতা', 'supriya': 'সুপ্রিয়া',
+        'supratim': 'সুপ্রতিম', 'surajit': 'সুরজিৎ', 'suresh': 'সুরেশ', 'surya': 'সূর্য', 'susanta': 'সুশান্ত', 'sushanta': 'সুশান্ত',
+        'subrata': 'সুব্রত', 'subir': 'সুবীর', 'subhash': 'সুভাষ', 'subhas': 'সুভাষ', 'subhasis': 'শুভাশিস', 'subhashis': 'শুভাশিস',
+        'sudip': 'সুদীপ', 'sudeep': 'সুদীপ', 'sudipta': 'সুদীপ্ত', 'sudipto': 'সুদীপ্ত', 'sudhir': 'সুধীর',
+        'sukanta': 'সুকান্ত', 'sukumar': 'সুকুমার', 'sujata': 'সুজাতা', 'sulekha': 'সুলেখা', 'sushmita': 'সুস্মিতা',
+        'sagar': 'সাগর', 'sagarika': 'সাগরিকা', 'saikat': 'সৈকত', 'sajal': 'সজল', 'sanat': 'সনৎ', 'sanjay': 'সঞ্জয়', 'sanjoy': 'সঞ্জয়',
+        'sanjib': 'সঞ্জীব', 'sandeep': 'সন্দীপ', 'sandip': 'সন্দীপ', 'sankar': 'শঙ্কর', 'shankar': 'শঙ্কর',
+        'santanu': 'শান্তনু', 'shantanu': 'শান্তনু', 'santosh': 'সন্তোষ', 'saroj': 'সরোজ', 'sasanka': 'শশাঙ্ক', 'sashi': 'শশী',
+        'satya': 'সত্য', 'satyajit': 'সত্যজিৎ', 'satyabrata': 'সত্যব্রত', 'sachin': 'শচীন', 'shib': 'শিব', 'shiva': 'শিব',
+        'shibnath': 'শিবনাথ', 'sibnath': 'শিবনাথ', 'shyam': 'শ্যাম', 'shyamal': 'শ্যামল', 'siddhartha': 'সিদ্ধার্থ',
+        'sisir': 'শিশির', 'shishir': 'শিশির', 'snehasis': 'স্নেহাশিস', 'somnath': 'সোমনাথ', 'sovan': 'শোভন', 'shovan': 'শোভন',
+        'srijit': 'সৃজিৎ', 'srijon': 'সৃজন', 'srikanta': 'শ্রীকান্ত', 'swapan': 'স্বপন', 'swarup': 'স্বরূপ', 'swati': 'স্বাতী',
+        'tapas': 'তাপস', 'tarun': 'তরুণ', 'tapan': 'তপন', 'tanmoy': 'তন্ময়', 'tanmay': 'তন্ময়', 'tanushree': 'তনুশ্রী',
+        'tirthankar': 'তীর্থঙ্কর', 'tridib': 'ত্রিদিব', 'tuhin': 'তুহিন', 'tushar': 'তুষার', 'tutul': 'টুটুল',
+        'biswajit': 'বিশ্বজিৎ', 'bishwajit': 'বিশ্বজিৎ', 'bikash': 'বিকাশ', 'bikram': 'বিক্রম', 'biplab': 'বিপ্লব',
+        'bapi': 'বাপি', 'bapan': 'বাপ্পা', 'bappa': 'বাপ্পা', 'babai': 'বাবাই', 'babu': 'বাবু', 'babul': 'বাবুল',
+        'badal': 'বাদল', 'balai': 'বলাই', 'banani': 'বনানী', 'barun': 'বরুণ', 'basudeb': 'বাসুদেব', 'bhaskar': 'ভাস্কর',
+        'bhola': 'ভোলা', 'bholanath': 'ভোলানাথ', 'bibek': 'বিবেক', 'vivek': 'বিবেক', 'bibhas': 'বিভাস', 'bijoy': 'বিজয়', 'bijay': 'বিজয়',
+        'bimal': 'বিমল', 'binoy': 'বিনয়', 'binay': 'বিনয়', 'biren': 'বীরেন', 'birendra': 'বীরেন্দ্র', 'bishnu': 'বিষ্ণু', 'biswanath': 'বিশ্বনাথ',
+        'arindam': 'অরিন্দম', 'arnab': 'অর্ণব', 'anirban': 'অনির্বাণ', 'aniruddha': 'অনিরুদ্ধ', 'ankit': 'অঙ্কিত', 'ankita': 'অঙ্কিতা',
+        'ananya': 'অনন্যা', 'anup': 'অনুপ', 'anupam': 'অনুপম', 'anurag': 'অনুরাগ', 'abhishek': 'অভিষেক', 'abhijit': 'অভিজিৎ',
+        'abhinaba': 'অভিনব', 'abir': 'আবীর', 'ajay': 'অজয়', 'ajoy': 'অজয়', 'ajit': 'অজিৎ', 'akash': 'আকাশ',
+        'alok': 'অলোক', 'aloke': 'অলোক', 'amal': 'অমল', 'amaresh': 'অমরেশ', 'amit': 'অমিত', 'amitava': 'অমিতাভ',
+        'amrit': 'অমৃত', 'amrita': 'অমৃতা', 'ananda': 'আনন্দ', 'anil': 'অনিল', 'anjan': 'অঞ্জন', 'aparajita': 'অপরাজিতা',
+        'aparna': 'অপর্ণা', 'arghya': 'অর্ঘ্য', 'arjun': 'অর্জুন', 'arka': 'অর্ক', 'arun': 'অরুণ', 'arup': 'অরূপ',
+        'ashim': 'অসীম', 'asim': 'অসীম', 'ashis': 'আশিস', 'ashish': 'আশিস', 'ashok': 'অশোক', 'asit': 'অসিত', 'atanu': 'অতনু', 'avinash': 'অবিনাশ',
+        'chandan': 'চন্দন', 'chandana': 'চন্দনা', 'chandi': 'চণ্ডী', 'chandra': 'চন্দ্র', 'chiranjit': 'চিরঞ্জিৎ', 'chitta': 'চিত্ত',
+        'deb': 'দেব', 'debashis': 'দেবাশিস', 'debashish': 'দেবাশিস', 'debabrata': 'দেবব্রত', 'debdas': 'দেবদাস',
+        'debjani': 'দেবযানী', 'debu': 'দেবু', 'deep': 'দীপ', 'dip': 'দীপ', 'deepak': 'দীপক', 'dipak': 'দীপক',
+        'dipankar': 'দীপঙ্কর', 'deepankar': 'দীপঙ্কর', 'dipta': 'দীপ্ত', 'dibyendu': 'দিব্যেন্দু', 'dilip': 'দিলীপ',
+        'dinesh': 'দীনেশ', 'dulal': 'দুলাল', 'durga': 'দুর্গা', 'durgadas': 'দুর্গাদাস',
+        'ganesh': 'গণেশ', 'gautam': 'গৌতম', 'goutam': 'গৌতম', 'gita': 'গীতা', 'gobinda': 'গোবিন্দ', 'gopal': 'গোপাল',
+        'gour': 'গৌর', 'gourab': 'গৌরব', 'gouranga': 'গৌরাঙ্গ', 'haradhan': 'হারাধন', 'hari': 'হরি', 'haridas': 'হরিদাস',
+        'haripada': 'হরিপদ', 'hemanta': 'হেমন্ত', 'himadri': 'হিমাদ্রি', 'hirak': 'হীরক', 'hiranmoy': 'হিরন্ময়',
+        'indrajit': 'ইন্দ্রজিৎ', 'indranil': 'ইন্দ্রনীল', 'ishita': 'ঈশিতা', 'jagadish': 'জগদীশ', 'jagannath': 'জগন্নাথ',
+        'jay': 'জয়', 'joy': 'জয়', 'jayanta': 'জয়ন্ত', 'joyanta': 'জয়ন্ত', 'joydeep': 'জয়দীপ', 'jaydeep': 'জয়দীপ',
+        'jiban': 'জীবন', 'jit': 'জিৎ', 'jiten': 'জিতেন', 'jitendra': 'জিতেন্দ্র', 'jyoti': 'জ্যোতি', 'jyotirmoy': 'জ্যোতির্ময়',
+        'kajal': 'কাজল', 'kalidas': 'কালীদাস', 'kalipada': 'কালীপদ', 'kalyan': 'কল্যাণ', 'kalyani': 'কল্যাণী',
+        'kamal': 'কমল', 'kanai': 'কানাই', 'kanak': 'কনক', 'kartik': 'কার্তিক', 'kaushik': 'কৌশিক', 'koushik': 'কৌশিক',
+        'keshab': 'কেশব', 'khokon': 'খোকন', 'kiran': 'কিরণ', 'kishore': 'কিশোর', 'kishor': 'কিশোর', 'krishna': 'কৃষ্ণ',
+        'kunal': 'কুণাল', 'kushal': 'কুশল', 'lakshman': 'লক্ষ্মণ', 'lakshmi': 'লক্ষ্মী', 'lalit': 'ললিত', 'laltu': 'লাল্টু',
+        'madan': 'মদন', 'madhab': 'মাধব', 'madhabi': 'মাধবী', 'madhumita': 'মধুমিতা', 'mahadeb': 'মহাদেব', 'mahesh': 'মহেশ',
+        'malay': 'মলয়', 'mamata': 'মমতা', 'manab': 'মানব', 'manas': 'মানস', 'manashi': 'মানসী', 'manik': 'মানিক',
+        'manoj': 'মনোজ', 'mantu': 'মন্টু', 'milan': 'মিলন', 'mithun': 'মিঠুন', 'mohan': 'মোহন', 'monoj': 'মনোজ',
+        'moumita': 'মৌমিতা', 'mousumi': 'মৌসুমী', 'mrinal': 'মৃণাল', 'mrinmoy': 'মৃন্ময়', 'mukesh': 'মুকেশ', 'mukul': 'মুকুল',
+        'nabakumar': 'নবকুমার', 'nabin': 'নবীন', 'nagen': 'নগেন', 'nandalal': 'নন্দলাল', 'narayan': 'নারায়ণ',
+        'naresh': 'নরেশ', 'nemai': 'নিমাই', 'nikhil': 'নিখিল', 'niladri': 'নীলাদ্রি', 'nilanjan': 'নীলাঞ্জন',
+        'nirmal': 'নির্মল', 'nirmala': 'নির্মলা', 'nirmalya': 'নির্মাল্য', 'nitai': 'নিতাই', 'nitesh': 'নীতেশ', 'nitin': 'নিতিন',
+        'pabitra': 'পবিত্র', 'pallab': 'পল্লব', 'pallabi': 'পল্লবী', 'paltu': 'পল্টু', 'panchu': 'পাঁচু', 'pankaj': 'পঙ্কজ',
+        'paresh': 'পরেশ', 'parimal': 'পরিমল', 'partha': 'পার্থ', 'parthasarathi': 'পার্থসারথি', 'payel': 'পায়েল',
+        'pinaki': 'পিনাকী', 'pintu': 'পিন্টু', 'piyush': 'পীযূষ', 'prabhat': 'প্রভাত', 'prabir': 'প্রবীর',
+        'pradip': 'প্রদীপ', 'pradeep': 'প্রদীপ', 'pradyut': 'প্রদ্যুৎ', 'prodyut': 'প্রদ্যুৎ', 'prakash': 'প্রকাশ',
+        'pramod': 'প্রমোদ', 'pranab': 'প্রণব', 'prasenjit': 'প্রসেনজিৎ', 'prosenjit': 'প্রসেনজিৎ', 'prashanta': 'প্রশান্ত', 'prasanta': 'প্রশান্ত',
+        'pratap': 'প্রতাপ', 'pratik': 'প্রতীক', 'pratul': 'প্রতুল', 'pritam': 'প্রীতম', 'priti': 'প্রীতি',
+        'priya': 'প্রিয়া', 'priyanka': 'প্রিয়াঙ্কা', 'pulak': 'পুলক', 'purna': 'পূর্ণ', 'pushpa': 'পুষ্পা',
+        'rabi': 'রবি', 'ravi': 'রবি', 'rabindra': 'রবীন্দ্র', 'radha': 'রাধা', 'raghunath': 'রঘুনাথ', 'rahul': 'রাহুল',
+        'raj': 'রাজ', 'raja': 'রাজা', 'rajat': 'রজত', 'rajdeep': 'রাজদীপ', 'rajesh': 'রাজেশ', 'rajib': 'রাজীব',
+        'rakesh': 'রাকেশ', 'ram': 'রাম', 'rama': 'রমা', 'ramen': 'রমেন', 'ramesh': 'রমেশ', 'ranajit': 'রঞ্জিত', 'ranjit': 'রঞ্জিত',
+        'ranjan': 'রঞ্জন', 'ratan': 'রতন', 'ratna': 'রত্না', 'rik': 'ঋক', 'rima': 'রিমা', 'rinku': 'রিঙ্কু', 'ritam': 'ঋতম',
+        'ritu': 'ঋতু', 'rituparna': 'ঋতুপর্ণা', 'rohan': 'রোহন', 'rohit': 'রোহিত', 'rupa': 'রূপা', 'rupam': 'রূপম',
+        'sambhu': 'শম্ভু', 'shambhu': 'শম্ভু', 'sarbajit': 'সর্বজিৎ', 'saraswati': 'সরস্বতী', 'shampa': 'শম্পা', 'sampa': 'শম্পা',
+        'sharmila': 'শর্মিলা', 'shila': 'শীলা', 'shreya': 'শ্রেয়া', 'shreyashi': 'শ্রেয়সী', 'shruti': 'শ্রুতি',
+        'soma': 'সোমা', 'sona': 'সোনা', 'sonali': 'সোনালী', 'srabani': 'শ্রাবণী', 'subhra': 'শুভ্রা', 'sucheta': 'সুচেতা',
+        'sudeshna': 'সুদেষ্ণা', 'sukanya': 'সুকন্যা', 'sulagna': 'সুলগ্না', 'susmita': 'সুস্মিতা', 'swapna': 'স্বপ্না',
+        'uday': 'উদয়', 'ujjwal': 'উজ্জ্বল', 'uma': 'উমা', 'upendra': 'উপেন্দ্র', 'uttam': 'উত্তম', 'utpal': 'উৎপল',
+        'kumar': 'কুমার', 'prasad': 'প্রসাদ', 'kanti': 'কান্তি', 'shekhar': 'শেখর', 'ranjan': 'রঞ্জন', 'nath': 'নাথ',
+        'devi': 'দেবী', 'rani': 'রানী', 'bala': 'বালা', 'lata': 'লতা', 'shree': 'শ্রী', 'sri': 'শ্রী', 'da': 'দা', 'di': 'দি',
+
+        // --- Puja, Club, Places & Expense Terms (আয় ও ব্যয় উভয়ের জন্য) ---
+        'modern': 'মডার্ণ', 'sporting': 'স্পোর্টিং', 'club': 'ক্লাব', 'dhaltitha': 'ধলতিথা', 'basirhat': 'বসিরহাট',
+        'puja': 'পূজা', 'pujo': 'পুজো', 'basanti': 'বাসন্তী', 'kali': 'কালী', 'durga': 'দুর্গা', 'kartik': 'কার্তিক',
+        'pandal': 'প্যান্ডেল', 'pandel': 'প্যান্ডেল', 'decoration': 'ডেকোরেশন', 'decorator': 'ডেকোরেটর',
+        'light': 'লাইট', 'lighting': 'লাইটিং', 'sound': 'সাউন্ড', 'mike': 'মাইক', 'mic': 'মাইক', 'box': 'বক্স', 'dj': 'ডিজে',
+        'dhak': 'ঢাক', 'dhaki': 'ঢাকী', 'idol': 'প্রতিমা', 'pratima': 'প্রতিমা', 'murti': 'মূর্তি', 'thakur': 'ঠাকুর',
+        'priest': 'পুরোহিত', 'dakshina': 'দক্ষিণা', 'flower': 'ফুল', 'phul': 'ফুল', 'ful': 'ফুল', 'garland': 'মালা', 'mala': 'মালা',
+        'prasad': 'প্রসাদ', 'bhog': 'ভোগ', 'khichuri': 'খিচুড়ি', 'sweet': 'মিষ্টি', 'mishti': 'মিষ্টি', 'fruit': 'ফল', 'fal': 'ফল',
+        'rice': 'চাল', 'chal': 'চাল', 'dal': 'ডাল', 'oil': 'তেল', 'tel': 'তেল', 'ghee': 'ঘি', 'milk': 'দুধ', 'dudh': 'দুধ',
+        'incense': 'ধূপ', 'dhup': 'ধূপ', 'dhuna': 'ধুনো', 'camphor': 'কর্পূর', 'karpur': 'কর্পূর', 'sindur': 'সিঁদুর',
+        'saree': 'শাড়ি', 'sari': 'শাড়ি', 'dhoti': 'ধুতি', 'dhuti': 'ধুতি', 'cloth': 'কাপড়', 'kapor': 'কাপড়',
+        'bamboo': 'বাঁশ', 'bansh': 'বাঁশ', 'rope': 'দড়ি', 'dori': 'দড়ি', 'generator': 'জেনারেটর', 'diesel': 'ডিজেল', 'petrol': 'পেট্রোল',
+        'electric': 'ইলেকট্রিক', 'electricity': 'বিদ্যুৎ', 'bill': 'বিল', 'water': 'জল', 'jol': 'জল', 'tea': 'চা', 'cha': 'চা',
+        'tiffin': 'টিফিন', 'lunch': 'দুপুরের খাবার', 'dinner': 'রাতের খাবার', 'food': 'খাবার', 'khawa': 'খাওয়া',
+        'transport': 'পরিবহন', 'van': 'ভ্যান', 'auto': 'অটো', 'car': 'গাড়ী', 'gari': 'গাড়ী', 'toto': 'টোটো', 'bhara': 'ভাড়া', 'rent': 'ভাড়া',
+        'printing': 'প্রিন্টিং', 'print': 'প্রিন্ট', 'book': 'বই', 'receipt': 'রসিদ', 'banner': 'ব্যানার', 'flex': 'ফ্লেক্স', 'poster': 'পোস্টার',
+        'police': 'পুলিশ', 'permission': 'পারমিশন', 'stage': 'স্টেজ', 'chair': 'চেয়ার', 'table': 'টেবিল', 'carpet': 'কার্পেট', 'tent': 'টেন্ট',
+        'immersion': 'বিসর্জন', 'bisarjan': 'বিসর্জন', 'bhashan': 'ভাসান', 'cultural': 'সাংস্কৃতিক', 'program': 'অনুষ্ঠান', 'function': 'অনুষ্ঠান',
+        'prize': 'পুরস্কার', 'trophy': 'ট্রফি', 'medal': 'মেডেল', 'gift': 'উপহার', 'advance': 'অগ্রিম', 'due': 'বাকি', 'paid': 'জমা',
+        'labour': 'মজুরি', 'labor': 'মজুরি', 'majuri': 'মজুরি', 'cleaning': 'পরিষ্কার', 'repair': 'মেরামতি', 'misc': 'বিবিধ', 'others': 'অন্যান্য',
+        'para': 'পাড়া', 'north': 'উত্তর', 'south': 'দক্ষিণ', 'east': 'পূর্ব', 'west': 'পশ্চিম', 'road': 'রোড', 'bazar': 'বাজার', 'market': 'মার্কেট',
+        'shop': 'দোকান', 'dokan': 'দোকান', 'store': 'স্টোর', 'traders': 'ট্রেডার্স', 'enterprise': 'এন্টারপ্রাইজ', 'medical': 'মেডিকেল', 'pharmacy': 'ফার্মেসি',
+        'hardware': 'হার্ডওয়্যার', 'jewellers': 'জুয়েলার্স', 'sweets': 'সুইটস', 'hotel': 'হোটেল', 'garage': 'গ্যারেজ', 'salon': 'সেলুন', 'studio': 'স্টুডিও',
+        'and': 'ও', 'for': 'জন্য', 'by': 'দ্বারা', 'from': 'থেকে', 'to': 'প্রতি', 'total': 'মোট'
+ };
+
+ const PRO_BN_TO_EN_DICT = {};
+ (function buildReverseDict() {
+        const preferredBnToEn = {
+            'আঢ্য': 'Adhya', 'সায়ন': 'Sayan', 'সায়ন': 'Sayan', 'সমীরণ': 'Samiran', 'মণ্ডল': 'Mondal', 'মন্ডল': 'Mondal',
+            'ঘোষ': 'Ghosh', 'বসু': 'Bose', 'দাস': 'Das', 'দে': 'Dey', 'রায়': 'Roy', 'রায়': 'Roy', 'সেন': 'Sen',
+            'সাহা': 'Saha', 'দত্ত': 'Dutta', 'পাল': 'Pal', 'মিত্র': 'Mitra', 'মুখার্জী': 'Mukherjee', 'মুখোপাধ্যায়': 'Mukhopadhyay',
+            'ব্যানার্জী': 'Banerjee', 'বন্দ্যোপাধ্যায়': 'Bandyopadhyay', 'চ্যাটার্জী': 'Chatterjee', 'চট্টোপাধ্যায়': 'Chattopadhyay',
+            'গাঙ্গুলী': 'Ganguly', 'গঙ্গোপাধ্যায়': 'Gangopadhyay', 'ভট্টাচার্য': 'Bhattacharya', 'চক্রবর্তী': 'Chakraborty',
+            'মজুমদার': 'Majumdar', 'বিশ্বাস': 'Biswas', 'সরকার': 'Sarkar', 'হালদার': 'Halder', 'নস্কর': 'Naskar',
+            'প্রামাণিক': 'Pramanik', 'কর্মকার': 'Karmakar', 'কুণ্ডু': 'Kundu', 'জানা': 'Jana', 'মাইতি': 'Maity',
+            'বেরা': 'Bera', 'পাত্র': 'Patra', 'হাজরা': 'Hazra', 'মাঝি': 'Majhi', 'মাহাতো': 'Mahato', 'ভৌমিক': 'Bhowmik',
+            'গুহ': 'Guha', 'কর': 'Kar', 'নাগ': 'Nag', 'নাথ': 'Nath', 'শীল': 'Sil', 'সাধুখাঁ': 'Sadhukhan',
+            'অধিকারী': 'Adhikary', 'বর্মণ': 'Barman', 'বৈদ্য': 'Baidya', 'বণিক': 'Banik', 'বারিক': 'Barik', 'বসাক': 'Basak',
+            'ভদ্র': 'Bhadra', 'চন্দ': 'Chanda', 'চৌধুরী': 'Choudhury', 'দেব': 'Deb', 'দেবনাথ': 'Debnath', 'ধর': 'Dhar',
+            'গিরি': 'Giri', 'গোস্বামী': 'Goswami', 'কোলে': 'Koley', 'লাহিড়ী': 'Lahiri', 'লাহা': 'Laha', 'মালাকার': 'Malakar',
+            'মল্লিক': 'Mallick', 'মান্না': 'Manna', 'মোদক': 'Modak', 'মুদি': 'Mudi', 'নন্দী': 'Nandi', 'নিয়োগী': 'Neogi',
+            'পাঁজা': 'Panja', 'পোদ্দার': 'Poddar', 'পুরকাইত': 'Purkait', 'রক্ষিত': 'Rakshit', 'রুদ্র': 'Rudra',
+            'সামন্ত': 'Samanta', 'সান্যাল': 'Sanyal', 'সর্দার': 'Sardar', 'শাসমল': 'Sasmal', 'সেনগুপ্ত': 'Sengupta',
+            'শেঠ': 'Sett', 'সাউ': 'Shaw', 'সিকদার': 'Sikdar', 'সিংহ': 'Singha', 'সিনহা': 'Sinha', 'সুর': 'Sur',
+            'তরফদার': 'Tarafdar', 'ঠাকুর': 'Thakur', 'ত্রিপাঠী': 'Tripathi', 'খান': 'Khan', 'শেখ': 'Sheikh', 'মোল্লা': 'Molla',
+            'গাজী': 'Gazi', 'আলী': 'Ali', 'ইসলাম': 'Islam', 'রহমান': 'Rahman', 'হোসেন': 'Hossain',
+            'সরস্বতী': 'Saraswati', 'দুর্গা': 'Durga', 'কালী': 'Kali', 'বাসন্তী': 'Basanti', 'লক্ষ্মী': 'Lakshmi',
+            'গণেশ': 'Ganesh', 'কার্তিক': 'Kartik', 'পূজা': 'Puja', 'পুজো': 'Pujo', 'মডার্ণ': 'Modern',
+            'স্পোর্টিং': 'Sporting', 'ক্লাব': 'Club', 'রাজকীয়': 'Rajokiya', 'প্যান্ডেল': 'Pandal', 'ডেকোরেশন': 'Decoration',
+            'লাইটিং': 'Lighting', 'লাইট': 'Light', 'সাউন্ড': 'Sound', 'মাইক': 'Mike', 'ঢাক': 'Dhak', 'ঢাকী': 'Dhaki',
+            'প্রতিমা': 'Pratima', 'পুরোহিত': 'Purohit', 'দক্ষিণা': 'Dakshina', 'ফুল': 'Flower', 'মালা': 'Garland',
+            'প্রসাদ': 'Prasad', 'ভোগ': 'Bhog', 'খিচুড়ি': 'Khichuri', 'মিষ্টি': 'Sweets', 'ফল': 'Fruits',
+            'চাল': 'Rice', 'তেল': 'Oil', 'ঘি': 'Ghee', 'ধূপ': 'Incense', 'জেনারেটর': 'Generator', 'ডিজেল': 'Diesel',
+            'ইলেকট্রিক': 'Electric', 'বিল': 'Bill', 'জল': 'Water', 'চা': 'Tea', 'টিফিন': 'Tiffin', 'ভাড়া': 'Rent',
+            'বিসর্জন': 'Bisarjan', 'ভাসান': 'Bhashan', 'মজুরি': 'Labour', 'পাড়া': 'Para'
+        };
+        const toTC = (w) => w.charAt(0).toUpperCase() + w.slice(1);
+        for (const [en, bn] of Object.entries(PRO_EN_TO_BN_DICT)) {
+            const normBn = bn.normalize('NFC');
+            if (!PRO_BN_TO_EN_DICT[normBn]) PRO_BN_TO_EN_DICT[normBn] = toTC(en);
+        }
+        for (const [bn, en] of Object.entries(preferredBnToEn)) {
+            PRO_BN_TO_EN_DICT[bn.normalize('NFC')] = en;
+        }
+ })();
+
+ // Phonetic English -> Bengali fallback engine (Avro / GBoard EN•BN style)
+ function phoneticEnWordToBn(rawWord) {
+        if (!rawWord) return '';
+        const w = rawWord.toLowerCase().replace(/[^a-z']/g, '');
+        if (!w) return rawWord;
+        if (PRO_EN_TO_BN_DICT[w]) return PRO_EN_TO_BN_DICT[w];
+
+        const vowels = {
+            'ou': { ind: 'ঔ', kar: 'ৌ' }, 'au': { ind: 'ঔ', kar: 'ৌ' },
+            'oi': { ind: 'ঐ', kar: 'ৈ' }, 'ai': { ind: 'ঐ', kar: 'ৈ' },
+            'ee': { ind: 'ঈ', kar: 'ী' }, 'oo': { ind: 'ঊ', kar: 'ূ' },
+            'aa': { ind: 'আ', kar: 'া' }, 'ri': { ind: 'ঋ', kar: 'ৃ' },
+            'a':  { ind: 'অ', kar: 'া' }, 'i':  { ind: 'ই', kar: 'ি' },
+            'u':  { ind: 'উ', kar: 'ু' }, 'e':  { ind: 'এ', kar: 'ে' },
+            'o':  { ind: 'ও', kar: 'ো' }
+        };
+        const consonants = [
+            ['ddhy', 'ঢ্য'], ['dhy', 'ধ্য'], ['ksh', 'ক্ষ'], ['chh', 'ছ'], ['ng', 'ঙ্গ'], ['ny', 'ঞ'],
+            ['kh', 'খ'], ['gh', 'ঘ'], ['ch', 'চ'], ['jh', 'ঝ'], ['th', 'থ'], ['dh', 'ধ'],
+            ['ph', 'ফ'], ['bh', 'ভ'], ['sh', 'শ'], ['rh', 'ঢ়'],
+            ['nd', 'ন্দ'], ['nt', 'ন্ত'], ['st', 'স্ট'], ['sp', 'স্প'], ['sk', 'স্ক'],
+            ['pr', 'প্র'], ['kr', 'ক্র'], ['br', 'ব্র'], ['dr', 'দ্র'], ['gr', 'গ্র'], ['tr', 'ত্র'], ['sr', 'স্র'],
+            ['k', 'ক'], ['g', 'গ'], ['c', 'ক'], ['j', 'জ'], ['t', 'ত'], ['d', 'দ'], ['n', 'ন'],
+            ['p', 'প'], ['f', 'ফ'], ['b', 'ব'], ['v', 'ভ'], ['m', 'ম'], ['y', 'য়'],
+            ['r', 'র'], ['l', 'ল'], ['s', 'স'], ['h', 'হ'], ['w', 'ও'], ['z', 'জ'], ['q', 'ক'], ['x', 'ক্স']
+        ];
+
+        let out = '';
+        let i = 0;
+        let lastWasConsonant = false;
+
+        while (i < w.length) {
+            if (w[i] === "'") { i++; continue; }
+
+            // Try 2-char vowels first
+            let vKey = '';
+            const two = w.slice(i, i + 2);
+            if (two === 'ou' || two === 'au' || two === 'oi' || two === 'ai' || two === 'ee' || two === 'oo' || two === 'aa') {
+                vKey = two;
+            } else if ('aeiou'.includes(w[i])) {
+                vKey = w[i];
+            }
+
+            if (vKey) {
+                const vObj = vowels[vKey];
+                if (lastWasConsonant) {
+                    // Inherent 'a' handling (Bengali 'অ' vs 'আ'-kar): middle 'a' before a consonant is often inherent (e.g. sayan -> সায়ন, kamal -> কমল)
+                    if (vKey === 'a') {
+                        const isFirstSyllable = (i === 1 || (i === 2 && ['kh','gh','ch','jh','th','dh','ph','bh','sh'].includes(w.slice(0,2))));
+                        const atEnd = (i + 1 === w.length);
+                        if (atEnd || isFirstSyllable) out += 'া';
+                    } else {
+                        out += vObj.kar;
+                    }
+                } else {
+                    if (vKey === 'a' && i === 0 && w.length > 2 && !'aeiou'.includes(w[1])) {
+                        out += 'অ';
+                    } else if (vKey === 'a' && i === 0) {
+                        out += 'আ';
+                    } else {
+                        out += vObj.ind;
+                    }
+                }
+                i += vKey.length;
+                lastWasConsonant = false;
+                continue;
+            }
+
+            // Try consonants (longest match first)
+            let matchedC = null;
+            for (const [enC, bnC] of consonants) {
+                if (w.startsWith(enC, i)) {
+                    matchedC = [enC, bnC];
+                    break;
+                }
+            }
+
+            if (matchedC) {
+                const [enC, bnC] = matchedC;
+                if (enC === 'y' && lastWasConsonant && i > 0) {
+                    out += '্য';
+                } else if (enC === 'ng' && i + 2 === w.length) {
+                    out += 'ং';
+                } else {
+                    out += bnC;
+                }
+                i += enC.length;
+                lastWasConsonant = true;
+                continue;
+            }
+
+            out += w[i];
+            i++;
+            lastWasConsonant = false;
+        }
+        return out;
+ }
+
+ function proEnglishToBengali(text) {
+        if (!text) return '';
+        const cleaned = cleanSpaceText(text);
+        if (!cleaned) return '';
+        const fullKey = cleaned.toLowerCase();
+        if (PRO_EN_TO_BN_DICT[fullKey]) return PRO_EN_TO_BN_DICT[fullKey];
+        return cleaned.split(' ').map(word => {
+            const stripped = word.replace(/^[^a-zA-Z]+|[^a-zA-Z]+$/g, '');
+            if (!stripped) return word;
+            const low = stripped.toLowerCase();
+            if (PRO_EN_TO_BN_DICT[low]) return PRO_EN_TO_BN_DICT[low];
+            return phoneticEnWordToBn(stripped);
+        }).join(' ');
+ }
+
  function safeTransliterate(text) {
         if (!text) return '';
-        
-        // ১. সাধারণ টাইপিং ভুল সংশোধন (যেমন: রাজকীয -> রাজকীয়)
         text = text.normalize("NFC");
-        text = text.replace(/ীয/g, 'ীয়'); 
-
-        // ২. Custom Dictionary (যে শব্দগুলো ম্যাপ দিয়ে ঠিক করা কঠিন, সেগুলো এখানে রাখুন)
-        const customDict = {
-            'সরস্বতী': 'Saraswati', 'দুর্গা': 'Durga', 'কালী': 'Kali',
-            'বাসন্তী': 'Basanti', 'লক্ষ্মী': 'Lakshmi', 'গণেশ': 'Ganesh',
-            'কার্তিক': 'Kartik', 'পূজা': 'Puja', 'পুজো': 'Pujo', 
-            'মডার্ণ': 'Modern', 'স্পোর্টিং': 'Sporting', 'ক্লাব': 'Club',
-            'আঢ্য': 'Adhya', 'রাজকীয়': 'Rajokiya', 'বন্দ্যোপাধ্যায়': 'Bandyopadhyay',
-            'চট্টোপাধ্যায়': 'Chattopadhyay', 'মুখোপাধ্যায়': 'Mukhopadhyay'
-        };
+        text = text.replace(/ীয/g, 'ীয়');
 
         const map = {
             'অ': 'a', 'আ': 'a', 'ই': 'i', 'ঈ': 'i', 'উ': 'u', 'ঊ': 'u', 'ঋ': 'ri', 'এ': 'e', 'ঐ': 'oi', 'ও': 'o', 'ঔ': 'ou',
@@ -1736,7 +2159,7 @@ function parseParaData(p) {
             'য': 'j', 'র': 'r', 'ল': 'l', 'শ': 'sh', 'ষ': 'sh', 'স': 's', 'হ': 'h',
             'ড়': 'r', 'ঢ়': 'rh', 'য়': 'y', 'ৎ': 't', 'ং': 'ng', 'ঃ': 'h', 'ঁ': 'n',
             'া': 'a', 'ি': 'i', 'ী': 'i', 'ু': 'u', 'ূ': 'u', 'ৃ': 'ri', 'ে': 'e', 'ৈ': 'oi', 'ো': 'o', 'ৌ': 'ou',
-            '্': '', '়': '' // Hasant & Nukta
+            '্': '', '়': ''
         };
         
         const consonants = "কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়";
@@ -1744,45 +2167,35 @@ function parseParaData(p) {
 
         let words = text.split(/[ \t]+/);
         let finalWords = words.map(word => {
-            if (customDict[word]) return customDict[word];
+            const normWord = word.normalize('NFC');
+            if (PRO_BN_TO_EN_DICT[normWord]) return PRO_BN_TO_EN_DICT[normWord];
 
             let convertedWord = '';
-            for (let i = 0; i < word.length; i++) {
-                let char = word[i];
-                let nextChar = word[i + 1] || '';
-                let prevChar = i > 0 ? word[i - 1] : '';
+            for (let i = 0; i < normWord.length; i++) {
+                let char = normWord[i];
+                let nextChar = normWord[i + 1] || '';
+                let prevChar = i > 0 ? normWord[i - 1] : '';
 
-                // ===== FIX 1: য-ফলা (Ya-Phala) লজিক =====
-                // যদি 'য'-এর ঠিক আগে হসন্ত (্) থাকে, তবে সেটি 'j' না হয়ে 'ya' বা 'y' হবে
+                // য-ফলা (Ya-Phala) লজিক (যেমন: আঢ্য -> Adhya)
                 if (char === 'য' && prevChar === '্') {
                     let val = 'y';
-                    if (!nextChar || !modifiers.includes(nextChar)) {
-                        val = 'ya'; // শব্দের শেষে বা পরে কোনো কার না থাকলে 'ya' হবে (যেমন: আঢ্য -> Adhya)
-                    }
+                    if (!nextChar || !modifiers.includes(nextChar)) val = 'ya';
                     convertedWord += val;
                     continue;
                 }
-
-                // ===== FIX 2: য + ় (Nukta) লজিক =====
-                // এনকোডিংয়ে য় যদি (য + ়) হিসেবে ভেঙে যায়, তবে 'j'-কে 'y' করে দেওয়া
+                // য + ় (Nukta) লজিক
                 if (char === '়' && prevChar === 'য') {
-                    if (convertedWord.endsWith('j')) {
-                        convertedWord = convertedWord.slice(0, -1) + 'y';
-                    }
+                    if (convertedWord.endsWith('j')) convertedWord = convertedWord.slice(0, -1) + 'y';
                     continue;
                 }
 
                 if (map[char] !== undefined) {
                     convertedWord += map[char];
-                    
-                    // Inherent Vowel ('a') Injection
                     if (consonants.includes(char) && nextChar && !modifiers.includes(nextChar) && consonants.includes(nextChar)) {
                         convertedWord += 'a';
                     }
                 } else {
-                    if (char.charCodeAt(0) >= 0x0980 && char.charCodeAt(0) <= 0x09FF) {
-                        continue; 
-                    }
+                    if (char.charCodeAt(0) >= 0x0980 && char.charCodeAt(0) <= 0x09FF) continue;
                     convertedWord += char;
                 }
             }
@@ -1791,6 +2204,26 @@ function parseParaData(p) {
 
         return finalWords.join(' ');
     }
+
+ // Global Outside Tap/Click & Escape Key Dismiss for ALL Suggestion Boxes
+ function hideAllSuggestionBoxes() {
+        document.querySelectorAll('.suggestion-box, .suggestion-box-top').forEach(el => {
+            el.classList.add('hidden');
+        });
+ }
+
+ document.addEventListener('pointerdown', function(e) {
+        const target = e.target;
+        if (!target) return;
+        if (target.closest && (target.closest('.suggestion-box') || target.closest('.suggestion-box-top'))) return;
+        const activeIds = ['billNameInput', 'expReason', 'carNumberInput', 'carRemarks', 'expRemarks', 'carNewRem', 'utilizePurpose'];
+        if (target.id && activeIds.includes(target.id)) return;
+        hideAllSuggestionBoxes();
+ }, true);
+
+ document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') hideAllSuggestionBoxes();
+ });
  
  
 
@@ -1912,7 +2345,7 @@ function parseParaData(p) {
         if(!currentReceiptItem) return null;
         
         // ফাইল নেম ফরম্যাট: চাঁদা দাতার নাম_পূজা_তারিখ.pdf
-        const dateStr = new Date(currentReceiptItem.date).toLocaleDateString('en-GB').replace(/\//g, '-');
+        const dateStr = formatDisplayDate(currentReceiptItem.date).replace(/\//g, '-');
         const puja = document.getElementById('pujaSelect').value.replace(/\s+/g, '_');
         const name = currentReceiptItem.bengali_name.replace(/\s+/g, '_');
         const fileName = `${name}_${puja}_${dateStr}.pdf`;
@@ -1991,7 +2424,11 @@ function parseParaData(p) {
     // 5. AI INTEGRATION
     // ==========================================
     async function callGemini(prompt) {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+        const key = (typeof apiKey !== 'undefined' && apiKey) ? apiKey : '';
+        if (!key) {
+            return "AI বিশ্লেষণ চালু করতে API Key কনফিগার করা নেই।";
+        }
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${key}`;
         const payload = {
             contents: [{ parts: [{ text: prompt }] }],
             systemInstruction: { parts: [{ text: "You are a helpful, respectful Bengali AI assistant for a Puja Committee called 'মডার্ণ স্পোর্টিং ক্লাব'. Always respond in natural Bengali language." }] }
@@ -2104,7 +2541,7 @@ function parseParaData(p) {
             e.remarks && String(e.remarks).includes(utilizeTag)
         );
 
-        const todayYMD = new Date().toISOString().split('T')[0];
+        const todayYMD = getLocalTodayYMD();
 
         if (existingExpIdx !== -1) {
             globalData.expense[existingExpIdx].reason = purpose;
@@ -2308,12 +2745,29 @@ function parseParaData(p) {
         }
     }
 
+    let smartInputSeq = 0;
+
     async function handleSmartInput(input, type) {
-        const rawVal = safeTrim(input.value).toLowerCase();
+        const mySeq = ++smartInputSeq;
+        const rawFull = safeTrim(input.value);
         const box = document.getElementById('billNameSuggestions');
         const refBox = document.getElementById('billDonorRefInfo');
         const selectedPara = document.getElementById('billPara') ? document.getElementById('billPara').value : '';
-        
+
+        // Sync hidden EN/BN fields whenever user manually edits with keyboard
+        if (rawFull.includes('|')) {
+            const parsedManual = cleanDoublePipe(rawFull);
+            document.getElementById('billNameEnglish').value = parsedManual.en;
+            document.getElementById('billNameBangla').value = parsedManual.bn;
+            // User is manually correcting "English | বাংলা" -> keep their edits untouched and hide dropdown
+            box.classList.add('hidden');
+            return;
+        } else {
+            document.getElementById('billNameEnglish').value = '';
+            document.getElementById('billNameBangla').value = '';
+        }
+
+        const rawVal = rawFull.toLowerCase();
         let dataset = store.getIncome(); 
         if (!rawVal) {
             if (refBox) { refBox.classList.add('hidden'); refBox.innerHTML = ''; }
@@ -2327,12 +2781,12 @@ function parseParaData(p) {
                         const div = document.createElement('div');
                         div.className = 'suggestion-item suggestion-past text-sm sm:text-base items-start gap-2';
                         const histHtml = buildDonorHistoryLines(m.english_name, m.bengali_name, dataset);
-                        div.innerHTML = `<div class="flex-1 min-w-0"><div><strong>${m.english_name}</strong> <span class="text-xs text-gray-500 ml-1">(${m.bengali_name})</span> <span class="text-xs text-purple-700 font-bold ml-1">[${m.para}]</span></div><div class="mt-0.5 space-y-0.5">${histHtml}</div></div> <span class="text-xs font-bold text-green-700 shrink-0 bg-green-100 px-2 py-0.5 rounded">পূর্বের দাতা</span>`;
-                        div.onmousedown = (e) => { e.preventDefault(); selectSmartValue(m.english_name, m.bengali_name, m.para, m.projected); };
-                        div.ontouchstart = (e) => { e.preventDefault(); selectSmartValue(m.english_name, m.bengali_name, m.para, m.projected); };
+                        div.innerHTML = `<div class="flex-1 min-w-0"><div><strong>${m.english_name}</strong> <span class="text-xs text-gray-500 ml-1">(${m.bengali_name})</span> <span class="text-xs text-purple-700 font-bold ml-1">[${m.para}]</span></div><div class="mt-0.5 space-y-0.5">${histHtml}</div></div> <span class="text-xs font-bold text-green-700 shrink-0 bg-green-100 px-2 py-0.5 rounded">শুধু নাম নিন</span>`;
+                        const pick = (e) => { if (e) e.preventDefault(); selectSmartValue(m.english_name, m.bengali_name); };
+                        div.onmousedown = pick;
+                        div.ontouchstart = pick;
                         box.appendChild(div);
                     });
-                    input.onblur = () => setTimeout(() => box.classList.add('hidden'), 200);
                     return;
                 }
             }
@@ -2344,9 +2798,22 @@ function parseParaData(p) {
         box.classList.remove('hidden');
 
         const toTitleCase = (str) => str.replace(/\b\w/g, char => char.toUpperCase());
-        const prettyVal = toTitleCase(safeTrim(input.value)); 
-        const exactInput = safeTrim(input.value);
+        const prettyVal = toTitleCase(rawFull); 
+        const exactInput = rawFull;
+        const inputIsBn = isBangla(exactInput);
+        const seenBn = new Set();
 
+        const appendSuggestionRow = (enText, bnText, badgeText, rowClass, badgeClass) => {
+            const div = document.createElement('div');
+            div.className = `suggestion-item text-sm sm:text-base border-t ${rowClass}`;
+            div.innerHTML = `<span><strong>${enText}</strong>${bnText && bnText !== enText ? ` <span class="text-xs text-gray-600 ml-1">(${bnText})</span>` : ''}</span> <span class="text-xs sm:text-sm font-bold shrink-0 ${badgeClass}">${badgeText}</span>`;
+            const pick = (e) => { if (e) e.preventDefault(); selectSmartValue(enText, bnText); };
+            div.onmousedown = pick;
+            div.ontouchstart = pick;
+            box.appendChild(div);
+        };
+
+        // 1. Past Donor Names (ONLY pastes name spelling — never touches para/amount/deposit)
         const matches = dataset.filter(item => 
             (item.bengali_name && item.bengali_name.toLowerCase().includes(rawVal)) || 
             (item.english_name && item.english_name.toLowerCase().includes(rawVal))
@@ -2354,7 +2821,7 @@ function parseParaData(p) {
         if (selectedPara) {
             matches.sort((a, b) => (a.para === selectedPara ? -1 : 1) - (b.para === selectedPara ? -1 : 1));
         }
-        const uniquePast = [...new Map(matches.map(item => [item['english_name'] + item['bengali_name'], item])).values()];
+        const uniquePast = [...new Map(matches.map(item => [item['english_name'] + '|' + item['bengali_name'], item])).values()];
         
         if(uniquePast.length > 0) {
             uniquePast.slice(0, 5).forEach(m => {
@@ -2362,73 +2829,56 @@ function parseParaData(p) {
                 div.className = 'suggestion-item suggestion-past text-sm sm:text-base items-start gap-2';
                 const paraBadge = m.para ? `<span class="text-xs text-purple-700 font-bold ml-1">[${m.para}]</span>` : '';
                 const histHtml = buildDonorHistoryLines(m.english_name, m.bengali_name, dataset);
-                div.innerHTML = `<div class="flex-1 min-w-0"><div><strong>${m.english_name}</strong> <span class="text-xs text-gray-500 ml-1">(${m.bengali_name})</span>${paraBadge}</div><div class="mt-0.5 space-y-0.5">${histHtml}</div></div> <span class="text-xs font-bold text-green-700 shrink-0 bg-green-100 px-2 py-0.5 rounded">Paste Reference</span>`;
-                div.onclick = () => selectSmartValue(m.english_name, m.bengali_name, m.para, m.projected);
+                div.innerHTML = `<div class="flex-1 min-w-0"><div><strong>${m.english_name}</strong> <span class="text-xs text-gray-500 ml-1">(${m.bengali_name})</span>${paraBadge}</div><div class="mt-0.5 space-y-0.5">${histHtml}</div></div> <span class="text-xs font-bold text-green-700 shrink-0 bg-green-100 px-2 py-0.5 rounded">শুধু নাম নিন</span>`;
+                const pick = (e) => { if (e) e.preventDefault(); selectSmartValue(m.english_name, m.bengali_name); };
+                div.onmousedown = pick;
+                div.ontouchstart = pick;
                 box.appendChild(div);
             });
         }
 
-        const inputIsBn = isBangla(exactInput);
-        let googleSuggestions = [];
-        
+        // 2. Pro EN•BN Accurate Name Dictionary & Phonetic Suggestion (Instant & Accurate!)
         if (!inputIsBn) {
+            const proBn = proEnglishToBengali(exactInput);
+            if (proBn) {
+                seenBn.add(proBn.normalize('NFC'));
+                appendSuggestionRow(prettyVal, proBn, 'Pro EN•BN', 'bg-purple-50 hover:bg-purple-100', 'text-purple-700');
+            }
+        } else {
+            const autoEn = toTitleCase(safeTransliterate(exactInput));
+            appendSuggestionRow(autoEn, exactInput, 'Pro BN•EN', 'bg-purple-50 hover:bg-purple-100', 'text-purple-700');
+        }
+
+        // 3. Google InputTools / Translate API (Secondary options, race-guarded)
+        if (!inputIsBn) {
+            let googleSuggestions = [];
             try {
                 const url = `https://inputtools.google.com/request?text=${encodeURIComponent(exactInput)}&itc=bn-t-i0-und&num=3&cp=0&cs=1&ie=utf-8&oe=utf-8`;
                 const res = await fetch(url); 
                 const json = await res.json();
-                if(json[0]==='SUCCESS'){
-                    googleSuggestions = json[1][0][1];
-                }
+                if(json[0]==='SUCCESS') googleSuggestions = json[1][0][1] || [];
             } catch(e){}
-        }
 
-        googleSuggestions.forEach(s => {
-            const div = document.createElement('div'); 
-            div.className = 'suggestion-item hover:bg-blue-50 text-sm sm:text-base border-t';
-            div.innerHTML = `<span><strong>${prettyVal}</strong> <span class="text-xs text-gray-500 ml-1">(${s})</span></span> <span class="text-xs sm:text-sm font-bold text-blue-600">Google API</span>`;
-            div.onclick = () => selectSmartValue(prettyVal, s);
-            box.appendChild(div);
-        });
+            if (mySeq !== smartInputSeq || document.activeElement !== input) return;
 
-        if (inputIsBn) {
-            const autoEn = toTitleCase(safeTransliterate(exactInput));
-            const div = document.createElement('div'); 
-            div.className = 'suggestion-item bg-purple-50 text-sm sm:text-base border-t';
-            div.innerHTML = `<span><strong>${autoEn}</strong> <span class="text-xs text-gray-500 ml-1">(${exactInput})</span></span> <span class="text-xs sm:text-sm font-bold text-purple-600">Mapped Suggestion</span>`;
-            div.onclick = () => selectSmartValue(autoEn, exactInput);
-            box.appendChild(div);
-        }
-
-        if (!inputIsBn) {
-            const divEn = document.createElement('div'); 
-            divEn.className = 'suggestion-item bg-gray-50 text-sm sm:text-base border-t';
-            divEn.innerHTML = `<span><strong>${prettyVal}</strong></span> <span class="text-xs sm:text-sm text-gray-500">অন্যান্য (Keep English)</span>`;
-            divEn.onclick = () => selectSmartValue(prettyVal, prettyVal); 
-            box.appendChild(divEn);
+            googleSuggestions.forEach(s => {
+                const normS = String(s || '').normalize('NFC');
+                if (normS && !seenBn.has(normS)) {
+                    seenBn.add(normS);
+                    appendSuggestionRow(prettyVal, normS, 'Google API', 'hover:bg-blue-50', 'text-blue-600');
+                }
+            });
+            appendSuggestionRow(prettyVal, prettyVal, 'অন্যান্য (Keep English)', 'bg-gray-50', 'text-gray-500');
         } else {
-            const divBn = document.createElement('div'); 
-            divBn.className = 'suggestion-item bg-gray-50 text-sm sm:text-base border-t';
-            divBn.innerHTML = `<span><strong>${exactInput}</strong></span> <span class="text-xs sm:text-sm text-gray-500">অন্যান্য (Keep Bangla)</span>`;
-            divBn.onclick = () => selectSmartValue(exactInput, exactInput); 
-            box.appendChild(divBn);
+            appendSuggestionRow(exactInput, exactInput, 'অন্যান্য (Keep Bangla)', 'bg-gray-50', 'text-gray-500');
         }
     }
     
-    function selectSmartValue(en, bn, donorPara = '', donorProj = 0) {
+    function selectSmartValue(en, bn) {
+        // শুধুমাত্র নামের বানান সিলেক্ট হবে — পাড়া, ধার্য, জমা, বা খরচ কিছুই পরিবর্তন বা আপডেট হবে না
         document.getElementById('billNameInput').value = `${en} | ${bn}`;
         document.getElementById('billNameEnglish').value = en;
         document.getElementById('billNameBangla').value = bn;
-        const paraSel = document.getElementById('billPara');
-        if (donorPara && paraSel && !paraSel.value) {
-            if (Array.from(paraSel.options).some(o => o.value === donorPara)) {
-                paraSel.value = donorPara;
-                if (paraSel.onchange) paraSel.onchange();
-            }
-        }
-        const amtInput = document.getElementById('billAmount');
-        if (donorProj && Number(donorProj) > 0 && amtInput && !amtInput.value) {
-            amtInput.value = donorProj;
-        }
         showDonorReferenceBanner(en, bn);
         document.getElementById('billNameSuggestions').classList.add('hidden');
     }
@@ -2577,11 +3027,15 @@ function saveBill() {
 
         const activePuja = document.getElementById('pujaSelect').value;
 
-        // --- NEW: DUPLICATE CHECK LOGIC ---
+        // --- NEW: DUPLICATE CHECK LOGIC (একই উৎসে একই নাম হলে Alert দেবে) ---
+        const normPara = cleanSpaceText(para);
+        const normBnCheck = cleanSpaceText(nameBn).toLowerCase();
+        const normEnCheck = cleanSpaceText(nameEn).toLowerCase();
         const existingEntry = globalData.income.find(i => 
-            getPuja(i) === activePuja && 
-            i.para === para && 
-            ((nameBn && i.bengali_name === nameBn) || (nameEn && i.english_name === nameEn))
+            isSamePuja(getPuja(i), activePuja) && 
+            cleanSpaceText(i.para) === normPara && 
+            ((normBnCheck && cleanSpaceText(i.bengali_name).toLowerCase() === normBnCheck) ||
+             (normEnCheck && cleanSpaceText(i.english_name).toLowerCase() === normEnCheck))
         );
 
         if (existingEntry) {
@@ -2631,7 +3085,7 @@ function saveBill() {
         const item = {
             id: Date.now().toString(), 
             puja: activePuja, 
-            date: document.getElementById('billDate').value, 
+            date: document.getElementById('billDate').value || getLocalTodayYMD(), 
             para: para,
             english_name: nameEn, 
             bengali_name: nameBn, 
@@ -2670,17 +3124,17 @@ function saveDuplicateBillUpdate() {
             let item = data[idx];
             
             // পুরনো টাকার সাথে নতুন টাকা যোগ করা হচ্ছে
-            item.paid += newAmount;
-            
-            // যদি কেউ নতুন করে টাকা দেয়, তবে তার ধার্য (Projected) পরিমাণও বেড়ে যাবে (যদি বাকী না থাকে)
-            if (item.due <= 0) {
-                item.projected += newAmount;
-            } else {
-                item.due = item.projected - item.paid;
-                if (item.due < 0) {
-                    item.projected += Math.abs(item.due);
-                    item.due = 0;
+            item.paid = parseNumericAmount(item.paid) + newAmount;
+            item.projected = parseNumericAmount(item.projected);
+
+            // ধার্য (Projected) থাকলে এবং জমা ধার্য ছাড়িয়ে গেলে ধার্য আপডেট হবে, নাহলে বাকী সঠিকভাবে কমবে
+            if (item.projected > 0) {
+                if (item.paid > item.projected) {
+                    item.projected = item.paid;
                 }
+                item.due = Math.max(0, item.projected - item.paid);
+            } else {
+                item.due = 0;
             }
             
             item.date = newDate;
@@ -2698,29 +3152,64 @@ function saveDuplicateBillUpdate() {
         }
     }
 
+    let colCurrentPage = 1;
+    const colRowsPerPage = 60;
+
+    function renderColPagination(totalPages) {
+        const container = document.getElementById('colPaginationContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        if (totalPages <= 1) return;
+
+        let html = `<button onclick="changeColPage(${colCurrentPage - 1})" class="px-3 py-1 border rounded bg-white text-gray-600 hover:bg-purple-50 font-bold ${colCurrentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" ${colCurrentPage === 1 ? 'disabled' : ''}>&lt;</button>`;
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= colCurrentPage - 1 && i <= colCurrentPage + 1)) {
+                html += `<button onclick="changeColPage(${i})" class="px-3 py-1 border rounded font-bold ${i === colCurrentPage ? 'bg-purple-700 text-white' : 'bg-white text-gray-600 hover:bg-purple-50'}">${i}</button>`;
+            } else if (i === colCurrentPage - 2 || i === colCurrentPage + 2) {
+                html += `<span class="px-2 text-gray-400 font-bold">...</span>`;
+            }
+        }
+        html += `<button onclick="changeColPage(${colCurrentPage + 1})" class="px-3 py-1 border rounded bg-white text-gray-600 hover:bg-purple-50 font-bold ${colCurrentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}" ${colCurrentPage === totalPages ? 'disabled' : ''}>&gt;</button>`;
+        container.innerHTML = html;
+    }
+
+    function changeColPage(page) {
+        colCurrentPage = page;
+        renderCollectionTable();
+    }
+
     function renderCollectionTable() {
         const rawData = store.getIncome(); 
         const activePuja = document.getElementById('pujaSelect').value;
-        const data = rawData.filter(d => getPuja(d) === activePuja);
+        const data = rawData.filter(d => isSamePuja(getPuja(d), activePuja));
         const tbody = document.getElementById('collectionTableBody'); 
         tbody.innerHTML = '';
         
         const filterPara = document.getElementById('colParaSelect').value; 
         const filterMode = document.getElementById('colModeFilter') ? document.getElementById('colModeFilter').value : 'all';
         const search = document.getElementById('colSearch').value.toLowerCase();
-        let serial = 1; 
         const sortedData = [...data].sort((a, b) => {
-    const dateDiff = new Date(b.date) - new Date(a.date);
-    // যদি তারিখ একই হয়, তবে যার আইডি (timestamp) বড় অর্থাৎ যেটা শেষে সেভ হয়েছে, সেটা আগে আসবে
-    return dateDiff === 0 ? Number(b.id) - Number(a.id) : dateDiff;
-});
+            const dateDiff = compareDatesSafe(a.date, b.date, true);
+            return dateDiff === 0 ? (Number(b.id) || 0) - (Number(a.id) || 0) : dateDiff;
+        });
 
-
+        const filteredRows = [];
+        let matchIdx = 1;
         sortedData.forEach(row => {
             if (filterPara !== 'all' && row.para !== filterPara) return;
             const modeInfo = parsePaymentModeFromItem(row);
             if (filterMode !== 'all' && modeInfo.mode !== filterMode) return;
-            if (search && !row.english_name.toLowerCase().includes(search) && !row.bengali_name.includes(search) && !String(row.remarks || '').toLowerCase().includes(search) && !String(serial).includes(search)) return;
+            if (search && !row.english_name.toLowerCase().includes(search) && !row.bengali_name.includes(search) && !String(row.remarks || '').toLowerCase().includes(search) && !String(matchIdx).includes(search)) return;
+            filteredRows.push({ row, modeInfo, serialNo: matchIdx++ });
+        });
+
+        const totalPages = Math.ceil(filteredRows.length / colRowsPerPage);
+        if (colCurrentPage > totalPages) colCurrentPage = totalPages || 1;
+        const startIdx = (colCurrentPage - 1) * colRowsPerPage;
+        const paginatedRows = filteredRows.slice(startIdx, startIdx + colRowsPerPage);
+
+        paginatedRows.forEach(({ row, modeInfo, serialNo }) => {
+            const serial = serialNo;
             
             const projectedAmt = Number(row.projected) || 0; 
             const paidAmt = Number(row.paid) || 0; 
@@ -2749,7 +3238,7 @@ function saveDuplicateBillUpdate() {
             tr.className = "hover:bg-purple-50 cursor-pointer transition";
             tr.onclick = (e) => { if(!e.target.closest('button')) openCollectionModal(row.id); };
             tr.innerHTML = `
-               <td class="text-gray-500">${formatDisplayDate(row.date)}</td><td class="text-center text-gray-500">${serial++}</td>
+               <td class="text-gray-500">${formatDisplayDate(row.date)}</td><td class="text-center text-gray-500">${serial}</td>
                 <td>${row.para}</td><td class="font-bold text-gray-700">${row.english_name}</td><td class="font-siliguri">${row.bengali_name}</td>
                 <td class="text-right font-mono text-gray-500 font-bold">${projectedAmt > 0 ? '₹'+projectedAmt : '-'}</td>
                 <td class="text-right font-mono text-green-600 font-bold">${paidDisplayHtml}</td><td class="text-right font-mono">${dueHtml}</td>
@@ -2765,6 +3254,7 @@ function saveDuplicateBillUpdate() {
             `;
             tbody.appendChild(tr);
         });
+        renderColPagination(totalPages);
         safeCreateIcons();
     }
 
@@ -2892,14 +3382,17 @@ function saveDuplicateBillUpdate() {
     // ==========================================
     // 8. EXPENSE MODULE & IMAGE ATTACHMENT
     // ==========================================
+    let expInputSeq = 0;
+
     async function handleExpInput(input) {
+        const mySeq = ++expInputSeq;
         const exactInput = safeTrim(input.value);
         const rawVal = exactInput.toLowerCase();
         const topBox = document.getElementById('expPastSuggestions'); 
         const botBox = document.getElementById('expSuggestions');
         if (topBox) topBox.classList.add('hidden');
         
-        if (!rawVal) {
+        if (!rawVal || exactInput.includes('|')) {
             if (botBox) botBox.classList.add('hidden');
             return;
         }
@@ -2920,7 +3413,17 @@ function saveDuplicateBillUpdate() {
             if (topBox) topBox.classList.add('hidden');
         };
 
-        // 1. Past Expense References (like Income Past Reference)
+        const appendExpRow = (enText, bnText, badgeText, rowClass, badgeClass) => {
+            const div = document.createElement('div');
+            div.className = `suggestion-item text-sm sm:text-base border-t ${rowClass}`;
+            div.innerHTML = `<span><strong>${enText}</strong>${bnText && bnText !== enText ? ` <span class="text-xs text-gray-600 ml-1">(${bnText})</span>` : ''}</span> <span class="text-xs sm:text-sm font-bold shrink-0 ${badgeClass}">${badgeText}</span>`;
+            const pick = (e) => { if (e) e.preventDefault(); selectExpVal(enText, bnText); };
+            div.onmousedown = pick;
+            div.ontouchstart = pick;
+            botBox.appendChild(div);
+        };
+
+        // 1. Past Expense References
         const pastExp = store.getExpense(); 
         const matches = pastExp.filter(e => e.reason && e.reason.toLowerCase().includes(rawVal));
         const uniqueMatches = [...new Set(matches.map(e => e.reason))];
@@ -2929,95 +3432,83 @@ function saveDuplicateBillUpdate() {
             uniqueMatches.slice(0, 5).forEach(r => { 
                 const div = document.createElement('div'); 
                 div.className = 'suggestion-item suggestion-past text-sm sm:text-base'; 
-                div.innerHTML = `<span class="font-bold text-gray-800">${r}</span> <span class="text-xs sm:text-sm font-bold text-green-700">Paste Reference</span>`; 
-                div.onclick = () => {
+                div.innerHTML = `<span class="font-bold text-gray-800">${r}</span> <span class="text-xs sm:text-sm font-bold text-green-700 shrink-0">শুধু নাম নিন</span>`; 
+                const pick = (e) => {
+                    if (e) e.preventDefault();
                     input.value = r;
                     botBox.classList.add('hidden');
                     if (topBox) topBox.classList.add('hidden');
-                }; 
+                };
+                div.onmousedown = pick;
+                div.ontouchstart = pick;
                 botBox.appendChild(div); 
             }); 
         }
 
         const inputIsBn = isBangla(exactInput);
 
-        // 2. Google Translate API (English -> Bengali AND Bengali -> English) + Google InputTools Phonetic API
+        // 2. Pro EN•BN Dictionary & Phonetic Suggestion FIRST (Instant!)
         if (!inputIsBn) {
+            const seenBn = new Set();
+            const proBn = proEnglishToBengali(exactInput);
+            if (proBn) {
+                seenBn.add(proBn.normalize('NFC'));
+                appendExpRow(prettyVal, proBn, 'Pro EN•BN', 'bg-purple-50 hover:bg-purple-100', 'text-purple-700');
+            }
+
             try {
                 const [transRes, inputToolsRes] = await Promise.allSettled([
                     fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=bn&dt=t&q=${encodeURIComponent(exactInput)}`).then(r => r.json()),
                     fetch(`https://inputtools.google.com/request?text=${encodeURIComponent(exactInput)}&itc=bn-t-i0-und&num=3&cp=0&cs=1&ie=utf-8&oe=utf-8`).then(r => r.json())
                 ]);
 
-                const seenBn = new Set();
+                if (mySeq !== expInputSeq || document.activeElement !== input) return;
 
-                // Google Translate API (meaning translation: e.g., Pandal Decoration -> প্যান্ডেল ডেকোরেশন / মণ্ডপ সজ্জা)
                 if (transRes.status === 'fulfilled' && Array.isArray(transRes.value) && Array.isArray(transRes.value[0])) {
-                    const translatedBn = transRes.value[0].map(part => part[0]).join('').trim();
-                    if (translatedBn && translatedBn.toLowerCase() !== rawVal) {
+                    const translatedBn = transRes.value[0].map(part => part[0]).join('').trim().normalize('NFC');
+                    if (translatedBn && translatedBn.toLowerCase() !== rawVal && !seenBn.has(translatedBn)) {
                         seenBn.add(translatedBn);
-                        const div = document.createElement('div');
-                        div.className = 'suggestion-item hover:bg-blue-50 text-sm sm:text-base border-t';
-                        div.innerHTML = `<span><strong>${prettyVal}</strong> <span class="text-xs text-gray-500 ml-1">(${translatedBn})</span></span> <span class="text-xs sm:text-sm font-bold text-blue-600">Google Translate</span>`;
-                        div.onclick = () => selectExpVal(prettyVal, translatedBn);
-                        botBox.appendChild(div);
+                        appendExpRow(prettyVal, translatedBn, 'Google Translate', 'hover:bg-blue-50', 'text-blue-600');
                     }
                 }
 
-                // Google InputTools API (phonetic transliteration: e.g., pandel -> প্যান্ডেল)
                 if (inputToolsRes.status === 'fulfilled' && inputToolsRes.value && inputToolsRes.value[0] === 'SUCCESS') {
                     const googleSuggestions = inputToolsRes.value[1][0][1] || [];
                     googleSuggestions.forEach(s => {
-                        if (!seenBn.has(s)) {
-                            seenBn.add(s);
-                            const div = document.createElement('div');
-                            div.className = 'suggestion-item hover:bg-blue-50 text-sm sm:text-base border-t';
-                            div.innerHTML = `<span><strong>${prettyVal}</strong> <span class="text-xs text-gray-500 ml-1">(${s})</span></span> <span class="text-xs sm:text-sm font-bold text-blue-600">Google API</span>`;
-                            div.onclick = () => selectExpVal(prettyVal, s);
-                            botBox.appendChild(div);
+                        const normS = String(s || '').normalize('NFC');
+                        if (normS && !seenBn.has(normS)) {
+                            seenBn.add(normS);
+                            appendExpRow(prettyVal, normS, 'Google API', 'hover:bg-blue-50', 'text-blue-600');
                         }
                     });
                 }
             } catch (e) {}
 
-            const divEn = document.createElement('div'); 
-            divEn.className = 'suggestion-item bg-gray-50 text-sm sm:text-base border-t';
-            divEn.innerHTML = `<span><strong>${prettyVal}</strong></span> <span class="text-xs sm:text-sm text-gray-500">অন্যান্য (Keep English)</span>`;
-            divEn.onclick = () => selectExpVal(prettyVal, prettyVal); 
-            botBox.appendChild(divEn);
+            if (mySeq !== expInputSeq || document.activeElement !== input) return;
+            appendExpRow(prettyVal, prettyVal, 'অন্যান্য (Keep English)', 'bg-gray-50', 'text-gray-500');
         } else {
-            // Input is Bengali -> Google Translate API (Bengali to English) + Mapped Phonetic Transliteration
             const seenEn = new Set();
+            const autoEn = toTitleCase(safeTransliterate(exactInput));
+            if (autoEn) {
+                seenEn.add(autoEn.toLowerCase());
+                appendExpRow(autoEn, exactInput, 'Pro BN•EN', 'bg-purple-50 hover:bg-purple-100', 'text-purple-700');
+            }
+
             try {
                 const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=bn&tl=en&dt=t&q=${encodeURIComponent(exactInput)}`);
                 const json = await res.json();
+                if (mySeq !== expInputSeq || document.activeElement !== input) return;
                 if (Array.isArray(json) && Array.isArray(json[0])) {
                     const translatedEn = toTitleCase(json[0].map(part => part[0]).join('').trim());
-                    if (translatedEn) {
+                    if (translatedEn && !seenEn.has(translatedEn.toLowerCase())) {
                         seenEn.add(translatedEn.toLowerCase());
-                        const div = document.createElement('div');
-                        div.className = 'suggestion-item hover:bg-blue-50 text-sm sm:text-base border-t';
-                        div.innerHTML = `<span><strong>${translatedEn}</strong> <span class="text-xs text-gray-500 ml-1">(${exactInput})</span></span> <span class="text-xs sm:text-sm font-bold text-blue-600">Google API</span>`;
-                        div.onclick = () => selectExpVal(translatedEn, exactInput);
-                        botBox.appendChild(div);
+                        appendExpRow(translatedEn, exactInput, 'Google API', 'hover:bg-blue-50', 'text-blue-600');
                     }
                 }
             } catch (e) {}
 
-            const autoEn = toTitleCase(safeTransliterate(exactInput));
-            if (autoEn && !seenEn.has(autoEn.toLowerCase())) {
-                const div = document.createElement('div'); 
-                div.className = 'suggestion-item bg-purple-50 text-sm sm:text-base border-t';
-                div.innerHTML = `<span><strong>${autoEn}</strong> <span class="text-xs text-gray-500 ml-1">(${exactInput})</span></span> <span class="text-xs sm:text-sm font-bold text-purple-600">Mapped Suggestion</span>`;
-                div.onclick = () => selectExpVal(autoEn, exactInput);
-                botBox.appendChild(div);
-            }
-
-            const divBn = document.createElement('div'); 
-            divBn.className = 'suggestion-item bg-gray-50 text-sm sm:text-base border-t';
-            divBn.innerHTML = `<span><strong>${exactInput}</strong></span> <span class="text-xs sm:text-sm text-gray-500">অন্যান্য (Keep Bangla)</span>`;
-            divBn.onclick = () => selectExpVal(exactInput, exactInput); 
-            botBox.appendChild(divBn);
+            if (mySeq !== expInputSeq || document.activeElement !== input) return;
+            appendExpRow(exactInput, exactInput, 'অন্যান্য (Keep Bangla)', 'bg-gray-50', 'text-gray-500');
         }
     }
 // ==========================================
@@ -3283,7 +3774,7 @@ function saveDuplicateBillUpdate() {
 
     function initExpDropdown() { 
         const activePuja = document.getElementById('pujaSelect').value; 
-        const data = store.getExpense().filter(d => getPuja(d) === activePuja); 
+        const data = store.getExpense().filter(d => isSamePuja(getPuja(d), activePuja)); 
         const select = document.getElementById('expFilterReason'); 
         const unique = [...new Set(data.map(d => d.reason))]; 
         select.innerHTML = '<option value="all">All</option>'; 
@@ -3292,7 +3783,7 @@ function saveDuplicateBillUpdate() {
 
     function renderExpenseTable() { 
         const activePuja = document.getElementById('pujaSelect').value; 
-        const data = store.getExpense().filter(d => getPuja(d) === activePuja); 
+        const data = store.getExpense().filter(d => isSamePuja(getPuja(d), activePuja)); 
         const tbody = document.getElementById('expenseTableBody'); 
         tbody.innerHTML = ''; 
         
@@ -3302,7 +3793,7 @@ function saveDuplicateBillUpdate() {
         const search = document.getElementById('expSearch').value.toLowerCase(); 
         
         const sortedExp = [...data].sort((a, b) => {
-            const diff = new Date(b.date) - new Date(a.date);
+            const diff = compareDatesSafe(a.date, b.date, true);
             return diff === 0 ? Number(b.id) - Number(a.id) : diff;
         });
 
@@ -3485,7 +3976,7 @@ function formatCarNumberDisplay(input) {
                 Object.keys(groupedByCar).slice(0, 5).forEach(normKey => { 
                     const group = groupedByCar[normKey];
                     // Prefer the entry for current activePuja for "জমা নিন", otherwise latest record
-                    const currentPujaRec = group.find(r => getPuja(r) === activePuja);
+                    const currentPujaRec = group.find(r => isSamePuja(getPuja(r), activePuja));
                     const targetRec = currentPujaRec || group[group.length - 1];
                     
                     let textColorClass = "";
@@ -3552,28 +4043,32 @@ function formatCarNumberDisplay(input) {
 
 
     function calcCarDue() { 
-        document.getElementById('carDue').value = Number(document.getElementById('carAmount').value) - Number(document.getElementById('carPaid').value); 
+        const amt = parseNumericAmount(document.getElementById('carAmount').value);
+        const paid = parseNumericAmount(document.getElementById('carPaid').value);
+        document.getElementById('carDue').value = Math.max(0, amt - paid); 
     }
 
 function saveCarEntry() { 
-    const num = document.getElementById('carNumberInput').value; 
+    const num = safeTrim(document.getElementById('carNumberInput').value); 
     if(num.length < 4) { showPopup("Invalid Car Number"); return; } 
     
     const activePuja = document.getElementById('pujaSelect').value; 
     
     // NEW: Duplicate Check
-    const isDuplicate = globalData.car.some(c => c.carNumber === num && c.puja === activePuja);
+    const isDuplicate = globalData.car.some(c => safeTrim(c.carNumber).toUpperCase() === num.toUpperCase() && isSamePuja(getPuja(c), activePuja));
     if (isDuplicate) {
         showPopup(`দুঃখিত! ${num} নম্বরটি এই পূজায় আগেই সেভ করা হয়েছে। আপনি চাইলে লিস্ট থেকে এডিট বা পেমেন্ট আপডেট করতে পারেন।`);
         return;
     }
 
-    const entryDate = document.getElementById('carEntryDate').value;
-    const paidAmt = Number(document.getElementById('carPaid').value);
-    let initialRemarks = document.getElementById('carRemarks').value;
+    const entryDate = document.getElementById('carEntryDate').value || getLocalTodayYMD();
+    const totalAmt = parseNumericAmount(document.getElementById('carAmount').value);
+    const paidAmt = parseNumericAmount(document.getElementById('carPaid').value);
+    const dueAmt = Math.max(0, totalAmt - paidAmt);
+    let initialRemarks = safeTrim(document.getElementById('carRemarks').value);
 
     if (paidAmt > 0) {
-        const displayDate = new Date(entryDate).toLocaleDateString('en-GB');
+        const displayDate = formatDisplayDate(entryDate);
         initialRemarks = `[Initial: ₹${paidAmt} on ${displayDate}]` + (initialRemarks ? ` - ${initialRemarks}` : '');
     }
 
@@ -3584,7 +4079,7 @@ function saveCarEntry() {
         type: document.querySelector('input[name="carType"]:checked').value, 
         date: entryDate, 
         paid: paidAmt, 
-        due: Number(document.getElementById('carDue').value), 
+        due: dueAmt, 
         remarks: initialRemarks 
     }; 
     
@@ -3599,24 +4094,13 @@ function saveCarEntry() {
     showPopup("সফলভাবে গাড়ির এন্ট্রি সেভ হয়েছে!"); 
 }
 
-// Clear Car Input Function
-function clearCarInput() {
-    const input = document.getElementById('carNumberInput');
-    input.value = '';
-    document.getElementById('clearCarBtn').classList.add('hidden');
-    document.getElementById('carNumberSuggestions').classList.add('hidden');
-    const refBox = document.getElementById('carRefInfo');
-    if(refBox) refBox.classList.add('hidden');
-    input.focus();
-}
-
 
     let carCurrentPage = 1;
 const carRowsPerPage = 60;
 
 function renderCarTable() { 
     const activePuja = document.getElementById('pujaSelect').value; 
-    const data = store.getCar().filter(d => getPuja(d) === activePuja); 
+    const data = store.getCar().filter(d => isSamePuja(getPuja(d), activePuja)); 
     const tbody = document.getElementById('carTableBody'); 
     tbody.innerHTML = ''; 
     const searchRaw = safeTrim(document.getElementById('carSearchInput').value).toLowerCase(); 
@@ -3627,21 +4111,22 @@ function renderCarTable() {
     data.forEach(c => {
         let hasLogs = false;
         let baseDateStr = formatDisplayDate(c.date);
-        const toYMD = (dStr) => { let parts = dStr.split('/'); return parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : dStr; };
         let cleanRemarks = c.remarks ? c.remarks.replace(/\[.*?\]/g, '').replace(/-/g, '').trim() : '-';
         if(!cleanRemarks) cleanRemarks = '-';
 
         if (c.remarks && c.remarks.includes('[')) {
             const logs = c.remarks.match(/\[.*?\]/g);
             if (logs && logs.length > 0) {
-                hasLogs = true;
                 logs.forEach((log) => {
-                    let dateMatch = log.match(/on (\d{2}\/\d{2}\/\d{4})/);
-                    let amtMatch = log.match(/₹(\d+)/);
+                    let dateMatch = log.match(/on\s+([^\]]+)/i);
+                    let amtMatch = log.match(/₹\s*([\d,\.]+)/);
                     if (dateMatch && amtMatch) {
+                        const normLogDate = fixDateOffset(dateMatch[1].trim());
+                        const dispLogDate = formatDisplayDate(normLogDate) || dateMatch[1].trim();
+                        hasLogs = true;
                         displayRows.push({
                             id: c.id, carNumber: c.carNumber, type: c.type, totalPaid: c.paid, totalDue: c.due,
-                            stepPaid: parseInt(amtMatch[1]), displayDate: dateMatch[1], sortDate: toYMD(dateMatch[1]),
+                            stepPaid: parseNumericAmount(amtMatch[1]), displayDate: dispLogDate, sortDate: normLogDate || c.date,
                             isHistory: !log.includes('[Initial:'), remarks: cleanRemarks
                         });
                     }
@@ -3658,8 +4143,8 @@ function renderCarTable() {
     });
 
     displayRows.sort((a, b) => {
-        const dateDiff = new Date(b.sortDate) - new Date(a.sortDate);
-        return dateDiff === 0 ? Number(b.id) - Number(a.id) : dateDiff;
+        const dateDiff = compareDatesSafe(a.sortDate, b.sortDate, true);
+        return dateDiff === 0 ? (Number(b.id) || 0) - (Number(a.id) || 0) : dateDiff;
     });
 
     // Search filter implementation
@@ -3757,7 +4242,7 @@ function changeCarPage(page) {
                     textMatch = textMatch.replace(/^- /, '').trim(); // সামনের ড্যাশ সড়িয়ে দেওয়া
                     
                     if (textMatch && textMatch !== '-') {
-                        let dateStr = dateMatch ? dateMatch[1] : new Date(item.date).toLocaleDateString('en-GB');
+                        let dateStr = dateMatch ? dateMatch[1] : formatDisplayDate(item.date);
                         customRemarksHtml += `<div class="mb-1 text-xs p-2 bg-yellow-50 border border-yellow-200 rounded shadow-sm"><span class="font-bold text-red-600">মন্তব্য (${dateStr}):</span> <span class="text-gray-800 font-semibold">${textMatch}</span></div>`;
                     }
                 });
@@ -3765,7 +4250,7 @@ function changeCarPage(page) {
                 // পুরোনো ডাটার ফরম্যাট (যেগুলোতে কোনো সিস্টেম ট্যাগ নেই)
                 let textMatch = item.remarks.trim();
                 if (textMatch && textMatch !== '-') {
-                    let dateStr = new Date(item.date).toLocaleDateString('en-GB');
+                    let dateStr = formatDisplayDate(item.date);
                     customRemarksHtml += `<div class="mb-1 text-xs p-2 bg-yellow-50 border border-yellow-200 rounded shadow-sm"><span class="font-bold text-red-600">মন্তব্য (${dateStr}):</span> <span class="text-gray-800 font-semibold">${textMatch}</span></div>`;
                 }
             }
@@ -3823,21 +4308,28 @@ function changeCarPage(page) {
 
 function saveCarPayment() { 
     const id = document.getElementById('carPayId').value; 
-    const newPay = Number(document.getElementById('carNewPay').value); 
-    const newRem = document.getElementById('carNewRem').value; 
-    const payDate = document.getElementById('carPayDate').value; 
+    const newPay = parseNumericAmount(document.getElementById('carNewPay').value); 
+    const newRem = safeTrim(document.getElementById('carNewRem').value); 
+    const payDate = document.getElementById('carPayDate').value || getLocalTodayYMD(); 
+    if (newPay <= 0 && !newRem) {
+        showPopup("দয়া করে সঠিক টাকার পরিমাণ অথবা মন্তব্য লিখুন!");
+        return;
+    }
     const idx = globalData.car.findIndex(c => String(c.id) === String(id)); 
     
     if(idx !== -1) { 
-        const oldPaid = globalData.car[idx].paid; 
-        const total = oldPaid + globalData.car[idx].due; 
+        const oldPaid = parseNumericAmount(globalData.car[idx].paid); 
+        const total = oldPaid + parseNumericAmount(globalData.car[idx].due); 
         globalData.car[idx].paid = oldPaid + newPay; 
-        globalData.car[idx].due = total - globalData.car[idx].paid; 
-        globalData.car[idx].date = payDate; // আপডেট করার তারিখটি মূল তারিখে সেভ হবে
-        
-        const displayDate = new Date(payDate).toLocaleDateString('en-GB'); 
-        const historyLog = ` [Paid: ₹${newPay} on ${displayDate}]`; 
-        globalData.car[idx].remarks = (globalData.car[idx].remarks || '') + historyLog + (newRem ? ` - ${newRem}` : ''); 
+        globalData.car[idx].due = Math.max(0, total - globalData.car[idx].paid); 
+        if (newPay > 0) {
+            globalData.car[idx].date = payDate; // আপডেট করার তারিখটি মূল তারিখে সেভ হবে
+            const displayDate = formatDisplayDate(payDate); 
+            const historyLog = ` [Paid: ₹${newPay} on ${displayDate}]`; 
+            globalData.car[idx].remarks = (globalData.car[idx].remarks || '') + historyLog + (newRem ? ` - ${newRem}` : ''); 
+        } else if (newRem) {
+            globalData.car[idx].remarks = (globalData.car[idx].remarks ? globalData.car[idx].remarks + ' - ' : '') + newRem;
+        }
         
         syncData('update', 'car', globalData.car[idx]); 
         
@@ -3881,7 +4373,7 @@ function saveCarPayment() {
             const total = Number(document.getElementById('ceAmount').value); 
             const paid = Number(document.getElementById('cePaid').value); 
             globalData.car[idx].paid = paid; 
-            globalData.car[idx].due = total - paid; 
+            globalData.car[idx].due = Math.max(0, total - paid); 
             globalData.car[idx].remarks = document.getElementById('ceRem').value; 
             
             syncData('update', 'car', globalData.car[idx]); 
@@ -3919,14 +4411,14 @@ const targetDate = dashDateInput ? dashDateInput.value : '';
 
 // ফিক্স: সার্ভার থেকে আসা Timestamp রিমুভ করে শুধু ডেট নেওয়া
 
-// যেহেতু fetchAllData তে তারিখ ঠিক করা হয়েছে, তাই সরাসরি তারিখ রিটার্ন করবে
-const cleanDate = (dStr) => dStr || '';
+// যেকোনো ফরম্যাটের তারিখকে YYYY-MM-DD তে রূপান্তর করে সঠিকভাবে মেলানো হচ্ছে
+const cleanDate = (dStr) => fixDateOffset(dStr);
 
-const inc = store.getIncome().filter(d => getPuja(d) === activePuja); 
+const inc = store.getIncome().filter(d => isSamePuja(getPuja(d), activePuja)); 
 
-const car = store.getCar().filter(d => getPuja(d) === activePuja); 
+const car = store.getCar().filter(d => isSamePuja(getPuja(d), activePuja)); 
 
-const exp = store.getExpense().filter(d => getPuja(d) === activePuja);
+const exp = store.getExpense().filter(d => isSamePuja(getPuja(d), activePuja));
 
 const totalInc = inc.reduce((s,x) => s + x.paid, 0) + car.reduce((s,x) => s + x.paid, 0);
 
@@ -3951,11 +4443,60 @@ store.getParas().forEach(p => {
     }
 });
 
+const getPaidOnDate = (item, isCar) => {
+    const paidVal = parseNumericAmount(item.paid);
+    const rem = String(item.remarks || '');
+    if (isCar && rem.includes('[')) {
+        const logs = rem.match(/\[.*?\]/g) || [];
+        let matchedAnyLog = false;
+        let dateSum = 0;
+        let hasInitial = false;
+        let totalLoggedPaid = 0;
+        logs.forEach(log => {
+            const dMatch = log.match(/on\s+([^\]]+)/i);
+            const aMatch = log.match(/₹\s*([\d,\.]+)/);
+            if (dMatch && aMatch) {
+                matchedAnyLog = true;
+                const amt = parseNumericAmount(aMatch[1]);
+                const logDate = cleanDate(dMatch[1].trim());
+                if (log.includes('[Initial:')) hasInitial = true;
+                else totalLoggedPaid += amt;
+                if (logDate === targetDate) dateSum += amt;
+            }
+        });
+        if (matchedAnyLog) {
+            if (!hasInitial && cleanDate(item.date) === targetDate) {
+                const remainder = Math.max(0, paidVal - totalLoggedPaid);
+                if (dateSum === 0) dateSum += remainder;
+            }
+            return dateSum;
+        }
+    }
+    if (!isCar && rem.includes('[পুনরায় জমা:')) {
+        const reLogs = rem.match(/\[পুনরায় জমা:[^\]]+\]/g) || [];
+        let reSumAll = 0;
+        let reSumTarget = 0;
+        reLogs.forEach(log => {
+            const aMatch = log.match(/₹\s*([\d,\.]+)/);
+            const dMatch = log.match(/\(([^\)]+)\)/);
+            if (aMatch && dMatch) {
+                const amt = parseNumericAmount(aMatch[1]);
+                reSumAll += amt;
+                if (cleanDate(dMatch[1].trim()) === targetDate) reSumTarget += amt;
+            }
+        });
+        if (reSumTarget > 0) return reSumTarget;
+        if (cleanDate(item.date) === targetDate) return Math.max(0, paidVal - reSumAll);
+        return 0;
+    }
+    return cleanDate(item.date) === targetDate ? paidVal : 0;
+};
+
 inc.forEach(item => {
-    if (!item.para) return;
-    if(!incomeSources[item.para]) incomeSources[item.para] = {today:0, total:0};
-    incomeSources[item.para].total += item.paid;
-    if(cleanDate(item.date) === targetDate) incomeSources[item.para].today += item.paid;
+    const paraKey = item.para || 'অন্যান্য উৎস';
+    if(!incomeSources[paraKey]) incomeSources[paraKey] = {today:0, total:0};
+    incomeSources[paraKey].total += parseNumericAmount(item.paid);
+    incomeSources[paraKey].today += getPaidOnDate(item, false);
 });
 
 ["Coal", "Local"].forEach(t => {
@@ -3966,8 +4507,8 @@ inc.forEach(item => {
 car.forEach(item => {
     let label = "গাড়ির চাঁদা (" + item.type + ")";
     if(!incomeSources[label]) incomeSources[label] = {today:0, total:0};
-    incomeSources[label].total += item.paid;
-    if(cleanDate(item.date) === targetDate) incomeSources[label].today += item.paid;
+    incomeSources[label].total += parseNumericAmount(item.paid);
+    incomeSources[label].today += getPaidOnDate(item, true);
 });
 
 const dashIncTbody = document.getElementById('dashIncomeTableBody');
@@ -3990,7 +4531,7 @@ const dashExpList = document.getElementById('dashRecentExpList');
 
 dashExpList.innerHTML = '';
 
-const recentExp = [...exp].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+const recentExp = [...exp].sort((a,b) => compareDatesSafe(a.date, b.date, true)).slice(0, 5);
 
 if(recentExp.length === 0) {
 
@@ -4012,6 +4553,10 @@ dashExpList.innerHTML += `<li class="flex justify-between items-center bg-white 
 
 function toggleAllRepParas(checked) {
         document.querySelectorAll('.para-filter-checkbox').forEach(cb => { cb.checked = checked; });
+    }
+
+function toggleAllRepCars(checked) {
+        document.querySelectorAll('.rep-car-checkbox').forEach(cb => { cb.checked = checked; });
     }
 
 function handleReportUI() {
@@ -4151,6 +4696,7 @@ function handleReportUI() {
         if (prePages) prePages.innerHTML = '';
         let totalAmount = 0; 
         let columns = [];
+        let filteredResults = [];
 
         const renderIncomeGroupedWithVariants = (targetTbody, groupedDataObj, colsArr, isCarOnlyFlag, groupByMode, repKind) => {
             let grandTot = 0;
@@ -4260,14 +4806,14 @@ function handleReportUI() {
             document.getElementById('repResultTitle').innerText = "আয়ের বিস্তারিত হিসাব (উৎস অনুযায়ী ক্যাশ, সামগ্রী ও অনলাইন বিভক্ত)";
             columns = ["নাম/গাড়ী", "জমার তারিখ", "ধার্য", "জমা (Paid)", "বাকী (Due)", "মাধ্যম ও Remarks"];
             
-            const rawInc = store.getIncome().filter(d => getPuja(d) === activePuja && (!start || d.date >= start) && (!end || d.date <= end));
-            const rawCar = store.getCar().filter(d => getPuja(d) === activePuja && (!start || d.date >= start) && (!end || d.date <= end));
-            const rawExp = store.getExpense().filter(d => getPuja(d) === activePuja && (!start || d.date >= start) && (!end || d.date <= end));
+            const rawInc = store.getIncome().filter(d => isSamePuja(getPuja(d), activePuja) && (!start || d.date >= start) && (!end || d.date <= end));
+            const rawCar = store.getCar().filter(d => isSamePuja(getPuja(d), activePuja) && (!start || d.date >= start) && (!end || d.date <= end));
+            const rawExp = store.getExpense().filter(d => isSamePuja(getPuja(d), activePuja) && (!start || d.date >= start) && (!end || d.date <= end));
 
             const combinedIncomeItems = [
                 ...rawInc.map(i => ({...i, t: 'para'})),
                 ...rawCar.map(c => ({...c, t: 'car'}))
-            ].sort((a, b) => new Date(a.date) - new Date(b.date));
+            ].sort((a, b) => compareDatesSafe(a.date, b.date, false));
 
             const groupedIncSummary = {};
             combinedIncomeItems.forEach(r => {
@@ -4291,7 +4837,7 @@ function handleReportUI() {
             if (exportableTableEl) exportableTableEl.classList.add('page-break-after');
 
             // আয়ের রিপোর্ট কমপ্লিট হওয়ার পর ব্যয়ের রিপোর্ট শুরু হবে
-            rawExp.sort((a, b) => new Date(a.date) - new Date(b.date));
+            rawExp.sort((a, b) => compareDatesSafe(a.date, b.date, false));
             const groupedExpSummary = {};
             let totalEx = 0;
             rawExp.forEach(r => {
@@ -4508,11 +5054,11 @@ function handleReportUI() {
             document.getElementById('repResultTitle').innerText = "খরচের রিপোর্ট (Expense Report)"; 
             columns = ["খরচের কারণ", "খরচের পরিমাণ", "Remarks", "প্রমাণ"];
             
-            let data = store.getExpense().filter(d => getPuja(d) === activePuja);
+            let data = store.getExpense().filter(d => isSamePuja(getPuja(d), activePuja));
             let results = data.filter(item => { if(start && item.date < start) return false; if(end && item.date > end) return false; return true; });
             
             let headerRow = '<tr>'; columns.forEach(c => headerRow += `<th class="border p-2 text-left bg-gray-100">${c}</th>`); headerRow += '</tr>'; thead.innerHTML = headerRow;
-            results.sort((a,b) => new Date(a.date) - new Date(b.date));
+            results.sort((a,b) => compareDatesSafe(a.date, b.date, false));
 
             let groupedExp = {};
             results.forEach(r => {
@@ -4569,9 +5115,9 @@ function handleReportUI() {
             const groupBy = document.getElementById('repGroupBy') ? document.getElementById('repGroupBy').value : 'source';
             
             // Multiple Selected Paras, Payment Modes & Car Types
-            const selectedParas = Array.from(document.querySelectorAll('.para-filter-checkbox:checked')).map(cb => cb.value);
+            const selectedParas = Array.from(document.querySelectorAll('.para-filter-checkbox:checked')).map(cb => cleanSpaceText(cb.value));
             const selectedModes = Array.from(document.querySelectorAll('.rep-mode-checkbox:checked')).map(cb => cb.value);
-            const selectedCarTypes = Array.from(document.querySelectorAll('.rep-car-checkbox:checked')).map(cb => cb.value);
+            const selectedCarTypes = Array.from(document.querySelectorAll('.rep-car-checkbox:checked')).map(cb => cleanSpaceText(cb.value));
 
             let sourceText = source === 'all' ? 'সব উৎস' : (source === 'para' ? 'পাড়া কালেকশন' : 'গাড়ির চাঁদা');
             if (groupBy === 'date') sourceText += ' (তারিখ অনুযায়ী)';
@@ -4591,33 +5137,42 @@ function handleReportUI() {
             }
             
             let rawData = []; 
-            const incomeData = store.getIncome().filter(d => getPuja(d) === activePuja) || []; 
-            const carData = store.getCar().filter(d => getPuja(d) === activePuja) || [];
+            const incomeData = store.getIncome().filter(d => isSamePuja(getPuja(d), activePuja)) || []; 
+            const carData = store.getCar().filter(d => isSamePuja(getPuja(d), activePuja)) || [];
             
             if (source === 'all') { rawData = [...incomeData.map(i => ({...i, t: 'para'})), ...carData.map(c => ({...c, t: 'car'}))]; } 
             else if (source === 'para') { rawData = incomeData.map(i => ({...i, t: 'para'})); } 
             else if (source === 'car') { rawData = carData.map(c => ({...c, t: 'car'})); }
             
+            const hasAnySourceSelection = (source === 'all') && (selectedParas.length > 0 || selectedCarTypes.length > 0);
             let results = rawData.filter(item => {
                 if(start && item.date < start) return false; 
                 if(end && item.date > end) return false;
-                
-                if (item.t === 'para' && selectedParas.length > 0) {
-                    if (!selectedParas.includes(item.para)) return false;
-                }
-                if (item.t === 'car' && selectedCarTypes.length > 0) {
-                    if (!selectedCarTypes.includes(item.type)) return false;
+
+                const itemParaNorm = cleanSpaceText(item.para);
+                const itemTypeNorm = cleanSpaceText(item.type);
+                if (source === 'all') {
+                    if (hasAnySourceSelection) {
+                        if (item.t === 'para' && !selectedParas.includes(itemParaNorm)) return false;
+                        if (item.t === 'car' && !selectedCarTypes.includes(itemTypeNorm)) return false;
+                    }
+                } else if (source === 'para') {
+                    if (item.t !== 'para') return false;
+                    if (selectedParas.length > 0 && !selectedParas.includes(itemParaNorm)) return false;
+                } else if (source === 'car') {
+                    if (item.t !== 'car') return false;
+                    if (selectedCarTypes.length > 0 && !selectedCarTypes.includes(itemTypeNorm)) return false;
                 }
 
                 // Payment Mode filter (ক্যাশ / সামগ্রী / অনলাইন)
                 const modeInfo = parsePaymentModeFromItem(item);
-                if (selectedModes.length > 0 && !selectedModes.includes(modeInfo.mode)) {
+                if (selectedModes.length === 0 || !selectedModes.includes(modeInfo.mode)) {
                     return false;
                 }
 
-                const projected = Number(item.projected) || 0; 
-                const paid = Number(item.paid) || 0;
-                const due = Number(item.due) || 0;
+                const paid = parseNumericAmount(item.paid);
+                const due = parseNumericAmount(item.due);
+                const projected = parseNumericAmount(item.projected) || (paid + due);
 
                 if(type === 'due_list') {
                     if (projected <= 0 || due <= 0) return false;
@@ -4635,8 +5190,9 @@ function handleReportUI() {
                 return true;
             });
 
+            filteredResults = results;
             let headerRow = '<tr>'; columns.forEach(c => headerRow += `<th class="border p-2 text-left bg-gray-100">${c}</th>`); headerRow += '</tr>'; thead.innerHTML = headerRow;
-            results.sort((a,b) => new Date(a.date) - new Date(b.date));
+            results.sort((a,b) => compareDatesSafe(a.date, b.date, false));
 
             let groupedData = {};
             results.forEach(r => {
@@ -4747,9 +5303,15 @@ function handleReportUI() {
         }
         
         if(type === 'expense') {
+            if (!tbody.innerHTML.trim()) {
+                tbody.innerHTML = `<tr><td colspan="${columns.length}" class="border p-4 text-center text-gray-400 font-bold">কোনো খরচের তথ্য পাওয়া যায়নি!</td></tr>`;
+            }
             document.getElementById('repTotalDisplay').innerText = '₹' + totalAmount;
         } else if(type !== 'summary') {
-            const tv = computeDonationVariantStats(results);
+            if (!tbody.innerHTML.trim()) {
+                tbody.innerHTML = `<tr><td colspan="${columns.length}" class="border p-4 text-center text-gray-400 font-bold">নির্বাচিত ফিল্টারে কোনো তথ্য পাওয়া যায়নি!</td></tr>`;
+            }
+            const tv = computeDonationVariantStats(filteredResults);
             document.getElementById('repTotalDisplay').innerText = `₹${totalAmount} (ক্যাশ: ₹${tv.cashAmt} | অনলাইন: ₹${tv.onlineAmt} | সামগ্রী: ${tv.samagriCount} টি)`;
         }
     }
@@ -4778,7 +5340,7 @@ function handleReportUI() {
                 rows.forEach(r => { 
                     const amt = r[3]; 
                     if (!amt && amt !== 0) return; 
-                    const item = { id: Date.now().toString() + Math.random(), puja: activePuja, date: new Date().toISOString().split('T')[0], para: r[0] || 'Legacy', english_name: r[1] || 'Unknown', bengali_name: r[2] || r[1] || 'অজানা', projected: Number(amt), paid: Number(amt), due: 0, remarks: r[4] || 'Legacy Import' }; 
+                    const item = { id: Date.now().toString() + Math.random(), puja: activePuja, date: getLocalTodayYMD(), para: r[0] || 'Legacy', english_name: r[1] || 'Unknown', bengali_name: r[2] || r[1] || 'অজানা', projected: parseNumericAmount(amt), paid: parseNumericAmount(amt), due: 0, remarks: r[4] || 'Legacy Import' }; 
                     globalData.income.push(item); 
                     syncData('add', 'income', item); 
                     count++; 
@@ -4815,14 +5377,14 @@ function handleReportUI() {
             if (source === 'all' || source === 'para' || source !== 'car') { 
                 bills.forEach(item => { 
                     const matchPara = (source === 'all' || source === 'para') ? true : (item.para === source);
-                    if (matchPara && (getPuja(item) === histPuja) && (!year || item.date.startsWith(year)) && (!keyword || item.english_name.toLowerCase().includes(keyword) || item.bengali_name.includes(keyword) || item.para.toLowerCase().includes(keyword))) { 
+                    if (matchPara && isSamePuja(getPuja(item), histPuja) && (!year || item.date.startsWith(year)) && (!keyword || item.english_name.toLowerCase().includes(keyword) || item.bengali_name.includes(keyword) || item.para.toLowerCase().includes(keyword))) { 
                         results.push({ date: item.date, desc: `${item.english_name} (${item.bengali_name})`, source: `Para: ${item.para}`, amount: item.paid, remarks: item.remarks || '-' }); 
                     } 
                 }); 
             } 
             if (source === 'all' || source === 'car') { 
                 cars.forEach(item => { 
-                    if ((getPuja(item) === histPuja) && (!year || item.date.startsWith(year)) && (!keyword || item.carNumber.toLowerCase().includes(keyword) || item.type.toLowerCase().includes(keyword))) { 
+                    if (isSamePuja(getPuja(item), histPuja) && (!year || item.date.startsWith(year)) && (!keyword || item.carNumber.toLowerCase().includes(keyword) || item.type.toLowerCase().includes(keyword))) { 
                         results.push({ date: item.date, desc: `Car No: ${item.carNumber}`, source: `Type: ${item.type}`, amount: item.paid, remarks: item.remarks || '-' }); 
                     } 
                 }); 
@@ -4831,7 +5393,7 @@ function handleReportUI() {
             const expenses = store.getExpense(); 
             expenses.forEach(item => { 
                 const expRem = item.remarks || '-';
-                if ((getPuja(item) === histPuja) && (!year || item.date.startsWith(year)) && (!keyword || item.reason.toLowerCase().includes(keyword) || expRem.toLowerCase().includes(keyword))) { 
+                if (isSamePuja(getPuja(item), histPuja) && (!year || item.date.startsWith(year)) && (!keyword || item.reason.toLowerCase().includes(keyword) || expRem.toLowerCase().includes(keyword))) { 
                     results.push({ date: item.date, desc: item.reason, source: 'Expense', amount: item.amount, remarks: expRem }); 
                 } 
             }); 
@@ -4844,7 +5406,7 @@ function handleReportUI() {
             document.getElementById('historyTotal').classList.add('hidden'); 
             return; 
         } 
-        results.sort((a, b) => new Date(b.date) - new Date(a.date)); 
+        results.sort((a, b) => compareDatesSafe(a.date, b.date, true)); 
         results.forEach(row => { 
             grandTotal += Number(row.amount); 
             const tr = document.createElement('tr'); 
@@ -5510,8 +6072,16 @@ function handleReportUI() {
             ...(globalData.car || []).map(c => c.puja),
             ...(globalData.expense || []).map(e => e.puja)
         ].filter(Boolean);
-        const merged = [...new Set([...DEFAULT_PUJAS, ...saved, ...fromData, ...(defPuja ? [defPuja] : [])])];
-        return merged;
+        const rawMerged = [...DEFAULT_PUJAS, ...saved, ...fromData, ...(defPuja ? [defPuja] : [])];
+        const seenKeys = new Map();
+        rawMerged.forEach(p => {
+            const clean = cleanSpaceText(p);
+            const key = normalizePujaKey(clean);
+            if (key && !seenKeys.has(key)) {
+                seenKeys.set(key, clean);
+            }
+        });
+        return Array.from(seenKeys.values());
     }
 
     function initPujaAndYearLists() {

@@ -171,6 +171,7 @@
                         <label class="block text-sm mb-1 font-bold text-gray-700">নাম লিখুন (Name)</label>
                         <input type="text" id="billNameInput" onkeyup="handleSmartInput(this, 'income')" onfocus="handleSmartInput(this, 'income')" class="w-full border-2 border-purple-200 focus:border-purple-600 focus:ring-1 focus:ring-purple-600 p-3 rounded text-base sm:text-lg" placeholder="ইংরেজী বা বাংলায় নাম লিখুন...">
                         <div id="billNameSuggestions" class="suggestion-box hidden"></div>
+                        <div id="billDonorRefInfo" class="hidden mt-2 p-2.5 rounded-lg text-xs sm:text-sm border border-green-300 bg-green-50 text-gray-800 space-y-1 shadow-sm"></div>
                         <input type="hidden" id="billNameBangla">
                         <input type="hidden" id="billNameEnglish">
                     </div>
@@ -910,6 +911,7 @@
             </div>
 
             <div class="p-4 overflow-y-auto space-y-2 flex-1 font-bold text-gray-700">
+                <button onclick="switchTab('income'); switchSubTab('dashboard'); toggleMobileMenu()" class="w-full text-left flex items-center p-2.5 bg-purple-50 hover:bg-purple-100 text-purple-900 rounded-lg border border-purple-200 mb-2 shadow-sm"><i data-lucide="layout-dashboard" class="w-4 h-4 mr-2 text-purple-700"></i> ড্যাশবোর্ড (Dashboard)</button>
                 <div class="border-b pb-2 mb-2">
                     <div class="flex justify-between items-center p-2 hover:bg-gray-100 rounded cursor-pointer" onclick="toggleMenuAccordion('acc-income', 'icon-income')">
                         <h3 class="font-bold flex items-center"><i data-lucide="indian-rupee" class="w-4 h-4 mr-2"></i> আয়ের হিসাব</h3>
@@ -2272,13 +2274,49 @@ function parseParaData(p) {
     // ==========================================
     // 7. INCOME (BILL) MODULE
     // ==========================================
+    function buildDonorHistoryLines(enName, bnName, allIncomeList) {
+        const normEn = safeTrim(String(enName || '')).toLowerCase();
+        const normBn = safeTrim(String(bnName || '')).toLowerCase();
+        const historyRecs = (allIncomeList || []).filter(r =>
+            (normBn && r.bengali_name && safeTrim(r.bengali_name).toLowerCase() === normBn) ||
+            (normEn && r.english_name && safeTrim(r.english_name).toLowerCase() === normEn)
+        ).sort((a, b) => extractEntryYear(a) - extractEntryYear(b));
+
+        if (historyRecs.length === 0) return '';
+        return historyRecs.map(rec => {
+            const pName = getPuja(rec);
+            const paidVal = Number(rec.paid) || 0;
+            const projVal = Number(rec.projected) || 0;
+            const dueVal = Number(rec.due) || 0;
+            const cleanRem = extractCleanRemark(rec.remarks || '');
+            const remPart = cleanRem ? ` <span class="text-gray-600 font-normal">(${cleanRem})</span>` : '';
+            return `<div class="text-[11px] sm:text-xs leading-snug"><span class="font-bold text-purple-800">${pName}:</span> <span class="font-bold text-green-700">জমা ₹${paidVal}</span> <span class="text-gray-600">(ধার্য: ₹${projVal}${dueVal > 0 ? `, বাকি: ₹${dueVal}` : ''})</span>${remPart}</div>`;
+        }).join('');
+    }
+
+    function showDonorReferenceBanner(enName, bnName) {
+        const refBox = document.getElementById('billDonorRefInfo');
+        if (!refBox) return;
+        const activePuja = document.getElementById('pujaSelect') ? document.getElementById('pujaSelect').value : getDefaultPuja();
+        const linesHtml = buildDonorHistoryLines(enName, bnName, store.getIncome());
+        if (linesHtml) {
+            refBox.innerHTML = `<div class="font-bold text-green-900 border-b border-green-200 pb-1 mb-1 flex justify-between items-center flex-wrap gap-1"><span>পূর্বের চাঁদার রেফারেন্স (${bnName || enName}):</span><span class="text-[11px] bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full">জমা হবে: ${activePuja}</span></div>${linesHtml}`;
+            refBox.classList.remove('hidden');
+        } else {
+            refBox.classList.add('hidden');
+            refBox.innerHTML = '';
+        }
+    }
+
     async function handleSmartInput(input, type) {
         const rawVal = safeTrim(input.value).toLowerCase();
         const box = document.getElementById('billNameSuggestions');
+        const refBox = document.getElementById('billDonorRefInfo');
         const selectedPara = document.getElementById('billPara') ? document.getElementById('billPara').value : '';
         
         let dataset = store.getIncome(); 
         if (!rawVal) {
+            if (refBox) { refBox.classList.add('hidden'); refBox.innerHTML = ''; }
             if (selectedPara) {
                 const paraDonors = dataset.filter(item => item.para === selectedPara);
                 const uniqueParaDonors = [...new Map(paraDonors.map(item => [(item.english_name || '') + '|' + (item.bengali_name || ''), item])).values()];
@@ -2287,8 +2325,9 @@ function parseParaData(p) {
                     box.classList.remove('hidden');
                     uniqueParaDonors.slice(0, 8).forEach(m => {
                         const div = document.createElement('div');
-                        div.className = 'suggestion-item suggestion-past text-sm sm:text-base';
-                        div.innerHTML = `<span><strong>${m.english_name}</strong> <span class="text-xs text-gray-500 ml-1">(${m.bengali_name})</span> <span class="text-xs text-purple-700 font-bold ml-1">[${m.para}]</span></span> <span class="text-xs sm:text-sm font-bold text-green-700">পূর্বের দাতা (₹${m.projected || m.paid || 0})</span>`;
+                        div.className = 'suggestion-item suggestion-past text-sm sm:text-base items-start gap-2';
+                        const histHtml = buildDonorHistoryLines(m.english_name, m.bengali_name, dataset);
+                        div.innerHTML = `<div class="flex-1 min-w-0"><div><strong>${m.english_name}</strong> <span class="text-xs text-gray-500 ml-1">(${m.bengali_name})</span> <span class="text-xs text-purple-700 font-bold ml-1">[${m.para}]</span></div><div class="mt-0.5 space-y-0.5">${histHtml}</div></div> <span class="text-xs font-bold text-green-700 shrink-0 bg-green-100 px-2 py-0.5 rounded">পূর্বের দাতা</span>`;
                         div.onmousedown = (e) => { e.preventDefault(); selectSmartValue(m.english_name, m.bengali_name, m.para, m.projected); };
                         div.ontouchstart = (e) => { e.preventDefault(); selectSmartValue(m.english_name, m.bengali_name, m.para, m.projected); };
                         box.appendChild(div);
@@ -2320,9 +2359,10 @@ function parseParaData(p) {
         if(uniquePast.length > 0) {
             uniquePast.slice(0, 5).forEach(m => {
                 const div = document.createElement('div'); 
-                div.className = 'suggestion-item suggestion-past text-sm sm:text-base';
+                div.className = 'suggestion-item suggestion-past text-sm sm:text-base items-start gap-2';
                 const paraBadge = m.para ? `<span class="text-xs text-purple-700 font-bold ml-1">[${m.para}]</span>` : '';
-                div.innerHTML = `<span><strong>${m.english_name}</strong> <span class="text-xs text-gray-500 ml-1">(${m.bengali_name})</span>${paraBadge}</span> <span class="text-xs sm:text-sm font-bold text-green-700">Paste Reference</span>`;
+                const histHtml = buildDonorHistoryLines(m.english_name, m.bengali_name, dataset);
+                div.innerHTML = `<div class="flex-1 min-w-0"><div><strong>${m.english_name}</strong> <span class="text-xs text-gray-500 ml-1">(${m.bengali_name})</span>${paraBadge}</div><div class="mt-0.5 space-y-0.5">${histHtml}</div></div> <span class="text-xs font-bold text-green-700 shrink-0 bg-green-100 px-2 py-0.5 rounded">Paste Reference</span>`;
                 div.onclick = () => selectSmartValue(m.english_name, m.bengali_name, m.para, m.projected);
                 box.appendChild(div);
             });
@@ -2389,6 +2429,7 @@ function parseParaData(p) {
         if (donorProj && Number(donorProj) > 0 && amtInput && !amtInput.value) {
             amtInput.value = donorProj;
         }
+        showDonorReferenceBanner(en, bn);
         document.getElementById('billNameSuggestions').classList.add('hidden');
     }
 
@@ -2500,6 +2541,8 @@ function parseParaData(p) {
         
         document.getElementById('billAdvance').value = ''; 
         document.getElementById('billRemarks').value = '';
+        const refBox = document.getElementById('billDonorRefInfo');
+        if (refBox) { refBox.classList.add('hidden'); refBox.innerHTML = ''; }
 
         // সবসময় ক্যাশ ডিফল্ট থাকবে
         setRadioVal('billPayMode', 'cash');

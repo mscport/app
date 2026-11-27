@@ -360,6 +360,7 @@
         .prem-btn.yearly::before { background: linear-gradient(180deg, #2563eb, #06b6d4); }
         .prem-btn.sports::before { background: linear-gradient(180deg, #059669, #10b981); }
         .prem-btn.member::before { background: linear-gradient(180deg, #7c3aed, #ec4899); }
+        .prem-btn.special-game::before { background: linear-gradient(180deg, #d97706, #e11d48); }
 
         .prem-btn:active {
             transform: scale(0.975);
@@ -381,6 +382,8 @@
         .orb-yearly { background: linear-gradient(135deg, #1d4ed8, #0284c7); color: #fff; }
         .orb-sports { background: linear-gradient(135deg, #047857, #10b981); color: #fff; }
         .orb-member { background: linear-gradient(135deg, #6d28d9, #db2777); color: #fff; }
+        .orb-special { background: linear-gradient(135deg, #d97706, #e11d48); color: #fff; }
+        .badge-puja { background: #fef3c7; color: #92400e; }
 
         .card-text {
             flex: 1;
@@ -830,7 +833,7 @@
                 <input
                     type="text"
                     id="homePujaSearch"
-                    placeholder="ডিফল্ট পূজার আয় বা ব্যয় খুঁজুন (নাম, পাড়া, গাড়ি, খরচ)..."
+                    placeholder="সব পূজার আয় বা ব্যয় খুঁজুন (নাম, পাড়া, গাড়ি, খরচ, পুজো)..."
                     autocomplete="off"
                     oninput="handleHomeSearch()"
                     onfocus="handleHomeSearch()"
@@ -900,6 +903,16 @@
                 <div class="card-text">
                     <div class="card-title">সদস্য রেজিস্টার</div>
                     <div class="card-sub">গভর্নিং বডি, সাধারণ ও সম্মানীয় সদস্য তালিকা</div>
+                </div>
+                <div class="arrow-pill">›</div>
+            </a>
+
+            <!-- ৫. স্পেশাল প্রতিযোগী -->
+            <a href="spcial_game.html" class="prem-btn special-game">
+                <div class="icon-orb orb-special">🌟</div>
+                <div class="card-text">
+                    <div class="card-title">স্পেশাল প্রতিযোগী</div>
+                    <div class="card-sub">বিশেষ প্রতিযোগিতা ও ইভেন্ট পোর্টাল</div>
                 </div>
                 <div class="arrow-pill">›</div>
             </a>
@@ -1031,54 +1044,65 @@
 
         function buildDefaultPujaSearchPool() {
             const activePuja = pujaCache.defaultPuja || "বাসন্তী পূজা ২০২৬";
-            const matchPuja = (item) => String(item.puja || "কালী পূজা ২০২৫").trim() === activePuja;
+            const getItemPuja = (item) => String((item && item.puja) || "কালী পূজা ২০২৫").trim();
             const pool = [];
 
             (pujaCache.income || []).forEach(item => {
-                if (!item || !matchPuja(item)) return;
+                if (!item) return;
+                const itemPuja = getItemPuja(item);
                 const bn = String(item.bengali_name || "").trim();
                 const en = String(item.english_name || "").trim();
                 const title = bn || en || "অজানা দাতা";
                 pool.push({
                     kind: "income",
                     badge: "আয় (চাঁদা)",
+                    pujaName: itemPuja,
+                    isDefaultPuja: itemPuja === activePuja,
                     title: title,
                     subtitle: `${en && bn ? en + " • " : ""}${item.para || "-"} • ${formatDisplayDate(item.date)}`,
                     amountText: `₹${Number(item.paid) || 0}`,
                     dueAmt: Number(item.due) || 0,
-                    searchText: `${bn} ${en} ${item.para || ""} ${item.remarks || ""} ${formatDisplayDate(item.date)} ${item.paid || ""} ${item.projected || ""}`.toLowerCase(),
+                    searchText: `${bn} ${en} ${itemPuja} ${item.para || ""} ${item.remarks || ""} ${formatDisplayDate(item.date)} ${item.paid || ""} ${item.projected || ""}`.toLowerCase(),
                     raw: item
                 });
             });
 
             (pujaCache.car || []).forEach(item => {
-                if (!item || !matchPuja(item)) return;
+                if (!item) return;
+                const itemPuja = getItemPuja(item);
                 pool.push({
                     kind: "car",
                     badge: "গাড়ীর চাঁদা",
+                    pujaName: itemPuja,
+                    isDefaultPuja: itemPuja === activePuja,
                     title: String(item.carNumber || "গাড়ী"),
                     subtitle: `${item.type || "Coal"} • ${formatDisplayDate(item.date)}`,
                     amountText: `₹${Number(item.paid) || 0}`,
                     dueAmt: Number(item.due) || 0,
-                    searchText: `${item.carNumber || ""} ${item.type || ""} ${item.remarks || ""} ${formatDisplayDate(item.date)} ${item.paid || ""}`.toLowerCase(),
+                    searchText: `${item.carNumber || ""} ${itemPuja} ${item.type || ""} ${item.remarks || ""} ${formatDisplayDate(item.date)} ${item.paid || ""}`.toLowerCase(),
                     raw: item
                 });
             });
 
             (pujaCache.expense || []).forEach(item => {
-                if (!item || !matchPuja(item)) return;
+                if (!item) return;
+                const itemPuja = getItemPuja(item);
                 pool.push({
                     kind: "expense",
                     badge: "ব্যয়",
+                    pujaName: itemPuja,
+                    isDefaultPuja: itemPuja === activePuja,
                     title: String(item.reason || "খরচ"),
                     subtitle: `${formatDisplayDate(item.date)}${item.remarks ? " • " + item.remarks : ""}`,
                     amountText: `₹${Number(item.amount) || 0}`,
                     dueAmt: 0,
-                    searchText: `${item.reason || ""} ${item.remarks || ""} ${formatDisplayDate(item.date)} ${item.amount || ""}`.toLowerCase(),
+                    searchText: `${item.reason || ""} ${itemPuja} ${item.remarks || ""} ${formatDisplayDate(item.date)} ${item.amount || ""}`.toLowerCase(),
                     raw: item
                 });
             });
 
+            // Show current Default Puja items first, followed by all other Pujas' references
+            pool.sort((a, b) => (b.isDefaultPuja ? 1 : 0) - (a.isDefaultPuja ? 1 : 0));
             return pool;
         }
 
@@ -1109,7 +1133,7 @@
             currentFilteredSuggestions = matches;
 
             if (matches.length === 0) {
-                dropdown.innerHTML = `<div class="sug-empty">"${escapeHtml(input.value.trim())}" — ডিফল্ট পূজায় কোনো আয় বা ব্যয় পাওয়া যায়নি</div>`;
+                dropdown.innerHTML = `<div class="sug-empty">"${escapeHtml(input.value.trim())}" — কোনো পূজার আয় বা ব্যয় পাওয়া যায়নি</div>`;
                 dropdown.classList.add("open");
                 return;
             }
@@ -1118,11 +1142,13 @@
                 const badgeCls = m.kind === "expense" ? "badge-exp" : (m.kind === "car" ? "badge-car" : "badge-inc");
                 const amtCls = m.kind === "expense" ? "amt-exp" : "amt-inc";
                 const dueHtml = m.dueAmt > 0 ? `<div class="sug-due">বাকী: ₹${m.dueAmt}</div>` : "";
+                const pujaTag = m.pujaName ? `<span class="sug-badge badge-puja">${escapeHtml(m.pujaName)}</span>` : "";
                 return `
                     <div class="sug-item" onclick="openSuggestionDetails(${idx})">
                         <div class="sug-left">
                             <div class="sug-title-row">
                                 <span class="sug-badge ${badgeCls}">${m.badge}</span>
+                                ${pujaTag}
                                 <span class="sug-name">${escapeHtml(m.title)}</span>
                             </div>
                             <div class="sug-sub">${escapeHtml(m.subtitle)}</div>
@@ -1164,7 +1190,7 @@
             const body = document.getElementById("popupBody");
             const modal = document.getElementById("detailsPopupModal");
             const raw = entry.raw || {};
-            const activePuja = pujaCache.defaultPuja || raw.puja || "বর্তমান পূজা";
+            const activePuja = entry.pujaName || raw.puja || pujaCache.defaultPuja || "বর্তমান পূজা";
 
             hdr.className = "popup-header " + (entry.kind === "expense" ? "hdr-exp" : (entry.kind === "car" ? "hdr-car" : "hdr-inc"));
 

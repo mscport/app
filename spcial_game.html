@@ -296,17 +296,20 @@
         display: none !important;
       }
     }
-    body.privacy-blackout-active {
+    /* Solid Pure-Black Screen Lock (Volume Up/Down + Power / Screenshot Protection) */
+    body.player-blackout-locked {
       background: #000000 !important;
+      overflow: hidden !important;
     }
-    body.privacy-blackout-active > *:not(#playerPrivacyShield) {
-      opacity: 0 !important;
+    body.player-blackout-locked header,
+    body.player-blackout-locked #viewPlayer,
+    body.player-blackout-locked footer {
       visibility: hidden !important;
+      opacity: 0 !important;
       pointer-events: none !important;
     }
-    #playerPrivacyShield {
+    #playerPrivacyShield.blackout-active {
       background: #000000 !important;
-      z-index: 999999 !important;
     }
 
     /* 1870x1180 Pixel Audience Broadcast Stream Stage */
@@ -402,14 +405,16 @@
   <!-- Toast Container -->
   <div id="toastContainer" class="fixed bottom-4 right-4 left-4 sm:left-auto z-50 flex flex-col gap-2 pointer-events-none max-w-sm ml-auto"></div>
 
-  <!-- Participant Privacy Shield (Anti-Screenshot / Anti-Recording Veil) -->
+  <!-- Participant Privacy Shield (Solid Black Screen Lock for Volume/Power/Screenshot) -->
   <div id="playerPrivacyShield" class="fixed inset-0 z-[10000] bg-black hidden flex-col items-center justify-center p-6 text-center select-none">
     <div class="w-16 h-16 rounded-2xl bg-rose-500/20 border border-rose-400/50 text-rose-300 flex items-center justify-center mb-4">
-      <i data-lucide="shield-alert" class="w-9 h-9"></i>
+      <i data-lucide="lock" class="w-9 h-9"></i>
     </div>
-    <h2 class="text-xl sm:text-2xl font-bold text-white mb-2">নিরাপত্তা সুরক্ষা চালু আছে</h2>
-    <p class="text-sm text-rose-200 max-w-sm">প্রতিযোগী মোডে স্ক্রীনশট, স্ক্রীন রেকর্ডিং ও কপি করা সম্পূর্ণ নিষিদ্ধ।</p>
-    <button type="button" id="btnDismissPrivacyShield" class="mt-5 px-5 py-2.5 rounded-xl btn-vivid btn-blue text-sm cursor-pointer">খেলায় ফিরে যান</button>
+    <h2 id="privacyShieldTitle" class="text-xl sm:text-2xl font-bold text-white mb-2">স্ক্রীন লক করা হয়েছে</h2>
+    <p id="privacyShieldMsg" class="text-sm text-rose-200 max-w-sm">প্রতিযোগী মোডে Volume/Power কী, স্ক্রীনশট, স্ক্রীন রেকর্ডিং ও কপি করা সম্পূর্ণ নিষিদ্ধ।</p>
+    <button type="button" id="btnDismissPrivacyShield" class="mt-6 px-6 py-2.5 rounded-xl btn-vivid btn-blue text-sm cursor-pointer flex items-center gap-2">
+      <i data-lucide="unlock" class="w-4 h-4"></i> খেলায় ফিরে যান
+    </button>
   </div>
 
   <!-- Modal Container -->
@@ -492,11 +497,10 @@
 
     function createDefaultState() {
       return {
-        updatedAt: Date.now(),
+        updatedAt: 0,
         activeGame: 'game1', // 'game1' | 'game2' | 'game3' | 'game4'
         showScoreboard: false,
         gamePaused: false,
-        blockBrowserForPlayers: false,
         pausedSnapshot: null,
         clubLogoUrl: 'msc_logo.png',
         deviceLocks: {},
@@ -614,7 +618,6 @@
         game3: {
           title: 'ভিডিও কুইজ (ল্যান্ডস্কেপ)',
           active: false,
-          rawMode: false,
           selectedVideoSetId: 'vset_1',
           uploadedVideos: [
             {
@@ -754,33 +757,69 @@
       };
     }
 
+    function mergeMissingDefaults(defaults, value) {
+      if (Array.isArray(defaults)) return Array.isArray(value) ? value : defaults.slice();
+      if (defaults && typeof defaults === 'object') {
+        var source = (value && typeof value === 'object' && !Array.isArray(value)) ? value : {};
+        var out = {};
+        Object.keys(defaults).forEach(function (key) {
+          out[key] = Object.prototype.hasOwnProperty.call(source, key) ? mergeMissingDefaults(defaults[key], source[key]) : defaults[key];
+        });
+        Object.keys(source).forEach(function (key) { if (!Object.prototype.hasOwnProperty.call(out, key)) out[key] = source[key]; });
+        return out;
+      }
+      return value === undefined || value === null ? defaults : value;
+    }
+
     function ensureStateSchema(s) {
       var def = createDefaultState();
-      if (!s.game1.savedSets || !Array.isArray(s.game1.savedSets)) s.game1.savedSets = def.game1.savedSets;
-      if (!s.game1.selectedPresetId && s.game1.savedSets[0]) s.game1.selectedPresetId = s.game1.savedSets[0].id;
-      if (!s.game2.savedSets || !Array.isArray(s.game2.savedSets)) s.game2.savedSets = def.game2.savedSets;
-      if (!s.game2.selectedPresetId && s.game2.savedSets[0]) s.game2.selectedPresetId = s.game2.savedSets[0].id;
-      if (!s.game3.savedSets || !Array.isArray(s.game3.savedSets)) s.game3.savedSets = def.game3.savedSets;
-      if (!s.game3.selectedVideoSetId && s.game3.savedSets[0]) s.game3.selectedVideoSetId = s.game3.savedSets[0].id;
-      if (!s.game3.uploadedVideos || !Array.isArray(s.game3.uploadedVideos)) s.game3.uploadedVideos = def.game3.uploadedVideos;
-      // Remove expired/broken blob: URLs from previous sessions so broken play icons never appear
-      s.game3.uploadedVideos = s.game3.uploadedVideos.filter(function (v) {
-        if (!v) return false;
-        if (v.url && String(v.url).indexOf('blob:') === 0) {
-          return !!(window.__activeSessionBlobs && window.__activeSessionBlobs[v.url]);
-        }
-        return true;
+      if (!s || typeof s !== 'object' || Array.isArray(s)) s = {};
+      // Deep merge prevents older/partial saved states from missing nested settings and timers.
+      s = mergeMissingDefaults(def, s);
+      if (!Array.isArray(s.players)) s.players = def.players.slice();
+      s.players = s.players.filter(function (p) { return p && typeof p === 'object' && p.id; });
+      if (!s.players.length) s.players = def.players.slice();
+
+      ['game1', 'game2'].forEach(function (gk) {
+        var g = s[gk];
+        if (!Array.isArray(g.savedSets)) g.savedSets = def[gk].savedSets.slice();
+        if (!g.settings || typeof g.settings !== 'object') g.settings = Object.assign({}, def[gk].settings);
+        if (!g.timer || typeof g.timer !== 'object') g.timer = Object.assign({}, def[gk].timer);
+        if (!g.sets || typeof g.sets !== 'object') g.sets = {};
+        s.players.forEach(function (p) {
+          if (!Array.isArray(g.sets[p.id])) {
+            var oldItems = g.sets[p.id];
+            g.sets[p.id] = oldItems && typeof oldItems === 'object' ? Object.values(oldItems) : [];
+          }
+        });
+        if (!g.savedSets.some(function (set) { return set && set.id === g.selectedPresetId; })) g.selectedPresetId = g.savedSets[0] ? g.savedSets[0].id : '';
       });
-      if (s.game3.uploadedVideos.length === 0) s.game3.uploadedVideos = def.game3.uploadedVideos;
-      if (!s.game4) s.game4 = def.game4;
-      if (!s.game4.savedSets || !Array.isArray(s.game4.savedSets)) s.game4.savedSets = def.game4.savedSets;
-      if (!s.game4.playerState) s.game4.playerState = {};
-      if (!s.game4.settings) s.game4.settings = def.game4.settings;
+
+      ['questions', 'uploadedVideos', 'savedSets'].forEach(function (key) {
+        var value = s.game3[key];
+        if (!Array.isArray(value)) s.game3[key] = value && typeof value === 'object' ? Object.values(value) : [];
+      });
+      // Blob URLs are browser-session-only; discard stale ones from shared state.
+      s.game3.uploadedVideos = s.game3.uploadedVideos.filter(function (v) {
+        return !!v && !(v.url && String(v.url).indexOf('blob:') === 0 && !(window.__activeSessionBlobs && window.__activeSessionBlobs[v.url]));
+      });
+      if (!s.game3.uploadedVideos.length) s.game3.uploadedVideos = def.game3.uploadedVideos.slice();
+      if (s.game3.activePopup && !Array.isArray(s.game3.activePopup.hijackTriedIds)) {
+        s.game3.activePopup.hijackTriedIds = s.game3.activePopup.hijackTriedIds ? Object.values(s.game3.activePopup.hijackTriedIds) : [];
+      }
+
+      if (!s.game4 || typeof s.game4 !== 'object') s.game4 = mergeMissingDefaults(def.game4, {});
+      if (!Array.isArray(s.game4.savedSets)) s.game4.savedSets = def.game4.savedSets.slice();
+      if (!s.game4.playerState || typeof s.game4.playerState !== 'object') s.game4.playerState = {};
+      Object.keys(s.game4.playerState).forEach(function (pid) {
+        var ps = s.game4.playerState[pid];
+        if (!ps || typeof ps !== 'object') s.game4.playerState[pid] = { draft: '', isTyping: false, lastTypedAt: 0, streak: 0, answers: [] };
+        else if (!Array.isArray(ps.answers)) ps.answers = ps.answers ? Object.values(ps.answers) : [];
+      });
       if (typeof s.gamePaused !== 'boolean') s.gamePaused = false;
-      if (typeof s.blockBrowserForPlayers !== 'boolean') s.blockBrowserForPlayers = false;
-      if (typeof s.game3.rawMode !== 'boolean') s.game3.rawMode = false;
       if (!s.deviceLocks || typeof s.deviceLocks !== 'object') s.deviceLocks = {};
       if (typeof s.clubLogoUrl !== 'string') s.clubLogoUrl = '';
+      if (['game1', 'game2', 'game3', 'game4'].indexOf(s.activeGame) === -1) s.activeGame = 'game1';
       return s;
     }
 
@@ -849,34 +888,68 @@
     }
 
     function loadLocalSession() {
+      var defaults = { mainTab: 'player', selectedPlayerId: null, adminLoggedIn: false, adminUser: '', adminSubTab: 'game1', adminEditPlayerId: 'p1', configSelectedGame: 'game1', g3RunPlayerId: 'keep', googlyExpanded: {} };
       var raw = safeGet(STORAGE_LOCAL_KEY);
       if (raw) {
-        try { return JSON.parse(raw); } catch (e) {}
+        try {
+          var parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            var merged = Object.assign({}, defaults, parsed);
+            if (!merged.googlyExpanded || typeof merged.googlyExpanded !== 'object') merged.googlyExpanded = {};
+            if (['player', 'audience', 'admin'].indexOf(merged.mainTab) === -1) merged.mainTab = 'player';
+            if (['game1', 'game2', 'game3', 'game4', 'players', 'settings'].indexOf(merged.adminSubTab) === -1) merged.adminSubTab = 'game1';
+            if (['game1', 'game2', 'game3', 'game4'].indexOf(merged.configSelectedGame) === -1) merged.configSelectedGame = 'game1';
+            return merged;
+          }
+        } catch (e) {}
       }
-      return {
-        mainTab: 'player', // 'player' | 'admin'
-        selectedPlayerId: null,
-        adminLoggedIn: false,
-        adminUser: '',
-        adminSubTab: 'game1', // 'game1' | 'game2' | 'game3' | 'game4' | 'players' | 'settings'
-        adminEditPlayerId: 'p1',
-        configSelectedGame: 'game1',
-        g3RunPlayerId: 'keep',
-        googlyExpanded: {}
-      };
+      return defaults;
     }
 
     var state = loadInitialState();
     var connConfig = loadConnConfig();
     var localSession = loadLocalSession();
 
-    // Persistent Per-Device ID for Call-Safe Single-Device Lock
+    // Persistent Per-Device ID + Public IP for Strict Single-Device / Single-IP Lock
     var DEVICE_ID_KEY = 'bengali_gameshow_device_id_v1';
+    var CLIENT_IP_KEY = 'bengali_gameshow_client_ip_v1';
     var myDeviceId = safeGet(DEVICE_ID_KEY);
     if (!myDeviceId) {
       myDeviceId = 'dev_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
       safeSet(DEVICE_ID_KEY, myDeviceId);
     }
+    var myClientIp = safeGet(CLIENT_IP_KEY) || '';
+    var hasInitialFirebaseSync = false;
+    var firebaseLocksRef = null;
+
+    function detectClientPublicIp() {
+      var endpoints = ['https://api.ipify.org?format=json', 'https://api64.ipify.org?format=json'];
+      (function tryNext(idx) {
+        if (idx >= endpoints.length) return;
+        fetch(endpoints[idx], { cache: 'no-store' })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) {
+            if (d && d.ip) {
+              myClientIp = String(d.ip).trim();
+              safeSet(CLIENT_IP_KEY, myClientIp);
+              // Update our active lock with resolved IP if already locked
+              if (localSession.selectedPlayerId && state.deviceLocks && state.deviceLocks[localSession.selectedPlayerId]) {
+                var lk = state.deviceLocks[localSession.selectedPlayerId];
+                if (lk.deviceId === myDeviceId && lk.ip !== myClientIp) {
+                  lk.ip = myClientIp;
+                  if (firebaseConnected && firebaseRef) {
+                    try { firebaseRef.child('deviceLocks/' + localSession.selectedPlayerId + '/ip').set(myClientIp); } catch (e) {}
+                  }
+                }
+              }
+            } else {
+              tryNext(idx + 1);
+            }
+          })
+          .catch(function () { tryNext(idx + 1); });
+      })(0);
+    }
+    detectClientPublicIp();
 
     // Screen Wake Lock Manager (keeps mobile screen ON & re-acquires after calls)
     var wakeLockSentinel = null;
@@ -899,18 +972,82 @@
 
     function isPlayerLockedByOther(playerId) {
       var lock = state.deviceLocks && state.deviceLocks[playerId];
-      return !!(lock && lock.deviceId && lock.deviceId !== myDeviceId);
+      if (!lock || !lock.deviceId) return false;
+      // Strict check: only the exact device that claimed this player can enter until they change name or Admin unlocks
+      return lock.deviceId !== myDeviceId;
     }
 
-    function claimPlayerDeviceLock(playerId) {
-      if (isPlayerLockedByOther(playerId)) return false;
-      if (!state.deviceLocks) state.deviceLocks = {};
-      state.deviceLocks[playerId] = { deviceId: myDeviceId, lockedAt: Date.now() };
-      if (firebaseConnected && firebaseRef) {
-        try { firebaseRef.child('deviceLocks/' + playerId).set(state.deviceLocks[playerId]); } catch (e) {}
+    function getMyLockedPlayerId() {
+      if (!state.deviceLocks) return null;
+      var ids = Object.keys(state.deviceLocks);
+      for (var i = 0; i < ids.length; i++) {
+        var lk = state.deviceLocks[ids[i]];
+        if (lk && lk.deviceId === myDeviceId) return ids[i];
       }
-      commitState();
+      return null;
+    }
+
+    function syncLocksLocallyOnly() {
+      safeSet(STORAGE_STATE_KEY, JSON.stringify(state));
+      if (broadcastChan) {
+        try { broadcastChan.postMessage({ type: 'STATE_UPDATE', state: state }); } catch (e) {}
+      }
+    }
+
+    function claimPlayerDeviceLock(playerId, onDone) {
+      if (isPlayerLockedByOther(playerId)) {
+        if (typeof onDone === 'function') onDone(false);
+        return false;
+      }
+      if (!state.deviceLocks) state.deviceLocks = {};
+
+      // Release any previous player locked by this same device before claiming a new one
+      var prevPid = getMyLockedPlayerId();
+      if (prevPid && prevPid !== playerId) {
+        delete state.deviceLocks[prevPid];
+        if (firebaseConnected && firebaseRef) {
+          try { firebaseRef.child('deviceLocks/' + prevPid).remove(); } catch (e) {}
+        }
+      }
+
+      var newLock = {
+        deviceId: myDeviceId,
+        ip: myClientIp || 'device-locked',
+        lockedAt: Date.now()
+      };
+
+      // Atomic Firebase Transaction prevents two mobiles from ever claiming the same player!
+      if (firebaseConnected && firebaseRef) {
+        var lockNode = firebaseRef.child('deviceLocks/' + playerId);
+        lockNode.transaction(function (currentData) {
+          if (currentData && currentData.deviceId && currentData.deviceId !== myDeviceId) {
+            return; // Abort transaction: already locked by another mobile/IP!
+          }
+          return newLock;
+        }, function (error, committed, snapshot) {
+          if (error || !committed) {
+            var liveLock = snapshot ? snapshot.val() : null;
+            if (liveLock && liveLock.deviceId) {
+              state.deviceLocks[playerId] = liveLock;
+              syncLocksLocallyOnly();
+              renderAll();
+            }
+            if (typeof onDone === 'function') onDone(false);
+            return;
+          }
+          state.deviceLocks[playerId] = newLock;
+          syncLocksLocallyOnly();
+          requestScreenWakeLock();
+          if (typeof onDone === 'function') onDone(true);
+        });
+        return true;
+      }
+
+      // Offline / Local fallback
+      state.deviceLocks[playerId] = newLock;
+      syncLocksLocallyOnly();
       requestScreenWakeLock();
+      if (typeof onDone === 'function') onDone(true);
       return true;
     }
 
@@ -921,7 +1058,8 @@
       if (firebaseConnected && firebaseRef) {
         try { firebaseRef.child('deviceLocks/' + playerId).remove(); } catch (e) {}
       }
-      commitState();
+      syncLocksLocallyOnly();
+      renderAll();
     }
 
     function toggleGlobalGamePause() {
@@ -979,10 +1117,6 @@
     var firebaseDb = null;
     var firebaseStorage = null;
     var firebaseConnected = false;
-    var firebaseServerOnline = false;
-    var firebaseInfoRef = null;
-    var firebaseLastError = '';
-    var firebasePendingSync = false;
     var firebaseRef = null;
     var broadcastChan = null;
     var suppressNextFirebaseEmit = false;
@@ -1012,28 +1146,6 @@
       safeSet(STORAGE_LOCAL_KEY, JSON.stringify(localSession));
     }
 
-    function pushStateToFirebase(cleanObj) {
-      if (!firebaseConnected || !firebaseRef || suppressNextFirebaseEmit) return;
-      try {
-        var payload = cleanObj || JSON.parse(JSON.stringify(state));
-        var p = firebaseRef.set(payload);
-        if (p && typeof p.then === 'function') {
-          p.then(function () {
-            firebaseLastError = '';
-            firebasePendingSync = false;
-          }).catch(function (err) {
-            firebasePendingSync = true;
-            firebaseLastError = err && err.message ? err.message : String(err);
-            console.warn('Firebase write error:', firebaseLastError);
-          });
-        }
-      } catch (e) {
-        firebasePendingSync = true;
-        firebaseLastError = e && e.message ? e.message : String(e);
-        console.warn('Firebase set exception:', firebaseLastError);
-      }
-    }
-
     function commitState(skipRender) {
       state.updatedAt = Date.now();
       var serialized = JSON.stringify(state);
@@ -1042,9 +1154,9 @@
         try { broadcastChan.postMessage({ type: 'STATE_UPDATE', state: state }); } catch (e) {}
       }
       if (firebaseConnected && firebaseRef && !suppressNextFirebaseEmit) {
-        var cleanPayload = null;
-        try { cleanPayload = JSON.parse(serialized); } catch (e) { cleanPayload = state; }
-        pushStateToFirebase(cleanPayload);
+        try {
+          firebaseRef.set(state);
+        } catch (e) {}
       }
       if (!skipRender) renderAll();
     }
@@ -1070,21 +1182,13 @@
         if (!cfg.apiKey || !cfg.databaseURL) {
           cfg = JSON.parse(DEFAULT_FIREBASE_CONFIG_TEXT);
         }
-        var app = null;
+        var app;
         if (window.firebase.apps && window.firebase.apps.length > 0) {
-          var existingApp = window.firebase.apps[0];
-          var exOpts = existingApp.options || {};
-          if (exOpts.databaseURL === cfg.databaseURL && exOpts.apiKey === cfg.apiKey) {
-            app = existingApp;
-          } else {
-            var customName = 'msc_app_' + Date.now();
-            app = window.firebase.initializeApp(cfg, customName);
-          }
+          app = window.firebase.apps[0];
         } else {
           app = window.firebase.initializeApp(cfg);
         }
         firebaseDb = window.firebase.database(app);
-        try { firebaseDb.goOnline(); } catch (e) {}
         try {
           if (typeof window.firebase.storage === 'function') {
             firebaseStorage = window.firebase.storage(app);
@@ -1096,40 +1200,36 @@
           firebaseStorage = null;
           window.__lastFbStorageErr = e && e.message ? e.message : String(e);
         }
-
-        // Monitor true real-time Firebase Server connectivity via .info/connected
-        if (firebaseInfoRef) {
-          try { firebaseInfoRef.off(); } catch (e) {}
-        }
-        firebaseInfoRef = firebaseDb.ref('.info/connected');
-        firebaseInfoRef.on('value', function (connSnap) {
-          var isOnlineNow = connSnap.val() === true;
-          var wasOnline = firebaseServerOnline;
-          firebaseServerOnline = isOnlineNow;
-          if (isOnlineNow) {
-            firebaseLastError = '';
-            if (firebasePendingSync && localSession.adminLoggedIn) {
-              pushStateToFirebase();
-            }
-            if (!wasOnline) {
-              renderAll();
-            }
-          } else if (wasOnline) {
-            renderAll();
-          }
-        });
-
         var roomPath = 'gameshow_rooms/' + (connConfig.roomCode || 'LIVE_ROOM_01').replace(/[^a-zA-Z0-9_-]/g, '_');
         if (firebaseRef) firebaseRef.off();
+        if (firebaseLocksRef) firebaseLocksRef.off();
         firebaseRef = firebaseDb.ref(roomPath);
+        firebaseLocksRef = firebaseRef.child('deviceLocks');
         firebaseConnected = true;
 
+        // Dedicated Real-Time Device/IP Lock Listener (always authoritative, never blocked by updatedAt)
+        firebaseLocksRef.on('value', function (lockSnap) {
+          var liveLocks = lockSnap.val() || {};
+          state.deviceLocks = liveLocks;
+          safeSet(STORAGE_STATE_KEY, JSON.stringify(state));
+
+          // If this phone had a player selected, verify we still own the lock
+          if (localSession.mainTab === 'player' && localSession.selectedPlayerId) {
+            var curLock = liveLocks[localSession.selectedPlayerId];
+            if (curLock && curLock.deviceId && curLock.deviceId !== myDeviceId) {
+              localSession.selectedPlayerId = null;
+              saveLocalSession();
+              showToast('এই নামটি অন্য ডিভাইস/IP-তে লক আছে!', 'error');
+            }
+          }
+          renderAll();
+        });
+
         firebaseRef.on('value', function (snapshot) {
-          firebaseServerOnline = true;
-          firebaseLastError = '';
           var val = snapshot.val();
           if (val && val.players && val.game1 && val.game2 && val.game3) {
-            if (!state.updatedAt || (val.updatedAt && val.updatedAt > state.updatedAt)) {
+            if (!hasInitialFirebaseSync || !state.updatedAt || (val.updatedAt && val.updatedAt > state.updatedAt)) {
+              hasInitialFirebaseSync = true;
               var prevClueIdx = state.game4 ? state.game4.currentClueIndex : -1;
               var prevG4Running = state.game4 ? state.game4.running : false;
               var prevActiveGame = state.activeGame;
@@ -1163,13 +1263,8 @@
               suppressNextFirebaseEmit = false;
             }
           } else if (localSession.adminLoggedIn) {
-            pushStateToFirebase();
+            firebaseRef.set(state);
           }
-        }, function (err) {
-          firebaseServerOnline = false;
-          firebaseLastError = err && err.message ? err.message : String(err);
-          console.warn('Firebase listener error:', firebaseLastError);
-          renderAll();
         });
 
         if (!silent) showToast('Firebase Realtime Database-এর সাথে সফলভাবে সংযুক্ত হয়েছে!', 'success');
@@ -1177,9 +1272,7 @@
         return true;
       } catch (err) {
         firebaseConnected = false;
-        firebaseServerOnline = false;
-        firebaseLastError = err && err.message ? err.message : String(err);
-        window.__lastFbStorageErr = firebaseLastError;
+        window.__lastFbStorageErr = err && err.message ? err.message : String(err);
         if (!silent) showToast('Firebase সংযোগ ত্রুটি: ' + err.message, 'error');
         return false;
       }
@@ -1236,28 +1329,8 @@
           var sep = sheetUrl.indexOf('?') === -1 ? '?' : '&';
           fetchUrl = sheetUrl + sep + 'username=' + encodeURIComponent(u) + '&password=' + encodeURIComponent(p) + '&user=' + encodeURIComponent(u) + '&pass=' + encodeURIComponent(p);
         }
-        var resp = null;
-        var lastFetchErr = null;
-        for (var attempt = 0; attempt < 2; attempt++) {
-          var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-          var timerId = ctrl ? setTimeout(function () { try { ctrl.abort(); } catch (e) {} }, 12000) : null;
-          try {
-            resp = await fetch(fetchUrl, {
-              method: 'GET',
-              redirect: 'follow',
-              credentials: 'omit',
-              cache: 'no-store',
-              signal: ctrl ? ctrl.signal : undefined
-            });
-            if (timerId) clearTimeout(timerId);
-            if (resp && resp.ok) break;
-            lastFetchErr = new Error('HTTP ' + (resp ? resp.status : 'ERR'));
-          } catch (fErr) {
-            if (timerId) clearTimeout(timerId);
-            lastFetchErr = fErr;
-          }
-        }
-        if (!resp || !resp.ok) throw (lastFetchErr || new Error('SERVER_UNREACHABLE'));
+        var resp = await fetch(fetchUrl, { method: 'GET', redirect: 'follow', credentials: 'omit', cache: 'no-store' });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
         var text = (await resp.text()).trim();
 
         // Check JSON response (Google Apps Script)
@@ -1299,7 +1372,7 @@
         }
         return { ok: false, msg: 'আপনার ভূল হচ্ছে' };
       } catch (err) {
-        return { ok: false, msg: 'ব্যাকএন্ড সার্ভারের সাথে সংযোগ বিচ্ছিন্ন হয়েছে। ইন্টারনেট চেক করে আবার চেষ্টা করুন।' };
+        return { ok: false, msg: 'আপনার ভূল হচ্ছে' };
       }
     }
 
@@ -1809,9 +1882,11 @@
         state.game3.currentTime = 0;
         state.game3.isPlaying = false;
         state.game3.questions.forEach(function (q) { q.asked = false; });
-        commitState();
+        // A blob: URL exists only in this browser session; never sync it to other devices.
+        safeSet(STORAGE_STATE_KEY, JSON.stringify(state));
+        renderAll();
         closeModal();
-        showToast('Drive Apps Script URL না থাকায় লোকাল প্রিভিউ চালু হয়েছে। সেটআপ থেকে Drive URL যুক্ত করুন।', 'warn');
+        showToast('Drive Apps Script URL না থাকায় শুধু এই ডিভাইসে লোকাল প্রিভিউ চালু হয়েছে। অন্য ডিভাইসে চালাতে Drive/Firebase URL দিন।', 'warn');
         return;
       }
 
@@ -2480,38 +2555,12 @@
       });
       state.activeGame = 'game3';
       state.showScoreboard = false;
-      g3.rawMode = false;
       g3.active = true;
       g3.isPlaying = true;
       g3.playbackUpdatedAt = Date.now();
       SoundFX.reveal();
       commitState();
       showToast('ভিডিও সেট "' + vset.name + '" চালু হয়েছে!', 'success');
-    }
-
-    function runRawVideoMode(vsetId) {
-      var g3 = state.game3;
-      if (vsetId) {
-        var vset = (g3.savedSets || []).find(function (s) { return s.id === vsetId; });
-        if (vset) {
-          g3.selectedVideoSetId = vset.id;
-          g3.videoSourceType = vset.videoSourceType || 'demo';
-          g3.videoUrl = vset.videoUrl || '';
-          g3.videoName = vset.videoName || vset.name;
-          g3.duration = Number(vset.duration || 30);
-        }
-      }
-      state.activeGame = 'game3';
-      state.showScoreboard = false;
-      g3.rawMode = true;
-      g3.active = true;
-      g3.activePopup = null;
-      g3.currentTime = 0;
-      g3.isPlaying = true;
-      g3.playbackUpdatedAt = Date.now();
-      SoundFX.reveal();
-      commitState();
-      showToast('Raw ভিডিও চালু হয়েছে (কোনো প্রশ্ন পপ-আপ আসবে না)!', 'success');
     }
 
     function saveCurrentVideoAsSet(setName) {
@@ -2810,15 +2859,13 @@
           // 3) Sync Video Element or Demo Canvas
           var effTime = getEffectiveVideoTime();
           if (g3.isPlaying && !g3.activePopup && (!firebaseConnected || localSession.adminLoggedIn)) {
-            // Check if any unasked question timestamp is reached (skip when Raw Video mode is active)
-            if (!g3.rawMode) {
-              var dueQ = g3.questions.find(function (q) {
-                return !q.asked && effTime >= Number(q.time) && effTime < Number(q.time) + 1.8;
-              });
-              if (dueQ) {
-                triggerVideoQuestion(dueQ);
-                return;
-              }
+            // Check if any unasked question timestamp is reached (authoritative on Admin)
+            var dueQ = g3.questions.find(function (q) {
+              return !q.asked && effTime >= Number(q.time) && effTime < Number(q.time) + 1.8;
+            });
+            if (dueQ) {
+              triggerVideoQuestion(dueQ);
+              return;
             }
             if (effTime >= (g3.duration || 30)) {
               g3.currentTime = g3.duration || 30;
@@ -3089,21 +3136,6 @@
       var container = document.getElementById('viewPlayer');
       if (!container) return;
 
-      // If Admin enabled App-Only (Chrome Block) mode for guaranteed FLAG_SECURE screenshot blocking
-      if (state.blockBrowserForPlayers && !isInsideAndroidAppWebView()) {
-        container.innerHTML =
-          '<div class="portrait-stage pt-8">' +
-            '<div class="glass rounded-3xl p-7 text-center space-y-4 border border-rose-500/40">' +
-              '<div class="w-16 h-16 mx-auto rounded-2xl bg-rose-500/20 text-rose-300 flex items-center justify-center">' +
-                '<i data-lucide="shield-ban" class="w-9 h-9"></i>' +
-              '</div>' +
-              '<h2 class="text-xl font-bold text-white">ক্রোম / ব্রাউজারে প্রবেশ নিষিদ্ধ</h2>' +
-              '<p class="text-sm text-slate-300 leading-relaxed">স্ক্রীনশট সুরক্ষার জন্য প্রতিযোগীদের শুধুমাত্র <strong>Modern Sporting Club APK অ্যাপ</strong> থেকেই খেলতে হবে।</p>' +
-            '</div>' +
-          '</div>';
-        return;
-      }
-
       // Step 1: Select Contestant Name if not selected
       var currentPlayer = localSession.selectedPlayerId ? getPlayerById(localSession.selectedPlayerId) : null;
       if (!currentPlayer) {
@@ -3118,7 +3150,7 @@
               '<div class="flex-1 min-w-0">' +
                 '<div class="font-bold text-base sm:text-lg text-white truncate">' + escapeHtml(p.name) + '</div>' +
                 '<div class="text-xs ' + (lockedOther ? 'text-rose-300 font-semibold' : 'text-cyan-300/80') + '">' +
-                  (lockedOther ? '🔒 ইতিমধ্যেই অন্য ডিভাইসে যুক্ত' : 'প্রতিযোগিতায় যোগ দিতে ক্লিক করুন') +
+                  (lockedOther ? '🔒 অন্য মোবাইল/IP-তে লক আছে (নাম পরিবর্তন না করা পর্যন্ত বন্ধ)' : 'প্রতিযোগিতায় যোগ দিতে ক্লিক করুন') +
                 '</div>' +
               '</div>' +
               '<i data-lucide="' + (lockedOther ? 'lock' : 'chevron-right') + '" class="w-5 h-5 ' + (lockedOther ? 'text-rose-400' : 'text-slate-400 group-hover:text-cyan-300') + '"></i>' +
@@ -3155,8 +3187,8 @@
                 '</span>' +
               '</div>' +
               '<div class="flex items-center gap-1.5 text-xs text-slate-400 mt-0.5">' +
-                '<span class="relative inline-block w-2 h-2 rounded-full ' + (firebaseServerOnline ? 'bg-emerald-400' : (firebaseConnected ? 'bg-amber-400' : 'bg-rose-400')) + ' live-dot"></span>' +
-                '<span>' + (firebaseServerOnline ? 'লাইভ সংযুক্ত' : (firebaseConnected ? 'পুনঃসংযোগ হচ্ছে...' : 'অফলাইন')) + '</span>' +
+                '<span class="relative inline-block w-2 h-2 rounded-full ' + (firebaseConnected ? 'bg-emerald-400' : 'bg-cyan-400') + ' live-dot"></span>' +
+                '<span>' + (firebaseConnected ? 'লাইভ সংযুক্ত' : 'লাইভ সিঙ্ক চালু') + '</span>' +
               '</div>' +
             '</div>' +
           '</div>' +
@@ -3728,9 +3760,8 @@
 
     // Participant Fullscreen + Anti-Copy / Anti-Screenshot / Anti-Recording Guards
     var privacyShieldTimer = null;
-    var activeTouchPointers = {};
     function isParticipantProtectedActive() {
-      return localSession.mainTab === 'player';
+      return localSession.mainTab === 'player' && !!localSession.selectedPlayerId;
     }
 
     function updateParticipantProtectionBodyClass() {
@@ -3742,27 +3773,32 @@
       }
     }
 
-    function showPrivacyShield(autoHideMs) {
+    function showPrivacyShield(autoHideMs, customMsg) {
       if (!isParticipantProtectedActive()) return;
       var sh = document.getElementById('playerPrivacyShield');
       if (!sh) return;
-      document.body.classList.add('privacy-blackout-active');
+      document.body.classList.add('player-blackout-locked');
+      sh.classList.add('blackout-active');
       sh.classList.remove('hidden');
       sh.classList.add('flex');
-      sh.style.display = 'flex';
+      var msgEl = document.getElementById('privacyShieldMsg');
+      if (msgEl) {
+        msgEl.textContent = customMsg || 'প্রতিযোগী মোডে Volume/Power কী, স্ক্রীনশট, স্ক্রীন রেকর্ডিং ও কপি করা সম্পূর্ণ নিষিদ্ধ।';
+      }
+      refreshIcons();
       if (privacyShieldTimer) clearTimeout(privacyShieldTimer);
-      if (autoHideMs) {
+      if (autoHideMs && autoHideMs > 0) {
         privacyShieldTimer = setTimeout(hidePrivacyShield, autoHideMs);
       }
     }
 
     function hidePrivacyShield() {
       var sh = document.getElementById('playerPrivacyShield');
-      document.body.classList.remove('privacy-blackout-active');
+      document.body.classList.remove('player-blackout-locked');
       if (!sh) return;
+      sh.classList.remove('blackout-active');
       sh.classList.add('hidden');
       sh.classList.remove('flex');
-      sh.style.display = '';
     }
 
     function togglePlayerPageFullscreen() {
@@ -3788,111 +3824,72 @@
       });
     });
 
-    function isHardwareOrScreenshotKey(e) {
+    function isHardwareVolumeOrPowerKey(e) {
       var k = String(e.key || '').toLowerCase();
-      var c = String(e.code || '').toLowerCase();
+      var code = String(e.code || '').toLowerCase();
       var kc = e.keyCode || e.which || 0;
       return (
-        k === 'printscreen' ||
-        k === 'snapshot' ||
-        k === 'audiovolumedown' ||
-        k === 'audiovolumeup' ||
-        k === 'volumedown' ||
-        k === 'volumeup' ||
-        k === 'power' ||
-        c === 'audiovolumedown' ||
-        c === 'audiovolumeup' ||
-        c === 'power' ||
-        c === 'printscreen' ||
-        kc === 44 || kc === 24 || kc === 25 || kc === 26 || kc === 182 || kc === 183 ||
-        (e.ctrlKey && (k === 'c' || k === 'x' || k === 's' || k === 'p' || k === 'u')) ||
-        (e.ctrlKey && e.shiftKey && (k === 'i' || k === 'j' || k === 'c' || k === 's')) ||
-        (e.metaKey && e.shiftKey && (k === '3' || k === '4' || k === '5')) ||
-        k === 'f12'
+        k === 'audiovolumeup' || k === 'audiovolumedown' || k === 'audiovolumemute' ||
+        k === 'volumeup' || k === 'volumedown' || k === 'power' || k === 'poweroff' ||
+        k === 'sleep' || k === 'standby' || k === 'snapshot' || k === 'printscreen' ||
+        code === 'audiovolumeup' || code === 'audiovolumedown' || code === 'power' || code === 'printscreen' ||
+        kc === 24 || kc === 25 || kc === 26 || kc === 44 || kc === 174 || kc === 175 || kc === 182 || kc === 183
       );
     }
 
-    document.addEventListener('keydown', function (e) {
+    function handleParticipantKeyGuard(e) {
       if (!isParticipantProtectedActive()) return;
-      if (isHardwareOrScreenshotKey(e)) {
+      var k = String(e.key || '').toLowerCase();
+      var isHwKey = isHardwareVolumeOrPowerKey(e);
+      var blocked =
+        isHwKey ||
+        (e.ctrlKey && (k === 'c' || k === 'x' || k === 's' || k === 'p' || k === 'u')) ||
+        (e.ctrlKey && e.shiftKey && (k === 'i' || k === 'j' || k === 'c' || k === 's')) ||
+        (e.metaKey && e.shiftKey && (k === '3' || k === '4' || k === '5')) ||
+        k === 'f12';
+      if (blocked) {
         e.preventDefault();
+        e.stopPropagation();
         try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(''); } catch (err) {}
-        showPrivacyShield(4000);
+        // Solid pure-black screen lock (stays locked until manually unlocked!)
+        showPrivacyShield(
+          0,
+          isHwKey
+            ? 'Volume Up/Down বা Power কী চাপা হয়েছে — নিরাপত্তার জন্য স্ক্রীন কালো করে লক করা হলো।'
+            : 'প্রতিযোগী মোডে স্ক্রীনশট, স্ক্রীন রেকর্ডিং ও কপি করা সম্পূর্ণ নিষিদ্ধ।'
+        );
       }
-    });
+    }
 
+    document.addEventListener('keydown', handleParticipantKeyGuard, true);
     document.addEventListener('keyup', function (e) {
       if (!isParticipantProtectedActive()) return;
-      if (isHardwareOrScreenshotKey(e)) {
+      if (isHardwareVolumeOrPowerKey(e)) {
         e.preventDefault();
-        showPrivacyShield(4000);
+        showPrivacyShield(0, 'Volume Up/Down বা Power কী চাপা হয়েছে — নিরাপত্তার জন্য স্ক্রীন কালো করে লক করা হলো।');
       }
-    });
+    }, true);
 
-    // Detect 2-finger or 3-finger touch/swipe screenshot gesture immediately -> pure black display
+    // Block Android 3-finger screenshot swipe gesture with immediate pure-black screen lock
     document.addEventListener('touchstart', function (e) {
       if (!isParticipantProtectedActive()) return;
-      if (e.touches && e.touches.length >= 2) {
+      if (e.touches && e.touches.length >= 3) {
         e.preventDefault();
-        showPrivacyShield(4000);
+        showPrivacyShield(0, 'তিন আঙুলের স্ক্রীনশট চেষ্টা শনাক্ত হয়েছে — স্ক্রীন কালো করে লক করা হলো।');
       }
-    }, { passive: false });
-
-    document.addEventListener('touchmove', function (e) {
-      if (!isParticipantProtectedActive()) return;
-      if (e.touches && e.touches.length >= 2) {
-        e.preventDefault();
-        showPrivacyShield(4000);
-      }
-    }, { passive: false });
-
-    document.addEventListener('pointerdown', function (e) {
-      if (!isParticipantProtectedActive()) return;
-      if (e.pointerType === 'touch') {
-        activeTouchPointers[e.pointerId] = true;
-        if (Object.keys(activeTouchPointers).length >= 2) {
-          showPrivacyShield(4000);
-        }
-      }
-    }, { passive: true });
-
-    ['pointerup', 'pointercancel'].forEach(function (evName) {
-      document.addEventListener(evName, function (e) {
-        if (e.pointerId !== undefined) delete activeTouchPointers[e.pointerId];
-      }, { passive: true });
-    });
-
-    document.addEventListener('touchcancel', function () {
-      activeTouchPointers = {};
-      if (isParticipantProtectedActive()) {
-        showPrivacyShield(4000);
-      }
-    });
+    }, { passive: false, capture: true });
 
     window.addEventListener('blur', function () {
       if (isParticipantProtectedActive()) {
-        showPrivacyShield(0);
-      }
-    });
-
-    window.addEventListener('pagehide', function () {
-      if (isParticipantProtectedActive()) {
-        showPrivacyShield(0);
+        showPrivacyShield(0, 'অ্যাপের বাইরে যাওয়া বা স্ক্রীনশট চেষ্টা শনাক্ত হয়েছে — স্ক্রীন কালো করে লক করা হলো।');
       }
     });
 
     document.addEventListener('visibilitychange', function () {
       if (document.visibilityState === 'hidden' && isParticipantProtectedActive()) {
-        showPrivacyShield(0);
+        showPrivacyShield(0, 'স্ক্রীন লক করা হয়েছে — খেলায় ফিরতে নিচের বাটনে ট্যাপ করুন।');
       }
     });
-
-    function isInsideAndroidAppWebView() {
-      var ua = navigator.userAgent || '';
-      var isWv = /\bwv\b|WebView|ModernSportingClubApp/i.test(ua);
-      var isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
-      return isWv || isStandalone;
-    }
 
     var audienceFullscreenActive = false;
 
@@ -4212,15 +4209,10 @@
       var topBar =
         '<div class="glass rounded-2xl px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2">' +
           '<div class="flex items-center gap-2.5">' +
-            '<span class="relative inline-block w-2.5 h-2.5 rounded-full ' + (firebaseServerOnline ? 'bg-emerald-400' : (firebaseConnected ? 'bg-amber-400' : 'bg-rose-400')) + ' live-dot"></span>' +
+            '<span class="relative inline-block w-2.5 h-2.5 rounded-full ' + (firebaseConnected ? 'bg-emerald-400' : 'bg-cyan-400') + ' live-dot"></span>' +
             '<span class="font-bold text-sm sm:text-base text-white">পরিচালক প্যানেল</span>' +
           '</div>' +
           '<div class="flex items-center gap-1.5 flex-wrap">' +
-            (!firebaseServerOnline ? '<button type="button" id="btnReconnectBackend" class="px-2.5 py-1.5 rounded-xl btn-vivid btn-amber text-xs flex items-center gap-1 cursor-pointer animate-pulse" title="ব্যাকএন্ড সার্ভার পুনঃসংযোগ করুন"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> পুনঃসংযোগ</button>' : '') +
-            '<button type="button" id="btnToggleChromeBlock" class="px-2.5 py-1.5 rounded-xl btn-vivid text-xs flex items-center gap-1 cursor-pointer ' +
-              (state.blockBrowserForPlayers ? 'btn-purple ring-1 ring-white' : 'btn-slate') + '" title="চালু করলে প্রতিযোগীরা ক্রোমে খুলতে পারবে না, শুধু সিকিউর APK অ্যাপে খেলতে পারবে">' +
-              '<i data-lucide="shield-ban" class="w-3.5 h-3.5"></i> ' + (state.blockBrowserForPlayers ? 'Chrome ব্লক চালু' : 'Chrome ব্লক') +
-            '</button>' +
             '<button type="button" id="btnToggleGlobalPause" class="px-3 py-1.5 rounded-xl btn-vivid text-xs flex items-center gap-1.5 cursor-pointer ' +
               (state.gamePaused ? 'btn-green animate-pulse' : 'btn-red') + '">' +
               '<i data-lucide="' + (state.gamePaused ? 'play' : 'pause') + '" class="w-3.5 h-3.5"></i> ' + (state.gamePaused ? 'রিজিউম করুন' : 'খেলা পজ') +
@@ -4534,15 +4526,12 @@
             '</div>' +
 
             '<div class="flex flex-wrap items-center justify-between gap-2.5">' +
-              '<div class="flex items-center gap-1.5 flex-wrap">' +
+              '<div class="flex items-center gap-1.5">' +
                 '<button type="button" id="btnG3PlayPause" class="px-4 py-2 rounded-xl btn-vivid text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer ' +
                   (g3.isPlaying ? 'btn-amber' : 'btn-green') + '">' +
                   '<i data-lucide="' + (g3.isPlaying ? 'pause' : 'play') + '" class="w-4 h-4"></i> ' + (g3.isPlaying ? 'বিরতি' : 'চালু করুন') +
                 '</button>' +
-                '<button type="button" id="btnRunRawVideo" class="px-3 py-2 rounded-xl btn-vivid btn-teal text-xs cursor-pointer flex items-center gap-1 ' + (g3.rawMode ? 'ring-2 ring-white' : '') + '" title="কোনো প্রশ্ন পপ-আপ ছাড়াই শুধু ভিডিও চালান">' +
-                  '<i data-lucide="film" class="w-3.5 h-3.5"></i> Run Raw Video' +
-                '</button>' +
-                '<button type="button" id="btnG3Restart" class="px-3 py-2 rounded-xl btn-vivid btn-slate text-xs cursor-pointer flex items-center gap-1">' +
+                '<button type="button" id="btnG3Restart" class="px-3.5 py-2 rounded-xl btn-vivid btn-slate text-xs cursor-pointer flex items-center gap-1">' +
                   '<i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> রিস্টার্ট' +
                 '</button>' +
               '</div>' +
@@ -5144,22 +5133,31 @@
     }
 
     function bindDynamicEvents() {
-      // Player Tab Events (with Call-Safe Single-Device Lock + Screen Wake Lock)
+      // Player Tab Events (with Atomic Firebase Single-Device / Single-IP Lock + Screen Wake Lock)
       document.querySelectorAll('[data-select-player]').forEach(function (btn) {
         btn.addEventListener('click', function () {
           SoundFX.init();
           var pid = btn.getAttribute('data-select-player');
-          if (!claimPlayerDeviceLock(pid)) {
-            showToast('এই প্রতিযোগী ইতিমধ্যেই অন্য ডিভাইসে যুক্ত আছেন!', 'error');
+          if (isPlayerLockedByOther(pid)) {
+            showToast('এই প্রতিযোগী ইতিমধ্যেই অন্য মোবাইল/IP-তে লক আছেন! নাম পরিবর্তন না করা পর্যন্ত ঢোকা যাবে না।', 'error');
             return;
           }
-          localSession.selectedPlayerId = pid;
-          saveLocalSession();
-          // Auto-request fullscreen when participant enters competition
-          if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
-            document.documentElement.requestFullscreen().catch(function () {});
-          }
-          renderAll();
+          btn.disabled = true;
+          claimPlayerDeviceLock(pid, function (ok) {
+            if (!ok) {
+              btn.disabled = false;
+              showToast('এই প্রতিযোগী ইতিমধ্যেই অন্য মোবাইল/IP-তে লক আছেন!', 'error');
+              renderAll();
+              return;
+            }
+            localSession.selectedPlayerId = pid;
+            saveLocalSession();
+            // Auto-request fullscreen when participant enters competition
+            if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+              document.documentElement.requestFullscreen().catch(function () {});
+            }
+            renderAll();
+          });
         });
       });
 
@@ -5869,32 +5867,6 @@
         });
       }
 
-      var btnRunRaw = document.getElementById('btnRunRawVideo');
-      if (btnRunRaw) {
-        btnRunRaw.addEventListener('click', function () {
-          SoundFX.init();
-          var vSel = document.querySelector('#formRunVideoSet select[name="vsetId"]');
-          runRawVideoMode(vSel ? vSel.value : state.game3.selectedVideoSetId);
-        });
-      }
-
-      var btnReconn = document.getElementById('btnReconnectBackend');
-      if (btnReconn) {
-        btnReconn.addEventListener('click', function () {
-          showToast('ব্যাকএন্ড সার্ভার পুনঃসংযোগ করা হচ্ছে...', 'info');
-          connectFirebase(false);
-        });
-      }
-
-      var btnChromeBlk = document.getElementById('btnToggleChromeBlock');
-      if (btnChromeBlk) {
-        btnChromeBlk.addEventListener('click', function () {
-          state.blockBrowserForPlayers = !state.blockBrowserForPlayers;
-          commitState();
-          showToast(state.blockBrowserForPlayers ? 'Chrome/ব্রাউজার ব্লক চালু হয়েছে — এখন শুধু APK অ্যাপ থেকে প্রতিযোগীরা খেলতে পারবে!' : 'Chrome/ব্রাউজার ব্লক বন্ধ করা হয়েছে।', state.blockBrowserForPlayers ? 'warn' : 'info');
-        });
-      }
-
       var btnRestart = document.getElementById('btnG3Restart');
       if (btnRestart) {
         btnRestart.addEventListener('click', function () {
@@ -6067,23 +6039,6 @@
 
     // Auto-request Wake Lock on first touch/click
     window.addEventListener('pointerdown', function () { requestScreenWakeLock(); }, { passive: true });
-
-    // Auto-reconnect Firebase when mobile/desktop internet returns
-    window.addEventListener('online', function () {
-      if (firebaseDb) {
-        try { firebaseDb.goOnline(); } catch (e) {}
-      }
-      if (!firebaseConnected) {
-        connectFirebase(true);
-      } else if (firebasePendingSync && localSession.adminLoggedIn) {
-        pushStateToFirebase();
-      }
-    });
-
-    window.addEventListener('offline', function () {
-      firebaseServerOnline = false;
-      renderAll();
-    });
 
     // Boot Application
     window.addEventListener('load', function () {

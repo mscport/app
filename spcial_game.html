@@ -296,6 +296,18 @@
         display: none !important;
       }
     }
+    body.privacy-blackout-active {
+      background: #000000 !important;
+    }
+    body.privacy-blackout-active > *:not(#playerPrivacyShield) {
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+    #playerPrivacyShield {
+      background: #000000 !important;
+      z-index: 999999 !important;
+    }
 
     /* 1870x1180 Pixel Audience Broadcast Stream Stage */
     .audience-viewport {
@@ -484,6 +496,7 @@
         activeGame: 'game1', // 'game1' | 'game2' | 'game3' | 'game4'
         showScoreboard: false,
         gamePaused: false,
+        blockBrowserForPlayers: false,
         pausedSnapshot: null,
         clubLogoUrl: 'msc_logo.png',
         deviceLocks: {},
@@ -601,6 +614,7 @@
         game3: {
           title: 'ভিডিও কুইজ (ল্যান্ডস্কেপ)',
           active: false,
+          rawMode: false,
           selectedVideoSetId: 'vset_1',
           uploadedVideos: [
             {
@@ -763,6 +777,8 @@
       if (!s.game4.playerState) s.game4.playerState = {};
       if (!s.game4.settings) s.game4.settings = def.game4.settings;
       if (typeof s.gamePaused !== 'boolean') s.gamePaused = false;
+      if (typeof s.blockBrowserForPlayers !== 'boolean') s.blockBrowserForPlayers = false;
+      if (typeof s.game3.rawMode !== 'boolean') s.game3.rawMode = false;
       if (!s.deviceLocks || typeof s.deviceLocks !== 'object') s.deviceLocks = {};
       if (typeof s.clubLogoUrl !== 'string') s.clubLogoUrl = '';
       return s;
@@ -963,6 +979,10 @@
     var firebaseDb = null;
     var firebaseStorage = null;
     var firebaseConnected = false;
+    var firebaseServerOnline = false;
+    var firebaseInfoRef = null;
+    var firebaseLastError = '';
+    var firebasePendingSync = false;
     var firebaseRef = null;
     var broadcastChan = null;
     var suppressNextFirebaseEmit = false;
@@ -992,6 +1012,28 @@
       safeSet(STORAGE_LOCAL_KEY, JSON.stringify(localSession));
     }
 
+    function pushStateToFirebase(cleanObj) {
+      if (!firebaseConnected || !firebaseRef || suppressNextFirebaseEmit) return;
+      try {
+        var payload = cleanObj || JSON.parse(JSON.stringify(state));
+        var p = firebaseRef.set(payload);
+        if (p && typeof p.then === 'function') {
+          p.then(function () {
+            firebaseLastError = '';
+            firebasePendingSync = false;
+          }).catch(function (err) {
+            firebasePendingSync = true;
+            firebaseLastError = err && err.message ? err.message : String(err);
+            console.warn('Firebase write error:', firebaseLastError);
+          });
+        }
+      } catch (e) {
+        firebasePendingSync = true;
+        firebaseLastError = e && e.message ? e.message : String(e);
+        console.warn('Firebase set exception:', firebaseLastError);
+      }
+    }
+
     function commitState(skipRender) {
       state.updatedAt = Date.now();
       var serialized = JSON.stringify(state);
@@ -1000,9 +1042,9 @@
         try { broadcastChan.postMessage({ type: 'STATE_UPDATE', state: state }); } catch (e) {}
       }
       if (firebaseConnected && firebaseRef && !suppressNextFirebaseEmit) {
-        try {
-          firebaseRef.set(state);
-        } catch (e) {}
+        var cleanPayload = null;
+        try { cleanPayload = JSON.parse(serialized); } catch (e) { cleanPayload = state; }
+        pushStateToFirebase(cleanPayload);
       }
       if (!skipRender) renderAll();
     }
@@ -1028,13 +1070,21 @@
         if (!cfg.apiKey || !cfg.databaseURL) {
           cfg = JSON.parse(DEFAULT_FIREBASE_CONFIG_TEXT);
         }
-        var app;
+        var app = null;
         if (window.firebase.apps && window.firebase.apps.length > 0) {
-          app = window.firebase.apps[0];
+          var existingApp = window.firebase.apps[0];
+          var exOpts = existingApp.options || {};
+          if (exOpts.databaseURL === cfg.databaseURL && exOpts.apiKey === cfg.apiKey) {
+            app = existingApp;
+          } else {
+            var customName = 'msc_app_' + Date.now();
+            app = window.firebase.initializeApp(cfg, customName);
+          }
         } else {
           app = window.firebase.initializeApp(cfg);
         }
         firebaseDb = window.firebase.database(app);
+        try { firebaseDb.goOnline(); } catch (e) {}
         try {
           if (typeof window.firebase.storage === 'function') {
             firebaseStorage = window.firebase.storage(app);
@@ -1046,12 +1096,37 @@
           firebaseStorage = null;
           window.__lastFbStorageErr = e && e.message ? e.message : String(e);
         }
+
+        // Monitor true real-time Firebase Server connectivity via .info/connected
+        if (firebaseInfoRef) {
+          try { firebaseInfoRef.off(); } catch (e) {}
+        }
+        firebaseInfoRef = firebaseDb.ref('.info/connected');
+        firebaseInfoRef.on('value', function (connSnap) {
+          var isOnlineNow = connSnap.val() === true;
+          var wasOnline = firebaseServerOnline;
+          firebaseServerOnline = isOnlineNow;
+          if (isOnlineNow) {
+            firebaseLastError = '';
+            if (firebasePendingSync && localSession.adminLoggedIn) {
+              pushStateToFirebase();
+            }
+            if (!wasOnline) {
+              renderAll();
+            }
+          } else if (wasOnline) {
+            renderAll();
+          }
+        });
+
         var roomPath = 'gameshow_rooms/' + (connConfig.roomCode || 'LIVE_ROOM_01').replace(/[^a-zA-Z0-9_-]/g, '_');
         if (firebaseRef) firebaseRef.off();
         firebaseRef = firebaseDb.ref(roomPath);
         firebaseConnected = true;
 
         firebaseRef.on('value', function (snapshot) {
+          firebaseServerOnline = true;
+          firebaseLastError = '';
           var val = snapshot.val();
           if (val && val.players && val.game1 && val.game2 && val.game3) {
             if (!state.updatedAt || (val.updatedAt && val.updatedAt > state.updatedAt)) {
@@ -1088,8 +1163,13 @@
               suppressNextFirebaseEmit = false;
             }
           } else if (localSession.adminLoggedIn) {
-            firebaseRef.set(state);
+            pushStateToFirebase();
           }
+        }, function (err) {
+          firebaseServerOnline = false;
+          firebaseLastError = err && err.message ? err.message : String(err);
+          console.warn('Firebase listener error:', firebaseLastError);
+          renderAll();
         });
 
         if (!silent) showToast('Firebase Realtime Database-এর সাথে সফলভাবে সংযুক্ত হয়েছে!', 'success');
@@ -1097,7 +1177,9 @@
         return true;
       } catch (err) {
         firebaseConnected = false;
-        window.__lastFbStorageErr = err && err.message ? err.message : String(err);
+        firebaseServerOnline = false;
+        firebaseLastError = err && err.message ? err.message : String(err);
+        window.__lastFbStorageErr = firebaseLastError;
         if (!silent) showToast('Firebase সংযোগ ত্রুটি: ' + err.message, 'error');
         return false;
       }
@@ -1154,8 +1236,28 @@
           var sep = sheetUrl.indexOf('?') === -1 ? '?' : '&';
           fetchUrl = sheetUrl + sep + 'username=' + encodeURIComponent(u) + '&password=' + encodeURIComponent(p) + '&user=' + encodeURIComponent(u) + '&pass=' + encodeURIComponent(p);
         }
-        var resp = await fetch(fetchUrl, { method: 'GET', redirect: 'follow', credentials: 'omit', cache: 'no-store' });
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        var resp = null;
+        var lastFetchErr = null;
+        for (var attempt = 0; attempt < 2; attempt++) {
+          var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+          var timerId = ctrl ? setTimeout(function () { try { ctrl.abort(); } catch (e) {} }, 12000) : null;
+          try {
+            resp = await fetch(fetchUrl, {
+              method: 'GET',
+              redirect: 'follow',
+              credentials: 'omit',
+              cache: 'no-store',
+              signal: ctrl ? ctrl.signal : undefined
+            });
+            if (timerId) clearTimeout(timerId);
+            if (resp && resp.ok) break;
+            lastFetchErr = new Error('HTTP ' + (resp ? resp.status : 'ERR'));
+          } catch (fErr) {
+            if (timerId) clearTimeout(timerId);
+            lastFetchErr = fErr;
+          }
+        }
+        if (!resp || !resp.ok) throw (lastFetchErr || new Error('SERVER_UNREACHABLE'));
         var text = (await resp.text()).trim();
 
         // Check JSON response (Google Apps Script)
@@ -1197,7 +1299,7 @@
         }
         return { ok: false, msg: 'আপনার ভূল হচ্ছে' };
       } catch (err) {
-        return { ok: false, msg: 'আপনার ভূল হচ্ছে' };
+        return { ok: false, msg: 'ব্যাকএন্ড সার্ভারের সাথে সংযোগ বিচ্ছিন্ন হয়েছে। ইন্টারনেট চেক করে আবার চেষ্টা করুন।' };
       }
     }
 
@@ -2378,12 +2480,38 @@
       });
       state.activeGame = 'game3';
       state.showScoreboard = false;
+      g3.rawMode = false;
       g3.active = true;
       g3.isPlaying = true;
       g3.playbackUpdatedAt = Date.now();
       SoundFX.reveal();
       commitState();
       showToast('ভিডিও সেট "' + vset.name + '" চালু হয়েছে!', 'success');
+    }
+
+    function runRawVideoMode(vsetId) {
+      var g3 = state.game3;
+      if (vsetId) {
+        var vset = (g3.savedSets || []).find(function (s) { return s.id === vsetId; });
+        if (vset) {
+          g3.selectedVideoSetId = vset.id;
+          g3.videoSourceType = vset.videoSourceType || 'demo';
+          g3.videoUrl = vset.videoUrl || '';
+          g3.videoName = vset.videoName || vset.name;
+          g3.duration = Number(vset.duration || 30);
+        }
+      }
+      state.activeGame = 'game3';
+      state.showScoreboard = false;
+      g3.rawMode = true;
+      g3.active = true;
+      g3.activePopup = null;
+      g3.currentTime = 0;
+      g3.isPlaying = true;
+      g3.playbackUpdatedAt = Date.now();
+      SoundFX.reveal();
+      commitState();
+      showToast('Raw ভিডিও চালু হয়েছে (কোনো প্রশ্ন পপ-আপ আসবে না)!', 'success');
     }
 
     function saveCurrentVideoAsSet(setName) {
@@ -2682,13 +2810,15 @@
           // 3) Sync Video Element or Demo Canvas
           var effTime = getEffectiveVideoTime();
           if (g3.isPlaying && !g3.activePopup && (!firebaseConnected || localSession.adminLoggedIn)) {
-            // Check if any unasked question timestamp is reached (authoritative on Admin)
-            var dueQ = g3.questions.find(function (q) {
-              return !q.asked && effTime >= Number(q.time) && effTime < Number(q.time) + 1.8;
-            });
-            if (dueQ) {
-              triggerVideoQuestion(dueQ);
-              return;
+            // Check if any unasked question timestamp is reached (skip when Raw Video mode is active)
+            if (!g3.rawMode) {
+              var dueQ = g3.questions.find(function (q) {
+                return !q.asked && effTime >= Number(q.time) && effTime < Number(q.time) + 1.8;
+              });
+              if (dueQ) {
+                triggerVideoQuestion(dueQ);
+                return;
+              }
             }
             if (effTime >= (g3.duration || 30)) {
               g3.currentTime = g3.duration || 30;
@@ -2959,6 +3089,21 @@
       var container = document.getElementById('viewPlayer');
       if (!container) return;
 
+      // If Admin enabled App-Only (Chrome Block) mode for guaranteed FLAG_SECURE screenshot blocking
+      if (state.blockBrowserForPlayers && !isInsideAndroidAppWebView()) {
+        container.innerHTML =
+          '<div class="portrait-stage pt-8">' +
+            '<div class="glass rounded-3xl p-7 text-center space-y-4 border border-rose-500/40">' +
+              '<div class="w-16 h-16 mx-auto rounded-2xl bg-rose-500/20 text-rose-300 flex items-center justify-center">' +
+                '<i data-lucide="shield-ban" class="w-9 h-9"></i>' +
+              '</div>' +
+              '<h2 class="text-xl font-bold text-white">ক্রোম / ব্রাউজারে প্রবেশ নিষিদ্ধ</h2>' +
+              '<p class="text-sm text-slate-300 leading-relaxed">স্ক্রীনশট সুরক্ষার জন্য প্রতিযোগীদের শুধুমাত্র <strong>Modern Sporting Club APK অ্যাপ</strong> থেকেই খেলতে হবে।</p>' +
+            '</div>' +
+          '</div>';
+        return;
+      }
+
       // Step 1: Select Contestant Name if not selected
       var currentPlayer = localSession.selectedPlayerId ? getPlayerById(localSession.selectedPlayerId) : null;
       if (!currentPlayer) {
@@ -3010,8 +3155,8 @@
                 '</span>' +
               '</div>' +
               '<div class="flex items-center gap-1.5 text-xs text-slate-400 mt-0.5">' +
-                '<span class="relative inline-block w-2 h-2 rounded-full ' + (firebaseConnected ? 'bg-emerald-400' : 'bg-cyan-400') + ' live-dot"></span>' +
-                '<span>' + (firebaseConnected ? 'লাইভ সংযুক্ত' : 'লাইভ সিঙ্ক চালু') + '</span>' +
+                '<span class="relative inline-block w-2 h-2 rounded-full ' + (firebaseServerOnline ? 'bg-emerald-400' : (firebaseConnected ? 'bg-amber-400' : 'bg-rose-400')) + ' live-dot"></span>' +
+                '<span>' + (firebaseServerOnline ? 'লাইভ সংযুক্ত' : (firebaseConnected ? 'পুনঃসংযোগ হচ্ছে...' : 'অফলাইন')) + '</span>' +
               '</div>' +
             '</div>' +
           '</div>' +
@@ -3583,8 +3728,9 @@
 
     // Participant Fullscreen + Anti-Copy / Anti-Screenshot / Anti-Recording Guards
     var privacyShieldTimer = null;
+    var activeTouchPointers = {};
     function isParticipantProtectedActive() {
-      return localSession.mainTab === 'player' && !!localSession.selectedPlayerId;
+      return localSession.mainTab === 'player';
     }
 
     function updateParticipantProtectionBodyClass() {
@@ -3600,9 +3746,10 @@
       if (!isParticipantProtectedActive()) return;
       var sh = document.getElementById('playerPrivacyShield');
       if (!sh) return;
+      document.body.classList.add('privacy-blackout-active');
       sh.classList.remove('hidden');
       sh.classList.add('flex');
-      refreshIcons();
+      sh.style.display = 'flex';
       if (privacyShieldTimer) clearTimeout(privacyShieldTimer);
       if (autoHideMs) {
         privacyShieldTimer = setTimeout(hidePrivacyShield, autoHideMs);
@@ -3611,9 +3758,11 @@
 
     function hidePrivacyShield() {
       var sh = document.getElementById('playerPrivacyShield');
+      document.body.classList.remove('privacy-blackout-active');
       if (!sh) return;
       sh.classList.add('hidden');
       sh.classList.remove('flex');
+      sh.style.display = '';
     }
 
     function togglePlayerPageFullscreen() {
@@ -3639,24 +3788,94 @@
       });
     });
 
-    document.addEventListener('keydown', function (e) {
-      if (!isParticipantProtectedActive()) return;
+    function isHardwareOrScreenshotKey(e) {
       var k = String(e.key || '').toLowerCase();
-      var blocked =
+      var c = String(e.code || '').toLowerCase();
+      var kc = e.keyCode || e.which || 0;
+      return (
         k === 'printscreen' ||
-        e.keyCode === 44 ||
+        k === 'snapshot' ||
+        k === 'audiovolumedown' ||
+        k === 'audiovolumeup' ||
+        k === 'volumedown' ||
+        k === 'volumeup' ||
+        k === 'power' ||
+        c === 'audiovolumedown' ||
+        c === 'audiovolumeup' ||
+        c === 'power' ||
+        c === 'printscreen' ||
+        kc === 44 || kc === 24 || kc === 25 || kc === 26 || kc === 182 || kc === 183 ||
         (e.ctrlKey && (k === 'c' || k === 'x' || k === 's' || k === 'p' || k === 'u')) ||
         (e.ctrlKey && e.shiftKey && (k === 'i' || k === 'j' || k === 'c' || k === 's')) ||
         (e.metaKey && e.shiftKey && (k === '3' || k === '4' || k === '5')) ||
-        k === 'f12';
-      if (blocked) {
+        k === 'f12'
+      );
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (!isParticipantProtectedActive()) return;
+      if (isHardwareOrScreenshotKey(e)) {
         e.preventDefault();
         try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(''); } catch (err) {}
-        showPrivacyShield(2800);
+        showPrivacyShield(4000);
+      }
+    });
+
+    document.addEventListener('keyup', function (e) {
+      if (!isParticipantProtectedActive()) return;
+      if (isHardwareOrScreenshotKey(e)) {
+        e.preventDefault();
+        showPrivacyShield(4000);
+      }
+    });
+
+    // Detect 2-finger or 3-finger touch/swipe screenshot gesture immediately -> pure black display
+    document.addEventListener('touchstart', function (e) {
+      if (!isParticipantProtectedActive()) return;
+      if (e.touches && e.touches.length >= 2) {
+        e.preventDefault();
+        showPrivacyShield(4000);
+      }
+    }, { passive: false });
+
+    document.addEventListener('touchmove', function (e) {
+      if (!isParticipantProtectedActive()) return;
+      if (e.touches && e.touches.length >= 2) {
+        e.preventDefault();
+        showPrivacyShield(4000);
+      }
+    }, { passive: false });
+
+    document.addEventListener('pointerdown', function (e) {
+      if (!isParticipantProtectedActive()) return;
+      if (e.pointerType === 'touch') {
+        activeTouchPointers[e.pointerId] = true;
+        if (Object.keys(activeTouchPointers).length >= 2) {
+          showPrivacyShield(4000);
+        }
+      }
+    }, { passive: true });
+
+    ['pointerup', 'pointercancel'].forEach(function (evName) {
+      document.addEventListener(evName, function (e) {
+        if (e.pointerId !== undefined) delete activeTouchPointers[e.pointerId];
+      }, { passive: true });
+    });
+
+    document.addEventListener('touchcancel', function () {
+      activeTouchPointers = {};
+      if (isParticipantProtectedActive()) {
+        showPrivacyShield(4000);
       }
     });
 
     window.addEventListener('blur', function () {
+      if (isParticipantProtectedActive()) {
+        showPrivacyShield(0);
+      }
+    });
+
+    window.addEventListener('pagehide', function () {
       if (isParticipantProtectedActive()) {
         showPrivacyShield(0);
       }
@@ -3667,6 +3886,13 @@
         showPrivacyShield(0);
       }
     });
+
+    function isInsideAndroidAppWebView() {
+      var ua = navigator.userAgent || '';
+      var isWv = /\bwv\b|WebView|ModernSportingClubApp/i.test(ua);
+      var isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+      return isWv || isStandalone;
+    }
 
     var audienceFullscreenActive = false;
 
@@ -3986,10 +4212,15 @@
       var topBar =
         '<div class="glass rounded-2xl px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2">' +
           '<div class="flex items-center gap-2.5">' +
-            '<span class="relative inline-block w-2.5 h-2.5 rounded-full ' + (firebaseConnected ? 'bg-emerald-400' : 'bg-cyan-400') + ' live-dot"></span>' +
+            '<span class="relative inline-block w-2.5 h-2.5 rounded-full ' + (firebaseServerOnline ? 'bg-emerald-400' : (firebaseConnected ? 'bg-amber-400' : 'bg-rose-400')) + ' live-dot"></span>' +
             '<span class="font-bold text-sm sm:text-base text-white">পরিচালক প্যানেল</span>' +
           '</div>' +
           '<div class="flex items-center gap-1.5 flex-wrap">' +
+            (!firebaseServerOnline ? '<button type="button" id="btnReconnectBackend" class="px-2.5 py-1.5 rounded-xl btn-vivid btn-amber text-xs flex items-center gap-1 cursor-pointer animate-pulse" title="ব্যাকএন্ড সার্ভার পুনঃসংযোগ করুন"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> পুনঃসংযোগ</button>' : '') +
+            '<button type="button" id="btnToggleChromeBlock" class="px-2.5 py-1.5 rounded-xl btn-vivid text-xs flex items-center gap-1 cursor-pointer ' +
+              (state.blockBrowserForPlayers ? 'btn-purple ring-1 ring-white' : 'btn-slate') + '" title="চালু করলে প্রতিযোগীরা ক্রোমে খুলতে পারবে না, শুধু সিকিউর APK অ্যাপে খেলতে পারবে">' +
+              '<i data-lucide="shield-ban" class="w-3.5 h-3.5"></i> ' + (state.blockBrowserForPlayers ? 'Chrome ব্লক চালু' : 'Chrome ব্লক') +
+            '</button>' +
             '<button type="button" id="btnToggleGlobalPause" class="px-3 py-1.5 rounded-xl btn-vivid text-xs flex items-center gap-1.5 cursor-pointer ' +
               (state.gamePaused ? 'btn-green animate-pulse' : 'btn-red') + '">' +
               '<i data-lucide="' + (state.gamePaused ? 'play' : 'pause') + '" class="w-3.5 h-3.5"></i> ' + (state.gamePaused ? 'রিজিউম করুন' : 'খেলা পজ') +
@@ -4303,12 +4534,15 @@
             '</div>' +
 
             '<div class="flex flex-wrap items-center justify-between gap-2.5">' +
-              '<div class="flex items-center gap-1.5">' +
+              '<div class="flex items-center gap-1.5 flex-wrap">' +
                 '<button type="button" id="btnG3PlayPause" class="px-4 py-2 rounded-xl btn-vivid text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer ' +
                   (g3.isPlaying ? 'btn-amber' : 'btn-green') + '">' +
                   '<i data-lucide="' + (g3.isPlaying ? 'pause' : 'play') + '" class="w-4 h-4"></i> ' + (g3.isPlaying ? 'বিরতি' : 'চালু করুন') +
                 '</button>' +
-                '<button type="button" id="btnG3Restart" class="px-3.5 py-2 rounded-xl btn-vivid btn-slate text-xs cursor-pointer flex items-center gap-1">' +
+                '<button type="button" id="btnRunRawVideo" class="px-3 py-2 rounded-xl btn-vivid btn-teal text-xs cursor-pointer flex items-center gap-1 ' + (g3.rawMode ? 'ring-2 ring-white' : '') + '" title="কোনো প্রশ্ন পপ-আপ ছাড়াই শুধু ভিডিও চালান">' +
+                  '<i data-lucide="film" class="w-3.5 h-3.5"></i> Run Raw Video' +
+                '</button>' +
+                '<button type="button" id="btnG3Restart" class="px-3 py-2 rounded-xl btn-vivid btn-slate text-xs cursor-pointer flex items-center gap-1">' +
                   '<i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> রিস্টার্ট' +
                 '</button>' +
               '</div>' +
@@ -5635,6 +5869,32 @@
         });
       }
 
+      var btnRunRaw = document.getElementById('btnRunRawVideo');
+      if (btnRunRaw) {
+        btnRunRaw.addEventListener('click', function () {
+          SoundFX.init();
+          var vSel = document.querySelector('#formRunVideoSet select[name="vsetId"]');
+          runRawVideoMode(vSel ? vSel.value : state.game3.selectedVideoSetId);
+        });
+      }
+
+      var btnReconn = document.getElementById('btnReconnectBackend');
+      if (btnReconn) {
+        btnReconn.addEventListener('click', function () {
+          showToast('ব্যাকএন্ড সার্ভার পুনঃসংযোগ করা হচ্ছে...', 'info');
+          connectFirebase(false);
+        });
+      }
+
+      var btnChromeBlk = document.getElementById('btnToggleChromeBlock');
+      if (btnChromeBlk) {
+        btnChromeBlk.addEventListener('click', function () {
+          state.blockBrowserForPlayers = !state.blockBrowserForPlayers;
+          commitState();
+          showToast(state.blockBrowserForPlayers ? 'Chrome/ব্রাউজার ব্লক চালু হয়েছে — এখন শুধু APK অ্যাপ থেকে প্রতিযোগীরা খেলতে পারবে!' : 'Chrome/ব্রাউজার ব্লক বন্ধ করা হয়েছে।', state.blockBrowserForPlayers ? 'warn' : 'info');
+        });
+      }
+
       var btnRestart = document.getElementById('btnG3Restart');
       if (btnRestart) {
         btnRestart.addEventListener('click', function () {
@@ -5807,6 +6067,23 @@
 
     // Auto-request Wake Lock on first touch/click
     window.addEventListener('pointerdown', function () { requestScreenWakeLock(); }, { passive: true });
+
+    // Auto-reconnect Firebase when mobile/desktop internet returns
+    window.addEventListener('online', function () {
+      if (firebaseDb) {
+        try { firebaseDb.goOnline(); } catch (e) {}
+      }
+      if (!firebaseConnected) {
+        connectFirebase(true);
+      } else if (firebasePendingSync && localSession.adminLoggedIn) {
+        pushStateToFirebase();
+      }
+    });
+
+    window.addEventListener('offline', function () {
+      firebaseServerOnline = false;
+      renderAll();
+    });
 
     // Boot Application
     window.addEventListener('load', function () {
